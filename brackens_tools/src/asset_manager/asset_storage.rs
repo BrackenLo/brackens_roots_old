@@ -97,6 +97,13 @@ where
 
     //----------------------------------------------
 
+    pub fn tick(&mut self) {
+        self.check_asset_changes();
+        self.remove_pending_assets();
+
+        self.just_added.clear();
+    }
+
     pub fn check_asset_changes(&mut self) {
         // Loop through each recieved signal and act accordingly
         loop {
@@ -142,17 +149,16 @@ where
                 .remove(&self.asset_paths.remove(&to_remove).unwrap());
         }
         self.pending_removal.clear();
-        self.just_added.clear();
     }
 
     //----------------------------------------------
 
-    pub fn get_pending_removal(&self) -> Vec<Handle<T>> {
-        self.pending_removal
-            .iter()
-            .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
-            .collect()
-    }
+    // pub fn get_pending_removal(&self) -> Vec<Handle<T>> {
+    //     self.pending_removal
+    //         .iter()
+    //         .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
+    //         .collect()
+    // }
 
     pub fn get_just_added(&self) -> Vec<Handle<T>> {
         self.just_added
