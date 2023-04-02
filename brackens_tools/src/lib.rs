@@ -4,6 +4,7 @@ pub mod asset_manager;
 pub mod general;
 pub mod input;
 pub mod renderer;
+pub mod runner;
 pub mod upkeep;
 pub mod window;
 
