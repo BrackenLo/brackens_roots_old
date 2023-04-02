@@ -3,6 +3,8 @@
 use log::info;
 
 pub mod pipelines;
+pub mod texture;
+pub mod texture_renderer;
 
 //===============================================================
 
