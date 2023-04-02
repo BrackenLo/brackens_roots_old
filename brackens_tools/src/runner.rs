@@ -25,10 +25,15 @@ pub enum RunnerLoopEvent {
 
 //===============================================================
 
+#[derive(Default)]
 pub struct Runner {
     pub window_builder: winit::window::WindowBuilder,
 }
 impl Runner {
+    pub fn new(window_builder: winit::window::WindowBuilder) -> Self {
+        Self { window_builder }
+    }
+
     pub fn run<RC: RunnerCore + 'static>(self) {
         //----------------------------------------------
 

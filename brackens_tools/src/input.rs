@@ -28,6 +28,10 @@ impl<T> ButtonManager<T>
 where
     T: Eq + Hash + Clone + Copy,
 {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     //----------------------------------------------
 
     fn add_pressed(&mut self, key: T) {

@@ -11,7 +11,18 @@ pub mod window;
 //===============================================================
 
 pub use glam;
-pub use winit::{dpi::PhysicalSize, event::VirtualKeyCode};
+pub use wgpu;
+pub use winit;
+
+// pub mod winit {
+//     pub use winit::{
+//         self,
+//         dpi::PhysicalSize,
+//         event::{DeviceEvent, DeviceId, VirtualKeyCode, WindowEvent},
+//         event_loop::{EventLoop, EventLoopProxy},
+//         window::Window,
+//     };
+// }
 
 //===============================================================
 //----------------------------------------------

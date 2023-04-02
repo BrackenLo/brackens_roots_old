@@ -10,7 +10,7 @@ pub mod texture_renderer;
 
 //===============================================================
 
-pub struct RendererPrefs {
+pub struct RenderPrefs {
     pub backends: wgpu::Backends,
     pub dx12_compiler: wgpu::Dx12Compiler,
     pub power_preferences: wgpu::PowerPreference,
@@ -18,7 +18,7 @@ pub struct RendererPrefs {
     pub limits: wgpu::Limits,
     pub present_mode: wgpu::PresentMode,
 }
-impl Default for RendererPrefs {
+impl Default for RenderPrefs {
     fn default() -> Self {
         Self {
             backends: wgpu::Backends::all(),
@@ -33,7 +33,7 @@ impl Default for RendererPrefs {
 
 //===============================================================
 
-pub struct RendererComponents {
+pub struct RenderComponents {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub surface: wgpu::Surface,
@@ -41,8 +41,8 @@ pub struct RendererComponents {
     pub size: winit::dpi::PhysicalSize<u32>,
 }
 
-impl RendererComponents {
-    pub fn new(prefs: RendererPrefs, window: &winit::window::Window) -> Self {
+impl RenderComponents {
+    pub fn new(prefs: RenderPrefs, window: &winit::window::Window) -> Self {
         info!("Creating new wgpu components");
 
         //----------------------------------------------
