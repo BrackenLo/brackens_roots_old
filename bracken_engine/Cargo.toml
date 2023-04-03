@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 brackens_tools = {path = "../brackens_tools"}
 shipyard = "0.6.2"
+log = "0.4.17"
+

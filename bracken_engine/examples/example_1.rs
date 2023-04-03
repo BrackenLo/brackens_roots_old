@@ -12,17 +12,11 @@ fn main() {
 
 struct Game;
 impl ShipyardGameState for Game {
-    fn new(world: &mut shipyard::World) -> Self {
+    fn new(_world: &mut shipyard::World) -> Self {
         Self
     }
 
-    fn update(&mut self, world: &mut shipyard::World) {
-        todo!()
-    }
-
-    fn render(&mut self, world: &mut shipyard::World) {
-        todo!()
-    }
+    fn update(&mut self, _world: &mut shipyard::World) {}
 }
 
 //===============================================================

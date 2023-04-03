@@ -19,6 +19,7 @@ pub trait RunnerCore {
     fn tick(&mut self);
 }
 
+#[derive(Debug)]
 pub enum RunnerLoopEvent {
     Exit,
 }

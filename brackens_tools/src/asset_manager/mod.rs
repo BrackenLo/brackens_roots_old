@@ -12,7 +12,7 @@ pub use asset_storage::AssetStorage;
 
 //===============================================================
 
-pub trait Asset: Send + Sync {
+pub trait Asset: 'static + Send + Sync + Sized {
     fn asset_name() -> &'static str;
 }
 

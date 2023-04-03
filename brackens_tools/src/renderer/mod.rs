@@ -167,7 +167,7 @@ pub mod render_tools {
         }
     }
 
-    pub fn finish_render_pass(queue: &wgpu::Queue, render_pass: RenderPassTools) {
+    pub fn end_render_pass(queue: &wgpu::Queue, render_pass: RenderPassTools) {
         queue.submit(Some(render_pass.encoder.finish()));
         render_pass.surface_texture.present();
     }

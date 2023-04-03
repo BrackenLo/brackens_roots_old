@@ -26,15 +26,15 @@ pub struct Window(pub(crate) brackens_tools::winit::window::Window);
 //===============================================================
 
 #[derive(Unique, Default)]
-pub struct KeyManagerUnique(input::KeyManager);
+pub struct KeyManagerUnique(pub(crate) input::KeyManager);
 
 #[derive(Unique, Default)]
-pub struct MouseKeyManagerUnique(input::MouseKeyManager);
+pub struct MouseKeyManagerUnique(pub(crate) input::MouseKeyManager);
 
 #[derive(Unique, Default)]
-pub struct MousePositionManagerUnique(input::MousePositionManager);
+pub struct MousePositionManagerUnique(pub(crate) input::MousePositionManager);
 
 #[derive(Unique, Default)]
-pub struct UpkeepTrackerUnique(UpkeepTracker);
+pub struct UpkeepTrackerUnique(pub(crate) UpkeepTracker);
 
 //===============================================================
