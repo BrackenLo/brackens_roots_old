@@ -2,15 +2,29 @@
 
 // use std::{any::TypeId, collections::HashMap};
 
-use brackens_tools::asset_manager::{Asset, AssetStorage};
+use brackens_tools::asset_manager;
 use shipyard::Unique;
 
 //===============================================================
 
 #[derive(Unique)]
-pub struct AssetStorageUnique<T>(AssetStorage<T>)
+pub struct AssetStorage<T>(pub(crate) asset_manager::AssetStorage<T>)
 where
-    T: Asset + 'static;
+    T: asset_manager::Asset;
+
+impl<T> AssetStorage<T>
+where
+    T: asset_manager::Asset,
+{
+    pub fn new() -> Self {
+        Self(asset_manager::AssetStorage::new())
+    }
+}
+
+#[derive(shipyard::Component)]
+pub struct Handle<T>(pub(crate) asset_manager::Handle<T>)
+where
+    T: asset_manager::Asset;
 
 //===============================================================
 

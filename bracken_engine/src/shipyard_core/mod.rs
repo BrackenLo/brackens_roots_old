@@ -23,6 +23,7 @@ mod core_systems;
 pub mod render_components;
 mod render_systems;
 pub mod tool_components;
+mod tool_systems;
 
 //===============================================================
 
@@ -86,6 +87,11 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         //--------------------------------------------------
 
         world.add_unique(ClearColor([0.5, 0.4, 0.4]));
+
+        //--------------------------------------------------
+
+        world.run(tool_systems::sys_setup_asset_storage);
+        world.add_workload(tool_systems::wl_reset_asset_storage);
 
         //--------------------------------------------------
 
@@ -213,7 +219,9 @@ where
     }
 
     fn end(&mut self) {
-        // Clear Asset Storage
+        self.world
+            .run_workload(tool_systems::wl_reset_asset_storage)
+            .unwrap();
     }
 }
 
