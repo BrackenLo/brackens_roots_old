@@ -2,6 +2,7 @@
 
 use log::info;
 
+mod assets;
 pub mod pipelines;
 pub mod texture;
 pub mod texture_renderer;

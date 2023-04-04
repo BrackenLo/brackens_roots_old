@@ -5,13 +5,6 @@ use image::GenericImageView;
 
 //===============================================================
 
-pub struct LoadedTexture {
-    pub texture: Texture,
-    pub bind_group: wgpu::BindGroup,
-}
-
-//===============================================================
-
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
@@ -99,6 +92,36 @@ impl Texture {
         })
 
         //----------------------------------------------
+    }
+}
+
+//===============================================================
+
+pub struct LoadedTexture {
+    pub texture: Texture,
+    pub bind_group: wgpu::BindGroup,
+}
+impl LoadedTexture {
+    pub fn load(device: &wgpu::Device, texture: Texture, layout: &wgpu::BindGroupLayout) -> Self {
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(&format!("Loaded wgpu texture")),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&texture.sampler),
+                },
+            ],
+        });
+
+        Self {
+            texture,
+            bind_group,
+        }
     }
 }
 
