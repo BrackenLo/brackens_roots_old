@@ -14,7 +14,7 @@ use brackens_tools::{
 
 use core_components::*;
 use log::{error, info, warn};
-use shipyard::{UniqueView, UniqueViewMut};
+use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 
 use crate::shipyard_core::render_components::ClearColor;
 
@@ -270,6 +270,20 @@ where
         self.world
             .run_workload(tool_systems::wl_reset_asset_storage)
             .unwrap();
+    }
+}
+
+impl<GS> Drop for ShipyardCore<GS>
+where
+    GS: ShipyardGameState,
+{
+    fn drop(&mut self) {
+        self.world.run(|mut all_storages: AllStoragesViewMut| {
+            // Clean up by deleting all components.
+            // In some cases, some components dropped after uniques are dropped can
+            // cause some errors e.g. handles
+            all_storages.clear();
+        });
     }
 }
 
