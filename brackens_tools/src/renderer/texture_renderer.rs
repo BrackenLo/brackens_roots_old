@@ -82,21 +82,25 @@ impl Vertex for RawTextureInstance {
 //===============================================================
 
 pub const TEXTURE_VERTICES: [RawTextureVertex; 4] = [
+    // Bottom Left
     RawTextureVertex {
         position: [-0.5, -0.5, 0.0],
-        tex_coord: [0.0, 0.0],
+        tex_coord: [0.0, 1.0],
     },
+    // Bottom Right
     RawTextureVertex {
         position: [0.5, -0.5, 0.0],
         tex_coord: [1.0, 1.0],
     },
+    // Top Right
     RawTextureVertex {
         position: [0.5, 0.5, 0.0],
         tex_coord: [1.0, 0.0],
     },
+    // Top Left
     RawTextureVertex {
         position: [-0.5, 0.5, 0.0],
-        tex_coord: [0.0, 1.0],
+        tex_coord: [0.0, 0.0],
     },
 ];
 pub const TEXTURE_INDICES: [u16; 6] = [0, 1, 2, 0, 2, 3];

@@ -53,6 +53,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     var color = textureSample(texture, texture_sampler, in.tex_coord);
 
     // return mix(in.color, color);
-    return in.color * color;
+    // return in.color * color;
+    return color;
     
 }

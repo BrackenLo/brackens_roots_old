@@ -113,7 +113,7 @@ pub fn sys_process_textures(
 
         let instance = RawTextureInstance {
             transform: transform.to_raw(),
-            color: [1., 1., 1., 1.],
+            color: texture.color,
         };
 
         renderer.draw_texture(texture.handle.id(), instance);

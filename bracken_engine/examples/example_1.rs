@@ -30,6 +30,7 @@ impl ShipyardGameState for Game {
             Texture {
                 size: Vec2::new(32., 32.),
                 handle: texture,
+                color: [1., 0., 1., 1.],
             },
             Movable(5.),
         ));

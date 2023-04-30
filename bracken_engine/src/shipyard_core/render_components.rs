@@ -175,6 +175,7 @@ pub struct Visible {
 pub struct Texture {
     pub size: Vec2,
     pub handle: Handle<LoadedTexture>,
+    pub color: [f32; 4],
 }
 
 //===============================================================
