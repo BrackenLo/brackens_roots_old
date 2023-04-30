@@ -1,7 +1,8 @@
 //===============================================================
 
+use brackens_renderer::{RenderComponents, RenderPrefs};
+
 use brackens_tools::{
-    renderer::{RenderComponents, RenderPrefs},
     runner::{Runner, RunnerCore, RunnerLoopEvent},
     winit::{
         self,
@@ -77,7 +78,12 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         //--------------------------------------------------
 
         let mut world = shipyard::World::new();
-        let render_components = RenderComponents::new(RenderPrefs::default(), &window);
+
+        let inner_size = brackens_renderer::Size {
+            width: window.inner_size().width,
+            height: window.inner_size().height,
+        };
+        let render_components = RenderComponents::new(RenderPrefs::default(), &window, inner_size);
 
         //--------------------------------------------------
 
@@ -191,11 +197,11 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
             match e {
                 // brackens_tools::wgpu::SurfaceError::Timeout => todo!(),
                 // brackens_tools::wgpu::SurfaceError::Outdated => todo!(),
-                brackens_tools::wgpu::SurfaceError::Lost => {
+                brackens_renderer::wgpu::SurfaceError::Lost => {
                     warn!("Warning: Surface has been lost. Attempting to resize:{}", e);
                     self.force_resize();
                 }
-                brackens_tools::wgpu::SurfaceError::OutOfMemory => {
+                brackens_renderer::wgpu::SurfaceError::OutOfMemory => {
                     error!(
                         "Error: Surface has no available memory to create new frame: {}",
                         e

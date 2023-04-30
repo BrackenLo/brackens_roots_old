@@ -1,18 +1,15 @@
 [package]
-name = "brackens_tools"
+name = "brackens_assets"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winit = "0.28.3"
+log = { workspace = true }
+crossbeam = "0.8.2"
+parking_lot = "0.12.1"
 
-glam = "0.23.0"
+image = { workspace = true }
+glyph_brush = { workspace = true }
 
-log = "0.4.17"
-env_logger = "0.10.0"
-
-anyhow = "1.0"
-pollster = "0.3.0"
-instant = "0.1.12"

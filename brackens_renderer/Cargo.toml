@@ -6,7 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+brackens_assets = { path = "../brackens_assets" }
+
 wgpu = "0.16.0"
+raw-window-handle = "0.5.2"
 
+pollster = "0.3.0"
+bytemuck = {version = "1.13.1", features = ["derive"]}
 
+log = { workspace = true }
+glam = { workspace = true }
+
+anyhow = "1.0"
+image = { workspace = true, features = ["png", "jpeg"] }
 

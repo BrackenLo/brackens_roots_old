@@ -1,10 +1,9 @@
 //===============================================================
 
-use brackens_tools::{
-    asset_manager::Handle,
-    renderer::{render_tools, texture_renderer::RawTextureInstance},
-    wgpu::SurfaceError,
-};
+use brackens_renderer::{render_tools, texture_renderer::RawTextureInstance};
+
+use brackens_assets::Handle;
+use brackens_renderer::wgpu::SurfaceError;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
 
 use crate::shipyard_core::render_components::*;
@@ -136,7 +135,7 @@ pub fn load_texture<T: AsRef<str>>(
     world: &mut World,
     path: T,
     label: T,
-    sampler: Option<brackens_tools::wgpu::SamplerDescriptor>,
+    sampler: Option<brackens_renderer::wgpu::SamplerDescriptor>,
 ) -> Handle<LoadedTexture> {
     world.run_with_data(
         |data: (T, T),
@@ -149,10 +148,10 @@ pub fn load_texture<T: AsRef<str>>(
             let layout = renderer.get_layout();
             let sampler = match sampler {
                 Some(val) => val,
-                None => brackens_tools::wgpu::SamplerDescriptor::default(),
+                None => brackens_renderer::wgpu::SamplerDescriptor::default(),
             };
 
-            let texture = brackens_tools::renderer::texture::Texture::from_file(
+            let texture = brackens_renderer::texture::Texture::from_file(
                 &device.0,
                 &queue.0,
                 data.0.as_ref(),
@@ -175,7 +174,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
     world: &mut World,
     bytes: &[u8],
     label: T,
-    sampler: Option<brackens_tools::wgpu::SamplerDescriptor>,
+    sampler: Option<brackens_renderer::wgpu::SamplerDescriptor>,
 ) -> Handle<LoadedTexture> {
     world.run_with_data(
         |data: (&[u8], T),
@@ -188,10 +187,10 @@ pub fn load_texture_bytes<T: AsRef<str>>(
             let layout = renderer.get_layout();
             let sampler = match sampler {
                 Some(val) => val,
-                None => brackens_tools::wgpu::SamplerDescriptor::default(),
+                None => brackens_renderer::wgpu::SamplerDescriptor::default(),
             };
 
-            let texture = brackens_tools::renderer::texture::Texture::from_bytes(
+            let texture = brackens_renderer::texture::Texture::from_bytes(
                 &device.0,
                 &queue.0,
                 data.0,

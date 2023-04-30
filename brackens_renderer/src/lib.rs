@@ -7,7 +7,16 @@ pub mod pipelines;
 pub mod texture;
 pub mod texture_renderer;
 
+pub use bytemuck;
+pub use image;
+pub use wgpu;
+
 //===============================================================
+
+pub struct Size<T> {
+    pub width: T,
+    pub height: T,
+}
 
 //===============================================================
 
@@ -39,11 +48,17 @@ pub struct RenderComponents {
     pub queue: wgpu::Queue,
     pub surface: wgpu::Surface,
     pub config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
+    pub size: Size<u32>,
 }
 
 impl RenderComponents {
-    pub fn new(prefs: RenderPrefs, window: &winit::window::Window) -> Self {
+    pub fn new<
+        W: raw_window_handle::HasRawWindowHandle + raw_window_handle::HasRawDisplayHandle,
+    >(
+        prefs: RenderPrefs,
+        window: &W,
+        size: Size<u32>,
+    ) -> Self {
         info!("Creating new wgpu components");
 
         //----------------------------------------------
@@ -80,7 +95,6 @@ impl RenderComponents {
             Err(e) => panic!("Error creating wgpu device and queue: {}", e),
         };
 
-        let size = window.inner_size();
         let capabilities = surface.get_capabilities(&adapter);
 
         let config = wgpu::SurfaceConfiguration {
@@ -114,7 +128,8 @@ impl RenderComponents {
 
 pub mod render_tools {
     use log::warn;
-    use winit::dpi::PhysicalSize;
+
+    use crate::Size;
 
     //===============================================================
 
@@ -165,7 +180,7 @@ pub mod render_tools {
         device: &wgpu::Device,
         surface: &wgpu::Surface,
         config: &mut wgpu::SurfaceConfiguration,
-        new_size: PhysicalSize<u32>,
+        new_size: Size<u32>,
     ) {
         if new_size.width > 0 && new_size.height > 0 {
             config.width = new_size.width;

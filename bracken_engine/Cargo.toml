@@ -6,7 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-brackens_tools = {path = "../brackens_tools"}
+brackens_tools = { path = "../brackens_tools" }
+brackens_renderer = { path = "../brackens_renderer" }
+brackens_assets = { path = "../brackens_assets" }
+
 shipyard = "0.6.2"
 log = "0.4.17"
 

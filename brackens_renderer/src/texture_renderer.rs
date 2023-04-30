@@ -1,7 +1,8 @@
 //===============================================================
 
 use wgpu::util::DeviceExt;
-use winit::dpi::PhysicalSize;
+
+use crate::Size;
 
 use super::{
     pipelines::{PipelineBuilderDescriptor, RawInstancePipeline, Vertex},
@@ -223,7 +224,7 @@ impl TextureRenderer {
         //----------------------------------------------
     }
 
-    pub fn resize(&mut self, queue: &wgpu::Queue, new_size: PhysicalSize<u32>) {
+    pub fn resize(&mut self, queue: &wgpu::Queue, new_size: Size<u32>) {
         queue.write_buffer(
             &self.projection_uniform_buffer,
             0,

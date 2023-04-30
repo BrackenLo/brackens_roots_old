@@ -6,7 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = ["brackens_tools", "bracken_engine", "brackens_renderer"]
+members = [
+  "brackens_tools", 
+  "bracken_engine",  
+  "brackens_renderer", 
+  "brackens_assets"
+]
 
-[dependencies]
+[workspace.dependencies]
+log = "0.4.17"
+glam = "0.23.0"
+
+image = "0.24.6"
+glyph_brush = "0.7.7"
+
 

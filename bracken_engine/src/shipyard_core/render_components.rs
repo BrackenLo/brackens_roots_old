@@ -2,20 +2,18 @@
 
 use std::collections::{HashMap, HashSet};
 
-use brackens_tools::{
-    asset_manager::{Handle, HandleID},
-    bytemuck,
-    glam::Vec2,
-    renderer::{
-        render_tools,
-        texture_renderer::{self, RawTextureInstance},
-    },
+use brackens_renderer::{
+    bytemuck, render_tools,
+    texture_renderer::{self, RawTextureInstance},
     wgpu::{self, util::DeviceExt},
-    winit::dpi::PhysicalSize,
 };
+
+use brackens_assets::{Handle, HandleID};
+
+use brackens_tools::{glam::Vec2, winit::dpi::PhysicalSize};
 use shipyard::{Component, Unique};
 
-pub use brackens_tools::renderer::{
+pub use brackens_renderer::{
     texture::LoadedTexture, texture_renderer::TextureDrawCall as FinalTextureDrawCall,
 };
 
@@ -39,6 +37,7 @@ pub struct TextureRenderer {
     texture_data: HashMap<HandleID, Handle<LoadedTexture>>,
     draw_data: HashMap<HandleID, FinalTextureDrawCall>,
 }
+
 impl TextureRenderer {
     //--------------------------------------------------
 
@@ -60,6 +59,10 @@ impl TextureRenderer {
     //--------------------------------------------------
 
     pub(crate) fn resize(&mut self, queue: &wgpu::Queue, new_size: PhysicalSize<u32>) {
+        let new_size = brackens_renderer::Size {
+            width: new_size.width,
+            height: new_size.height,
+        };
         self.renderer.resize(queue, new_size)
     }
 

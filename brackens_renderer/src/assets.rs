@@ -1,6 +1,6 @@
 //===============================================================
 
-use crate::asset_manager::Asset;
+use brackens_assets::Asset;
 
 use super::texture::{LoadedTexture, Texture};
 

@@ -1,7 +1,9 @@
 //===============================================================
 
+use brackens_renderer::wgpu;
+
 use brackens_tools::{
-    input, upkeep, wgpu,
+    input, upkeep,
     winit::{
         dpi::{PhysicalPosition, PhysicalSize},
         event::{MouseButton, VirtualKeyCode},
