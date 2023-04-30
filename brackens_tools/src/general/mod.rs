@@ -9,6 +9,31 @@ pub struct Transform {
     pub scale: glam::Vec3,
 }
 impl Transform {
+    //--------------------------------------------------
+
+    pub fn from_translation(translation: glam::Vec3) -> Self {
+        Self {
+            translation,
+            ..Default::default()
+        }
+    }
+
+    pub fn from_rotation(rotation: glam::Quat) -> Self {
+        Self {
+            rotation,
+            ..Default::default()
+        }
+    }
+
+    pub fn from_scale(scale: glam::Vec3) -> Self {
+        Self {
+            scale,
+            ..Default::default()
+        }
+    }
+
+    //--------------------------------------------------
+
     pub fn to_raw(&self) -> [f32; 16] {
         glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
             .to_cols_array()

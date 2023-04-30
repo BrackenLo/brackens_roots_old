@@ -27,6 +27,8 @@ mod spatial_systems;
 pub mod tool_components;
 mod tool_systems;
 
+pub use render_systems::load_texture;
+
 //===============================================================
 
 pub type UV<'a, T> = shipyard::UniqueView<'a, T>;
@@ -34,6 +36,8 @@ pub type UVM<'a, T> = shipyard::UniqueViewMut<'a, T>;
 
 pub type CV<'a, T> = shipyard::View<'a, T>;
 pub type CVM<'a, T> = shipyard::ViewMut<'a, T>;
+
+pub type KeyCode = winit::event::VirtualKeyCode;
 
 //===============================================================
 
@@ -88,11 +92,11 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         //--------------------------------------------------
 
-        world.add_unique(KeyManagerUnique::default());
-        world.add_unique(MouseKeyManagerUnique::default());
-        world.add_unique(MousePositionManagerUnique::default());
+        world.add_unique(KeyManager::default());
+        world.add_unique(MouseKeyManager::default());
+        world.add_unique(MousePositionManager::default());
 
-        world.add_unique(UpkeepTrackerUnique::default());
+        world.add_unique(UpkeepTracker::default());
 
         //--------------------------------------------------
 
@@ -226,7 +230,10 @@ where
                     config.0.height = new_size.height;
                     surface.0.configure(&device.0, &config.0);
                 },
-            )
+            );
+
+            // Resize everything here
+            self.world.run(render_systems::sys_resize_pipeline);
         }
     }
     fn force_resize(&mut self) {
@@ -239,6 +246,7 @@ where
     }
 
     fn post_update(&mut self) {
+        self.world.run(spatial_systems::sys_update_transforms);
         self.world.run(core_systems::sys_reset_input);
     }
 
@@ -251,6 +259,7 @@ where
         // Render pipelines
 
         self.world.run(render_systems::sys_process_textures);
+        self.world.run(render_systems::sys_add_new_textures);
         self.world.run(render_systems::sys_remove_unloaded_textures);
         self.world.run(render_systems::sys_render_textures);
 

@@ -243,19 +243,22 @@ impl TextureRenderer {
 }
 
 pub struct TextureDrawCall {
-    pub texture_bind_group: wgpu::BindGroup,
     pub instances: wgpu::Buffer,
     pub instance_count: u32,
 }
 
 impl TextureRenderer {
-    pub fn render(&self, render_tools: &mut RenderPassTools, draw_calls: &[TextureDrawCall]) {
+    pub fn render(
+        &self,
+        render_tools: &mut RenderPassTools,
+        draw_calls: &[(&wgpu::BindGroup, &TextureDrawCall)],
+    ) {
         let mut render_pass = self.pipeline.start_render_pass(render_tools, None);
 
         render_pass.set_bind_group(0, &self.projection_bind_group);
         for draw_call in draw_calls {
-            render_pass.set_bind_group(1, &draw_call.texture_bind_group);
-            render_pass.draw_instanced(Some(&draw_call.instances), draw_call.instance_count);
+            render_pass.set_bind_group(1, &draw_call.0);
+            render_pass.draw_instanced(Some(&draw_call.1.instances), draw_call.1.instance_count);
         }
     }
 }

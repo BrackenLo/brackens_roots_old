@@ -8,8 +8,7 @@ pub struct UpkeepTracker {
     elapsed_time: Instant,
     last_frame_instant: Instant,
 
-    // If my math is correct, u32 should last for about 0.8 of a year as 150 fps :D
-    total_frame_count: u32,
+    total_frame_count: u64,
     second_tracker: f32,
     frame_count_this_second: u16,
 

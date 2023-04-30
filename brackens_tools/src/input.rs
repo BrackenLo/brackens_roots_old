@@ -72,6 +72,7 @@ where
 //===============================================================
 
 pub type KeyManager = ButtonManager<VirtualKeyCode>;
+pub type MouseKeyManager = ButtonManager<MouseButton>;
 
 //===============================================================
 
@@ -110,7 +111,5 @@ impl MousePositionManager {
 
     //----------------------------------------------
 }
-
-pub type MouseKeyManager = ButtonManager<MouseButton>;
 
 //===============================================================

@@ -12,6 +12,16 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn from_file(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        path: &str,
+        label: &str,
+    ) -> Result<Self> {
+        let image = image::io::Reader::open(path)?.decode()?;
+        Self::from_image(device, queue, &image, Some(label))
+    }
+
     pub fn from_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -30,7 +40,7 @@ impl Texture {
     ) -> Result<Self> {
         //----------------------------------------------
 
-        let rgba = img.to_rgb8();
+        let rgba = img.to_rgba8();
         let dimensions = img.dimensions();
 
         let size = wgpu::Extent3d {
@@ -65,7 +75,9 @@ impl Texture {
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(4 * dimensions.0),
-                rows_per_image: Some(dimensions.1),
+                // rows_per_image: Some(dimensions.1),
+                // bytes_per_row: None,
+                rows_per_image: None,
             },
             size,
         );

@@ -1,19 +1,16 @@
 //===============================================================
 
-use std::collections::HashMap;
-
 use brackens_tools::{
-    asset_manager::HandleID,
-    bytemuck,
+    asset_manager::Handle,
     renderer::{render_tools, texture_renderer::RawTextureInstance},
-    wgpu::{self, util::DeviceExt, SurfaceError},
+    wgpu::SurfaceError,
 };
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
 
 use crate::shipyard_core::render_components::*;
 
 use super::{
-    core_components::{Device, Queue, Surface, SurfaceConfig},
+    core_components::{Device, Queue, Surface, SurfaceConfig, WindowSize},
     render_components::{ClearColor, RenderPassTools},
     spatial_components::GlobalTransform,
     tool_components::AssetStorage,
@@ -55,6 +52,7 @@ pub fn sys_end_render_pass(world: &mut World) {
 }
 
 //===============================================================
+// Texture Stuff
 
 pub fn sys_setup_texture_renderer(
     all_storages: AllStoragesView,
@@ -64,85 +62,15 @@ pub fn sys_setup_texture_renderer(
     all_storages.add_unique(TextureRenderer::new(&device.0, &config.0));
 }
 
-pub fn sys_process_textures(
-    device: UV<Device>,
-    queue: UV<Queue>,
+//--------------------------------------------------
 
+pub fn sys_add_new_textures(
     mut renderer: UVM<TextureRenderer>,
-    textures: View<Texture>,
-    visible: View<Visible>,
-    global_transforms: View<GlobalTransform>,
+    texture_storage: UV<AssetStorage<LoadedTexture>>,
 ) {
-    // Create a hashmap of all the textures used this frame
-    let mut texture_calls: HashMap<HandleID, TextureDrawCall> = HashMap::new();
-
-    for (texture, visible, transform) in (&textures, &visible, &global_transforms).iter() {
-        // If a texture is invisible, ignore it
-        if !visible.0 {
-            continue;
-        }
-
-        let id = texture.handle.id();
-
-        // Check if the texture has been used already this frame
-        if let Some(draw_calls) = texture_calls.get_mut(&id) {
-            // If so, we can just add this texture data to the already existing data
-            draw_calls.to_draw.push(RawTextureInstance {
-                transform: transform.0.to_raw(),
-                color: [1., 1., 1., 1.],
-            });
-            continue;
-        }
-
-        // Otherwise, add the texture data to the hashmap of textures used this frame
-        texture_calls.insert(
-            id,
-            TextureDrawCall {
-                handle: texture.handle.clone_weak(),
-                to_draw: vec![RawTextureInstance {
-                    transform: transform.0.to_raw(),
-                    color: [1., 1., 1., 1.],
-                }],
-            },
-        );
+    for new in texture_storage.0.get_just_added() {
+        renderer.add_texture(new);
     }
-
-    for vals in texture_calls {
-        renderer.should_render.push(vals.0);
-        if let Some(mut draw_call) = renderer.final_draw_calls.get_mut(&vals.0) {
-            if draw_call.instance_count >= vals.1.to_draw.len() as u32 {
-                queue.0.write_buffer(
-                    &draw_call.instances,
-                    0,
-                    bytemuck::cast_slice(&vals.1.to_draw),
-                );
-                continue;
-            }
-
-            //else increase size of buffer
-            draw_call.instances = device
-                .0
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("Texture Instance Buffer - Naming TODO"),
-                    contents: bytemuck::cast_slice(&vals.1.to_draw),
-                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                });
-            draw_call.instance_count = vals.1.to_draw.len() as u32;
-        } else {
-            renderer.final_draw_calls.insert(
-                vals.0,
-                FinalTextureDrawCall {
-                    texture_bind_group: vals.1.handle.get().bind_group,
-                    instances: todo!(),
-                    instance_count: todo!(),
-                },
-            );
-        }
-    }
-
-    // if renderer.final_draw_calls.contains_key()
-
-    todo!()
 }
 
 pub fn sys_remove_unloaded_textures(
@@ -154,12 +82,115 @@ pub fn sys_remove_unloaded_textures(
     }
 }
 
+//--------------------------------------------------
+
+pub fn sys_resize_pipeline(
+    queue: UniqueView<Queue>,
+    window_size: UniqueView<WindowSize>,
+    mut renderer: UniqueViewMut<TextureRenderer>,
+) {
+    renderer.resize(&queue.0, window_size.0);
+}
+
+//--------------------------------------------------
+
+pub fn sys_process_textures(
+    device: UV<Device>,
+    queue: UV<Queue>,
+
+    mut renderer: UVM<TextureRenderer>,
+    textures: View<Texture>,
+    visible: View<Visible>,
+    global_transforms: View<GlobalTransform>,
+) {
+    for (texture, visible, transform) in (&textures, &visible, &global_transforms).iter() {
+        // If a texture is invisible, ignore it
+        if !visible.visible {
+            continue;
+        }
+
+        let transform = GlobalTransform::from_scale(texture.size.extend(1.)) + transform;
+
+        let instance = RawTextureInstance {
+            transform: transform.to_raw(),
+            color: [1., 1., 1., 1.],
+        };
+
+        renderer.draw_texture(texture.handle.id(), instance);
+    }
+
+    renderer.process_texture(&device.0, &queue.0);
+}
+
 pub fn sys_render_textures(
     mut renderer: UVM<TextureRenderer>,
     mut render_tools: UVM<RenderPassTools>,
 ) {
     renderer.render(&mut render_tools.0);
-    todo!()
+}
+
+//===============================================================
+// Functions for loading textures
+
+pub fn load_texture<T: AsRef<str>>(world: &mut World, path: T, label: T) -> Handle<LoadedTexture> {
+    world.run_with_data(
+        |data: (T, T),
+         mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
+         renderer: UV<TextureRenderer>,
+         device: UV<Device>,
+         queue: UV<Queue>| {
+            //--------------------------------------------------
+
+            let layout = renderer.get_layout();
+
+            let texture = brackens_tools::renderer::texture::Texture::from_file(
+                &device.0,
+                &queue.0,
+                data.0.as_ref(),
+                data.1.as_ref(),
+            )
+            .unwrap();
+
+            let loaded_texture = LoadedTexture::load(&device.0, texture, layout);
+            texture_storage.0.load_asset(loaded_texture)
+
+            //--------------------------------------------------
+        },
+        (path, label),
+    )
+}
+
+#[allow(unused)]
+pub fn load_texture_bytes<T: AsRef<str>>(
+    world: &mut World,
+    bytes: &[u8],
+    label: T,
+) -> Handle<LoadedTexture> {
+    world.run_with_data(
+        |data: (&[u8], T),
+         mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
+         renderer: UV<TextureRenderer>,
+         device: UV<Device>,
+         queue: UV<Queue>| {
+            //--------------------------------------------------
+
+            let layout = renderer.get_layout();
+
+            let texture = brackens_tools::renderer::texture::Texture::from_bytes(
+                &device.0,
+                &queue.0,
+                data.0,
+                data.1.as_ref(),
+            )
+            .unwrap();
+
+            let loaded_texture = LoadedTexture::load(&device.0, texture, layout);
+            texture_storage.0.load_asset(loaded_texture)
+
+            //--------------------------------------------------
+        },
+        (bytes, label),
+    )
 }
 
 //===============================================================
