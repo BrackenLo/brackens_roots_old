@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 winit = "0.28.3"
-wgpu = "0.15.1"
+wgpu = "0.16.0"
 
 glam = "0.23.0"
 image = {version = "0.24.6", features = ["png", "jpeg"]}
