@@ -5,9 +5,11 @@ use brackens_tools::{
     exports::{DynamicImage, FontArc},
     renderer::texture::LoadedTexture,
 };
-use shipyard::{AllStoragesView, IntoWorkload, UniqueViewMut, Workload};
+use shipyard::{
+    AllStoragesView, IntoIter, IntoWorkload, UniqueView, UniqueViewMut, ViewMut, Workload,
+};
 
-use super::tool_components::*;
+use super::{core_components::UpkeepTracker, tool_components::*};
 
 //===============================================================
 
@@ -32,6 +34,15 @@ pub fn wl_reset_asset_storage() -> Workload {
 
 pub fn sys_reset_asset_storage<T: Asset>(mut asset_storage: UniqueViewMut<AssetStorage<T>>) {
     asset_storage.0.tick();
+}
+
+//===============================================================
+
+pub fn sys_tick_timers(upkeep: UniqueView<UpkeepTracker>, mut timers: ViewMut<Timer>) {
+    let delta = upkeep.delta();
+    for timer in (&mut timers).iter() {
+        timer.0.tick(delta);
+    }
 }
 
 //===============================================================

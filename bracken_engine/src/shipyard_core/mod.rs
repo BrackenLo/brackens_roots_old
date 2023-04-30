@@ -242,7 +242,7 @@ where
     }
 
     fn pre_update(&mut self) {
-        //Update Timers
+        self.world.run(tool_systems::sys_tick_timers);
     }
 
     fn post_update(&mut self) {
