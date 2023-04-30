@@ -21,7 +21,7 @@ fn main() {
 struct Game;
 impl ShipyardGameState for Game {
     fn new(world: &mut shipyard::World) -> Self {
-        let texture = load_texture(world, "res/bossFace.png", "BossFace");
+        let texture = load_texture(world, "res/bossFace.png", "BossFace", None);
 
         world.add_entity((
             Visible { visible: true },

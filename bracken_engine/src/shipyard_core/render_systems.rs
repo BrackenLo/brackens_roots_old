@@ -132,7 +132,12 @@ pub fn sys_render_textures(
 //===============================================================
 // Functions for loading textures
 
-pub fn load_texture<T: AsRef<str>>(world: &mut World, path: T, label: T) -> Handle<LoadedTexture> {
+pub fn load_texture<T: AsRef<str>>(
+    world: &mut World,
+    path: T,
+    label: T,
+    sampler: Option<brackens_tools::wgpu::SamplerDescriptor>,
+) -> Handle<LoadedTexture> {
     world.run_with_data(
         |data: (T, T),
          mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
@@ -142,12 +147,17 @@ pub fn load_texture<T: AsRef<str>>(world: &mut World, path: T, label: T) -> Hand
             //--------------------------------------------------
 
             let layout = renderer.get_layout();
+            let sampler = match sampler {
+                Some(val) => val,
+                None => brackens_tools::wgpu::SamplerDescriptor::default(),
+            };
 
             let texture = brackens_tools::renderer::texture::Texture::from_file(
                 &device.0,
                 &queue.0,
                 data.0.as_ref(),
                 data.1.as_ref(),
+                &sampler,
             )
             .unwrap();
 
@@ -165,6 +175,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
     world: &mut World,
     bytes: &[u8],
     label: T,
+    sampler: Option<brackens_tools::wgpu::SamplerDescriptor>,
 ) -> Handle<LoadedTexture> {
     world.run_with_data(
         |data: (&[u8], T),
@@ -175,12 +186,17 @@ pub fn load_texture_bytes<T: AsRef<str>>(
             //--------------------------------------------------
 
             let layout = renderer.get_layout();
+            let sampler = match sampler {
+                Some(val) => val,
+                None => brackens_tools::wgpu::SamplerDescriptor::default(),
+            };
 
             let texture = brackens_tools::renderer::texture::Texture::from_bytes(
                 &device.0,
                 &queue.0,
                 data.0,
                 data.1.as_ref(),
+                &sampler,
             )
             .unwrap();
 
