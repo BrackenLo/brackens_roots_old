@@ -39,9 +39,9 @@ impl Vertex for RawTextureVertex {
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct RawTextureInstance {
-    transform: [f32; 16],
-    color: [f32; 4],
+pub struct RawTextureInstance {
+    pub transform: [f32; 16],
+    pub color: [f32; 4],
 }
 impl Vertex for RawTextureInstance {
     fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
@@ -178,7 +178,10 @@ impl TextureRenderer {
 
         let builder = PipelineBuilderDescriptor {
             name: "Texture".into(),
-            bind_group_layouts: Some(vec![]),
+            bind_group_layouts: Some(vec![
+                &projection_bind_group_layout,
+                &texture_bind_group_layout,
+            ]),
             shader: device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Texture Renderer Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("texture_shader.wgsl").into()),
@@ -240,17 +243,17 @@ impl TextureRenderer {
 }
 
 pub struct TextureDrawCall {
-    texture_bind_group: wgpu::BindGroup,
-    instances: wgpu::Buffer,
-    instance_count: u32,
+    pub texture_bind_group: wgpu::BindGroup,
+    pub instances: wgpu::Buffer,
+    pub instance_count: u32,
 }
 
 impl TextureRenderer {
-    pub fn render(&self, render_tools: &mut RenderPassTools, draw_calls: Vec<TextureDrawCall>) {
+    pub fn render(&self, render_tools: &mut RenderPassTools, draw_calls: &[TextureDrawCall]) {
         let mut render_pass = self.pipeline.start_render_pass(render_tools, None);
 
         render_pass.set_bind_group(0, &self.projection_bind_group);
-        for draw_call in &draw_calls {
+        for draw_call in draw_calls {
             render_pass.set_bind_group(1, &draw_call.texture_bind_group);
             render_pass.draw_instanced(Some(&draw_call.instances), draw_call.instance_count);
         }

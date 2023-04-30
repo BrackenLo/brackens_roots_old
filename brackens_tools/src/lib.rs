@@ -10,6 +10,7 @@ pub mod window;
 
 //===============================================================
 
+pub use bytemuck;
 pub use glam;
 pub use wgpu;
 pub use winit;

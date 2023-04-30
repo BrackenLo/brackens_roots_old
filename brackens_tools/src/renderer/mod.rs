@@ -113,7 +113,7 @@ impl RenderComponents {
 //===============================================================
 
 pub mod render_tools {
-    use log::{error, warn};
+    use log::warn;
     use winit::dpi::PhysicalSize;
 
     //===============================================================
@@ -137,21 +137,7 @@ pub mod render_tools {
                     .create_view(&wgpu::TextureViewDescriptor::default());
                 Ok((output, view))
             }
-            Err(e) => {
-                match e {
-                    wgpu::SurfaceError::Lost => {
-                        warn!(
-                            "Warning in begin_render_pass: wgpu surface has been lost. {}",
-                            e
-                        );
-                    }
-                    wgpu::SurfaceError::OutOfMemory => {
-                        error!("Error beggining render pass: No available memory to create new frame. {}", e);
-                    }
-                    _ => {}
-                };
-                Err(e)
-            }
+            Err(e) => Err(e),
         };
 
         let encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {

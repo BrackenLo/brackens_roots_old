@@ -43,7 +43,7 @@ pub struct AssetStorage<T: Asset> {
     // Keep track of how many strong handles in existance
     asset_count: HashMap<HandleID, u32>,
     just_added: Vec<HandleID>,
-    pending_removal: Vec<HandleID>,
+    removed_assets: Vec<HandleID>,
 
     load_path: String,
 }
@@ -67,7 +67,7 @@ where
             asset_paths: HashMap::new(),
             asset_count: HashMap::new(),
             just_added: Vec::new(),
-            pending_removal: Vec::new(),
+            removed_assets: Vec::new(),
 
             load_path: "".into(),
         }
@@ -105,6 +105,8 @@ where
     }
 
     pub fn check_asset_changes(&mut self) {
+        self.removed_assets.clear();
+
         // Loop through each recieved signal and act accordingly
         loop {
             let data = match self.receiver.try_recv() {
@@ -126,7 +128,7 @@ where
                     let count = self.asset_count.get_mut(&id).unwrap();
                     *count -= 1;
                     if *count == 0 {
-                        self.pending_removal.push(id);
+                        self.removed_assets.push(id);
                     }
                 }
             }
@@ -134,7 +136,7 @@ where
     }
 
     pub fn remove_pending_assets(&mut self) {
-        for to_remove in &self.pending_removal {
+        for to_remove in &self.removed_assets {
             info!(
                 "Unloading {} asset with handle id {}",
                 T::asset_name(),
@@ -148,23 +150,23 @@ where
             self.loaded_paths
                 .remove(&self.asset_paths.remove(&to_remove).unwrap());
         }
-        self.pending_removal.clear();
     }
 
     //----------------------------------------------
-
-    // pub fn get_pending_removal(&self) -> Vec<Handle<T>> {
-    //     self.pending_removal
-    //         .iter()
-    //         .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
-    //         .collect()
-    // }
 
     pub fn get_just_added(&self) -> Vec<Handle<T>> {
         self.just_added
             .iter()
             .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
             .collect()
+    }
+
+    pub fn get_removed_assets(&self) -> &Vec<HandleID> {
+        &self.removed_assets
+        // self.removed_assets
+        //     .iter()
+        //     .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
+        //     .collect()
     }
 
     //----------------------------------------------

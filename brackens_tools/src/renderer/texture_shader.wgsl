@@ -33,10 +33,10 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         in.transform_3
     );
 
-    out.clip_pos =
+    out.clip_position =
         projection.transform *
         transform *
-        vec4<f32>(in.vertex, 1.);
+        vec4<f32>(in.position, 1.);
 
     out.tex_coord = in.tex_coord;
     out.color = in.color;
@@ -52,6 +52,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     var color = textureSample(texture, texture_sampler, in.tex_coord);
 
-    return mix(in.color, color);
+    // return mix(in.color, color);
+    return in.color * color;
     
 }

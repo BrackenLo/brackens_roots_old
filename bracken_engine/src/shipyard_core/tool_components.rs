@@ -21,10 +21,10 @@ where
     }
 }
 
-#[derive(shipyard::Component)]
-pub struct Handle<T>(pub(crate) asset_manager::Handle<T>)
-where
-    T: asset_manager::Asset;
+// #[derive(shipyard::Component)]
+// pub struct Handle<T>(pub(crate) asset_manager::Handle<T>)
+// where
+//     T: asset_manager::Asset;
 
 //===============================================================
 

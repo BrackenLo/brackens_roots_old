@@ -11,9 +11,9 @@ pub trait Vertex: bytemuck::Pod {
     fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a>;
 }
 
-pub struct PipelineBuilderDescriptor {
+pub struct PipelineBuilderDescriptor<'a> {
     pub name: String,
-    pub bind_group_layouts: Option<Vec<wgpu::BindGroupLayout>>,
+    pub bind_group_layouts: Option<Vec<&'a wgpu::BindGroupLayout>>,
     pub shader: wgpu::ShaderModule,
     pub primitive: wgpu::PrimitiveState,
     pub depth_stencil: Option<wgpu::DepthStencilState>,
@@ -61,10 +61,16 @@ impl RawInstancePipeline {
 
         //----------------------------------------------
 
-        let bind_group_layouts = if let Some(bind_group_layouts) = &builder.bind_group_layouts {
-            bind_group_layouts.iter().collect::<Vec<_>>()
-        } else {
-            vec![]
+        // let bind_group_layouts = if let Some(bind_group_layouts) = &builder.bind_group_layouts {
+        //     bind_group_layouts.iter().collect::<Vec<_>>()
+        // } else {
+        //     vec![]
+        // };
+
+        // let bind_group_layouts = if let Some(bind_group_layouts) = builder.bind_group_layouts
+        let bind_group_layouts = match builder.bind_group_layouts {
+            Some(val) => val,
+            None => vec![],
         };
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

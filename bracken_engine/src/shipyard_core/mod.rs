@@ -13,7 +13,7 @@ use brackens_tools::{
 };
 
 use core_components::*;
-use log::info;
+use log::{error, info, warn};
 use shipyard::{UniqueView, UniqueViewMut};
 
 use crate::shipyard_core::render_components::ClearColor;
@@ -22,8 +22,18 @@ pub mod core_components;
 mod core_systems;
 pub mod render_components;
 mod render_systems;
+pub mod spatial_components;
+mod spatial_systems;
 pub mod tool_components;
 mod tool_systems;
+
+//===============================================================
+
+pub type UV<'a, T> = shipyard::UniqueView<'a, T>;
+pub type UVM<'a, T> = shipyard::UniqueViewMut<'a, T>;
+
+pub type CV<'a, T> = shipyard::View<'a, T>;
+pub type CVM<'a, T> = shipyard::ViewMut<'a, T>;
 
 //===============================================================
 
@@ -92,6 +102,10 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         world.run(tool_systems::sys_setup_asset_storage);
         world.add_workload(tool_systems::wl_reset_asset_storage);
+
+        //--------------------------------------------------
+
+        world.run(render_systems::sys_setup_texture_renderer);
 
         //--------------------------------------------------
 
@@ -169,7 +183,24 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         self.game_state.update(&mut self.world);
         self.post_update();
 
-        if render_systems::start_render_pass(&mut self.world) {
+        if let Err(e) = render_systems::start_render_pass(&mut self.world) {
+            match e {
+                // brackens_tools::wgpu::SurfaceError::Timeout => todo!(),
+                // brackens_tools::wgpu::SurfaceError::Outdated => todo!(),
+                brackens_tools::wgpu::SurfaceError::Lost => {
+                    warn!("Warning: Surface has been lost. Attempting to resize:{}", e);
+                    self.force_resize();
+                }
+                brackens_tools::wgpu::SurfaceError::OutOfMemory => {
+                    error!(
+                        "Error: Surface has no available memory to create new frame: {}",
+                        e
+                    );
+                    self.proxy.send_event(RunnerLoopEvent::Exit).unwrap();
+                }
+                _ => {}
+            }
+        } else {
             self.pre_render();
             self.game_state.render(&mut self.world);
             self.post_render();
@@ -198,6 +229,10 @@ where
             )
         }
     }
+    fn force_resize(&mut self) {
+        let size = self.world.run(|size: UniqueView<WindowSize>| size.0);
+        self.resize(size);
+    }
 
     fn pre_update(&mut self) {
         //Update Timers
@@ -214,6 +249,10 @@ where
     fn post_render(&mut self) {
         // Process Pipelines
         // Render pipelines
+
+        self.world.run(render_systems::sys_process_textures);
+        self.world.run(render_systems::sys_remove_unloaded_textures);
+        self.world.run(render_systems::sys_render_textures);
 
         render_systems::sys_end_render_pass(&mut self.world);
     }
