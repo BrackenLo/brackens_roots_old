@@ -17,7 +17,7 @@ use core_components::*;
 use log::{error, info, warn};
 use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 
-use crate::shipyard_core::render_components::ClearColor;
+use crate::render_components::ClearColor;
 
 pub mod core_components;
 mod core_systems;
@@ -294,3 +294,4 @@ where
 }
 
 //===============================================================
+//--------------------------------------------------

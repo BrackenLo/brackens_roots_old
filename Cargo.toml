@@ -8,7 +8,7 @@ edition = "2021"
 [workspace]
 members = [
   "brackens_tools", 
-  "bracken_engine",  
+  "brackens_engine",  
   "brackens_renderer", 
   "brackens_assets"
 ]

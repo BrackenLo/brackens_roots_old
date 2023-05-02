@@ -6,7 +6,7 @@ use brackens_assets::Handle;
 use brackens_renderer::wgpu::SurfaceError;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
 
-use crate::shipyard_core::render_components::*;
+use crate::render_components::*;
 
 use super::{
     core_components::{Device, Queue, Surface, SurfaceConfig, WindowSize},
