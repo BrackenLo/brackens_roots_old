@@ -150,6 +150,10 @@ impl TextureRenderer {
     //--------------------------------------------------
 
     pub(crate) fn render(&mut self, render_tools: &mut render_tools::RenderPassTools) {
+        if self.should_render.len() == 0 {
+            return;
+        }
+
         let draw = self
             .should_render
             .iter()
