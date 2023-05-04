@@ -80,8 +80,6 @@ impl Texture {
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(4 * dimensions.0),
-                // rows_per_image: Some(dimensions.1),
-                // bytes_per_row: None,
                 rows_per_image: None,
             },
             size,
@@ -92,29 +90,6 @@ impl Texture {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let sampler = device.create_sampler(sampler);
-
-        // let sampler = match sampler {
-        //     Some(val) => device.create_sampler(val),
-        //     None => device.create_sampler(&wgpu::SamplerDescriptor {
-        //         address_mode_u: wgpu::AddressMode::ClampToEdge,
-        //         address_mode_v: wgpu::AddressMode::ClampToEdge,
-        //         address_mode_w: wgpu::AddressMode::ClampToEdge,
-        //         mag_filter: wgpu::FilterMode::Nearest,
-        //         min_filter: wgpu::FilterMode::Nearest,
-        //         mipmap_filter: wgpu::FilterMode::Nearest,
-        //         ..Default::default()
-        //     }),
-        // };
-
-        // let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        //     address_mode_u: wgpu::AddressMode::ClampToEdge,
-        //     address_mode_v: wgpu::AddressMode::ClampToEdge,
-        //     address_mode_w: wgpu::AddressMode::ClampToEdge,
-        //     mag_filter: wgpu::FilterMode::Nearest,
-        //     min_filter: wgpu::FilterMode::Nearest,
-        //     mipmap_filter: wgpu::FilterMode::Nearest,
-        //     ..Default::default()
-        // });
 
         //----------------------------------------------
 

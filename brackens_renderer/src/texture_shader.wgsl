@@ -1,3 +1,5 @@
+//===============================================================
+
 struct Projection {
     transform: mat4x4<f32>,
 }
@@ -22,6 +24,8 @@ struct VertexOutput {
     @location(1) color: vec4<f32>,
 }
 
+//===============================================================
+
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
@@ -44,6 +48,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     return out;
 }
 
+//===============================================================
+
 @group(1) @binding(0) var texture: texture_2d<f32>;
 @group(1) @binding(1) var texture_sampler: sampler;
 
@@ -55,3 +61,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return in.color * color;
     
 }
+
+//===============================================================
+
