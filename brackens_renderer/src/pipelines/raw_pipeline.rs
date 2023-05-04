@@ -1,12 +1,17 @@
 //===============================================================
 
+use std::ops::Range;
+
 use log::info;
+
+use crate::render_tools::RenderPassTools;
 
 use super::PipelineBuilderDescriptor;
 
 //===============================================================
 
 pub struct RawPipeline {
+    name: String,
     pipeline: wgpu::RenderPipeline,
 }
 impl RawPipeline {
@@ -55,7 +60,77 @@ impl RawPipeline {
 
         //----------------------------------------------
 
-        Self { pipeline }
+        Self {
+            name: builder.name,
+            pipeline,
+        }
+    }
+
+    pub fn start_render_pass<'a: 'b, 'b>(
+        &'a self,
+        render_tools: &'a mut RenderPassTools,
+        depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment<'a>>,
+    ) -> PipelineRenderPass<'b> {
+        let mut render_pass = render_tools
+            .encoder
+            .begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some(&format!("{} Render Pass", &self.name)),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &render_tools.surface_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment,
+            });
+
+        render_pass.set_pipeline(&self.pipeline);
+
+        PipelineRenderPass { render_pass }
+    }
+}
+
+pub struct PipelineRenderPass<'a> {
+    render_pass: wgpu::RenderPass<'a>,
+}
+impl<'a> PipelineRenderPass<'a> {
+    pub fn set_bind_group(&mut self, index: u32, bind_group: &'a wgpu::BindGroup) {
+        self.render_pass.set_bind_group(index, bind_group, &[]);
+    }
+
+    pub fn draw<VertexBuffers: IntoIterator<Item = &'a wgpu::Buffer>>(
+        &mut self,
+        vertex_buffers: VertexBuffers,
+        vertices: Range<u32>,
+        instances: Range<u32>,
+    ) {
+        let mut index = 0;
+        for val in vertex_buffers.into_iter() {
+            self.render_pass.set_vertex_buffer(index, val.slice(..));
+            index += 1;
+        }
+        self.render_pass.draw(vertices, instances);
+    }
+
+    pub fn draw_index<VertexBuffers: IntoIterator<Item = &'a wgpu::Buffer>>(
+        &mut self,
+        vertex_buffers: VertexBuffers,
+        index_buffer: &'a wgpu::Buffer,
+        indices: Range<u32>,
+        instances: Range<u32>,
+    ) {
+        let mut index = 0;
+        for val in vertex_buffers.into_iter() {
+            self.render_pass.set_vertex_buffer(index, val.slice(..));
+            index += 1;
+        }
+
+        self.render_pass
+            .set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+
+        self.render_pass.draw_indexed(indices, 0, instances);
     }
 }
 
