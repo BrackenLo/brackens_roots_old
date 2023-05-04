@@ -3,6 +3,14 @@
 use anyhow::Result;
 use image::GenericImageView;
 
+use crate::Size;
+
+pub mod texture_renderer;
+
+pub use texture_renderer::{
+    RawTextureInstance, RawTextureVertex, TextureDrawCall, TextureRenderer,
+};
+
 //===============================================================
 
 pub struct Texture {
@@ -100,6 +108,49 @@ impl Texture {
         })
 
         //----------------------------------------------
+    }
+
+    pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
+    pub fn create_depth_texture(
+        device: &wgpu::Device,
+        window_size: Size<u32>,
+        label: &str,
+    ) -> Self {
+        let size = wgpu::Extent3d {
+            width: window_size.width,
+            height: window_size.height,
+            depth_or_array_layers: 1,
+        };
+
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: Self::DEPTH_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[wgpu::TextureFormat::Depth32Float],
+        });
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some(label),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 100.,
+            compare: Some(wgpu::CompareFunction::LessEqual),
+            ..Default::default()
+        });
+
+        Self {
+            texture,
+            view,
+            sampler,
+        }
     }
 }
 

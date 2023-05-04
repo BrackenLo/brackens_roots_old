@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use brackens_renderer::{
     bytemuck, render_tools,
-    texture_renderer::{self, RawTextureInstance},
+    textures::{self, RawTextureInstance},
     wgpu::{self, util::DeviceExt},
 };
 
@@ -14,7 +14,7 @@ use brackens_tools::{glam::Vec2, winit::dpi::PhysicalSize};
 use shipyard::{Component, Unique};
 
 pub use brackens_renderer::{
-    texture::LoadedTexture, texture_renderer::TextureDrawCall as FinalTextureDrawCall,
+    textures::LoadedTexture, textures::TextureDrawCall as FinalTextureDrawCall,
 };
 
 //===============================================================
@@ -29,7 +29,7 @@ pub struct ClearColor(pub [f64; 3]);
 
 #[derive(Unique)]
 pub struct TextureRenderer {
-    renderer: texture_renderer::TextureRenderer,
+    renderer: textures::TextureRenderer,
 
     should_render: HashSet<HandleID>,
     unprocessed_draw_data: HashMap<HandleID, Vec<RawTextureInstance>>,
@@ -43,7 +43,7 @@ impl TextureRenderer {
 
     pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
         Self {
-            renderer: texture_renderer::TextureRenderer::new(device, config.format),
+            renderer: textures::TextureRenderer::new(device, config.format),
             should_render: HashSet::new(),
             unprocessed_draw_data: HashMap::new(),
 

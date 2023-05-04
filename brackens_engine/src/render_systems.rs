@@ -1,6 +1,6 @@
 //===============================================================
 
-use brackens_renderer::{render_tools, texture_renderer::RawTextureInstance};
+use brackens_renderer::{render_tools, textures::RawTextureInstance};
 
 use brackens_assets::Handle;
 use brackens_renderer::wgpu::SurfaceError;
@@ -151,7 +151,7 @@ pub fn load_texture<T: AsRef<str>>(
                 None => brackens_renderer::wgpu::SamplerDescriptor::default(),
             };
 
-            let texture = brackens_renderer::texture::Texture::from_file(
+            let texture = brackens_renderer::textures::Texture::from_file(
                 &device.0,
                 &queue.0,
                 data.0.as_ref(),
@@ -190,7 +190,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
                 None => brackens_renderer::wgpu::SamplerDescriptor::default(),
             };
 
-            let texture = brackens_renderer::texture::Texture::from_bytes(
+            let texture = brackens_renderer::textures::Texture::from_bytes(
                 &device.0,
                 &queue.0,
                 data.0,

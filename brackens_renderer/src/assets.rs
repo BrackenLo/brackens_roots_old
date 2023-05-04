@@ -2,7 +2,7 @@
 
 use brackens_assets::Asset;
 
-use super::texture::{LoadedTexture, Texture};
+use crate::textures::{LoadedTexture, Texture};
 
 //===============================================================
 

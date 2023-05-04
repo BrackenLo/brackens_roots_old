@@ -1,6 +1,6 @@
 //===============================================================
 
-use brackens_renderer::{image::DynamicImage, texture::LoadedTexture};
+use brackens_renderer::{image::DynamicImage, textures::LoadedTexture};
 
 use brackens_assets::Asset;
 use shipyard::{

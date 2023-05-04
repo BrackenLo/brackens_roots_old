@@ -2,11 +2,10 @@
 
 use wgpu::util::DeviceExt;
 
-use crate::Size;
-
-use super::{
-    pipelines::{PipelineBuilderDescriptor, RawInstancePipeline, Vertex},
+use crate::{
+    pipelines::{instance_pipeline::RawInstancePipeline, PipelineBuilderDescriptor, Vertex},
     render_tools::RenderPassTools,
+    Size,
 };
 
 //===============================================================
@@ -82,7 +81,7 @@ impl Vertex for RawTextureInstance {
 
 //===============================================================
 
-pub const TEXTURE_VERTICES: [RawTextureVertex; 4] = [
+const TEXTURE_VERTICES: [RawTextureVertex; 4] = [
     // Bottom Left
     RawTextureVertex {
         position: [-0.5, -0.5, 0.0],
@@ -104,7 +103,7 @@ pub const TEXTURE_VERTICES: [RawTextureVertex; 4] = [
         tex_coord: [0.0, 0.0],
     },
 ];
-pub const TEXTURE_INDICES: [u16; 6] = [0, 1, 2, 0, 2, 3];
+const TEXTURE_INDICES: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
 //===============================================================
 

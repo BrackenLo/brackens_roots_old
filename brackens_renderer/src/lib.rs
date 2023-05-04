@@ -3,9 +3,9 @@
 use log::info;
 
 mod assets;
+pub mod models;
 pub mod pipelines;
-pub mod texture;
-pub mod texture_renderer;
+pub mod textures;
 
 pub use bytemuck;
 pub use image;

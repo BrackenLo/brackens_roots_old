@@ -3,26 +3,9 @@
 use log::info;
 use wgpu::util::DeviceExt;
 
-use super::render_tools::RenderPassTools;
+use crate::render_tools::RenderPassTools;
 
-//===============================================================
-
-pub trait Vertex: bytemuck::Pod {
-    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a>;
-}
-
-pub struct PipelineBuilderDescriptor<'a> {
-    pub name: String,
-    pub bind_group_layouts: Option<Vec<&'a wgpu::BindGroupLayout>>,
-    pub shader: wgpu::ShaderModule,
-    pub primitive: wgpu::PrimitiveState,
-    pub depth_stencil: Option<wgpu::DepthStencilState>,
-    pub multisample: wgpu::MultisampleState,
-    pub fragment_targets: Vec<Option<wgpu::ColorTargetState>>,
-    pub multiview: Option<std::num::NonZeroU32>,
-}
-
-//===============================================================
+use super::{PipelineBuilderDescriptor, Vertex};
 
 //===============================================================
 
@@ -41,7 +24,7 @@ impl RawInstancePipeline {
         vertex_data: &[VB],
         index_data: &[u16],
     ) -> Self {
-        info!("Creating new pipeline '{}'", &builder.name);
+        info!("Creating new instance pipeline '{}'", &builder.name);
 
         //----------------------------------------------
 
@@ -61,13 +44,6 @@ impl RawInstancePipeline {
 
         //----------------------------------------------
 
-        // let bind_group_layouts = if let Some(bind_group_layouts) = &builder.bind_group_layouts {
-        //     bind_group_layouts.iter().collect::<Vec<_>>()
-        // } else {
-        //     vec![]
-        // };
-
-        // let bind_group_layouts = if let Some(bind_group_layouts) = builder.bind_group_layouts
         let bind_group_layouts = match builder.bind_group_layouts {
             Some(val) => val,
             None => vec![],
@@ -100,7 +76,10 @@ impl RawInstancePipeline {
 
         //----------------------------------------------
 
-        info!("Successfully created new Pipeline '{}'", &builder.name);
+        info!(
+            "Successfully created new instance Pipeline '{}'",
+            &builder.name
+        );
 
         Self {
             name: builder.name,
