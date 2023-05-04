@@ -5,18 +5,18 @@ use wgpu::util::DeviceExt;
 
 use crate::render_tools::RenderPassTools;
 
-use super::{PipelineBuilderDescriptor, Vertex};
+use super::{raw_pipeline::PipelineRenderPass, PipelineBuilderDescriptor, RawPipeline, Vertex};
 
 //===============================================================
 
 pub struct RawInstancePipeline {
-    name: String,
-    pipeline: wgpu::RenderPipeline,
+    pipeline: RawPipeline,
 
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     index_count: u32,
 }
+
 impl RawInstancePipeline {
     pub fn new<VB: Vertex, IB: Vertex>(
         device: &wgpu::Device,
@@ -44,45 +44,17 @@ impl RawInstancePipeline {
 
         //----------------------------------------------
 
-        let bind_group_layouts = match builder.bind_group_layouts {
-            Some(val) => val,
-            None => vec![],
-        };
-
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some(&format!("{} Pipeline Layout", &builder.name)),
-            bind_group_layouts: bind_group_layouts.as_slice(),
-            push_constant_ranges: &[],
-        });
-
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some(&format!("{} Render Pipeline", &builder.name)),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &builder.shader,
-                entry_point: "vs_main",
-                buffers: &[VB::buffer_layout(), IB::buffer_layout()],
-            },
-            primitive: builder.primitive,
-            depth_stencil: builder.depth_stencil.clone(),
-            multisample: builder.multisample,
-            fragment: Some(wgpu::FragmentState {
-                module: &builder.shader,
-                entry_point: "fs_main",
-                targets: builder.fragment_targets.as_slice(),
-            }),
-            multiview: builder.multiview,
-        });
+        let pipeline =
+            RawPipeline::new(device, &[VB::buffer_layout(), IB::buffer_layout()], builder);
 
         //----------------------------------------------
 
-        info!(
-            "Successfully created new instance Pipeline '{}'",
-            &builder.name
-        );
+        // info!(
+        //     "Successfully created new instance Pipeline '{}'",
+        //     &builder.name
+        // );
 
         Self {
-            name: builder.name,
             pipeline,
             vertex_buffer,
             index_buffer,
@@ -91,62 +63,26 @@ impl RawInstancePipeline {
 
         //----------------------------------------------
     }
-}
 
-pub struct PipelineRenderPass<'a> {
-    render_pass: wgpu::RenderPass<'a>,
-    index_count: u32,
-}
-impl<'a> PipelineRenderPass<'a> {
-    pub fn set_bind_group(&mut self, index: u32, bind_group: &'a wgpu::BindGroup) {
-        self.render_pass.set_bind_group(index, bind_group, &[]);
+    pub fn name(&self) -> &str {
+        &self.pipeline.name()
     }
 
-    pub fn draw_instanced<InstanceBuffers: IntoIterator<Item = &'a wgpu::Buffer>>(
-        &mut self,
-        instance_buffers: InstanceBuffers,
-        instance_count: u32,
-    ) {
-        let mut index = 1;
-        for val in instance_buffers.into_iter() {
-            self.render_pass.set_vertex_buffer(index, val.slice(..));
-            index += 1;
-        }
-
-        self.render_pass
-            .draw_indexed(0..self.index_count, 0, 0..instance_count);
-    }
-}
-
-impl RawInstancePipeline {
     pub fn start_render_pass<'a: 'b, 'b>(
         &'a self,
         render_tools: &'a mut RenderPassTools,
         depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment<'a>>,
-    ) -> PipelineRenderPass<'b> {
-        let mut render_pass = render_tools
-            .encoder
-            .begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some(&format!("{} Render Pass", &self.name)),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &render_tools.surface_view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment,
-            });
+    ) -> InstancePipelineRenderPass<'b> {
+        let render_pass = self
+            .pipeline
+            .start_render_pass(render_tools, depth_stencil_attachment);
 
-        render_pass.set_pipeline(&self.pipeline);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-        PipelineRenderPass {
+        InstancePipelineRenderPass::new(
             render_pass,
-            index_count: self.index_count,
-        }
+            &self.vertex_buffer,
+            &self.index_buffer,
+            self.index_count,
+        )
     }
 
     pub fn render<
@@ -173,6 +109,45 @@ impl RawInstancePipeline {
     }
 }
 
+//===============================================================
+
+pub struct InstancePipelineRenderPass<'a> {
+    render_pass: PipelineRenderPass<'a>,
+    index_count: u32,
+}
+impl<'a> InstancePipelineRenderPass<'a> {
+    pub fn new(
+        mut render_pass: PipelineRenderPass<'a>,
+        vertex_buffer: &'a wgpu::Buffer,
+        index_buffer: &'a wgpu::Buffer,
+        index_count: u32,
+    ) -> Self {
+        render_pass.set_vertex_buffers(Some(vertex_buffer), 0);
+        render_pass.set_index_buffer(index_buffer);
+
+        Self {
+            render_pass,
+            index_count,
+        }
+    }
+
+    pub fn set_bind_group(&mut self, index: u32, bind_group: &'a wgpu::BindGroup) {
+        self.render_pass.set_bind_group(index, bind_group);
+    }
+
+    pub fn draw_instanced<InstanceBuffers: IntoIterator<Item = &'a wgpu::Buffer>>(
+        &mut self,
+        instance_buffers: InstanceBuffers,
+        instance_count: u32,
+    ) {
+        self.render_pass.set_vertex_buffers(instance_buffers, 1);
+        self.render_pass
+            .draw_index(0..self.index_count, 0..instance_count);
+    }
+}
+
+//===============================================================
+//===============================================================
 //===============================================================
 
 pub struct InstancePipeline {
@@ -229,7 +204,7 @@ impl InstancePipeline {
         // Data has outgrown the instance buffer. We need to make a new, larger buffer.
         self.instance_count = data.len() as u32;
         self.instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("{} Instance Buffer", &self.pipeline.name)),
+            label: Some(&format!("{} Instance Buffer", &self.pipeline.name())),
             contents: bytemuck::cast_slice(data),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
