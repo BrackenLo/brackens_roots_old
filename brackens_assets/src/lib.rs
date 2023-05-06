@@ -21,4 +21,8 @@ pub trait AssetLoadable: Asset {
     fn load_default() -> Self;
 }
 
+pub trait AssetLoadableData: Asset {
+    fn load_from_file_data<T>(path: String, data: T) -> Self;
+}
+
 //===============================================================

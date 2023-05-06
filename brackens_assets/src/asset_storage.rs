@@ -6,6 +6,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use log::info;
 
+use crate::AssetLoadableData;
+
 use super::{
     asset_handle::{Handle, HandleID},
     Asset, AssetLoadable,
@@ -80,6 +82,16 @@ where
         let to_return = self.current_id;
         self.current_id.0 += 1;
         to_return
+    }
+
+    fn get_file_loaded(&self, path: &str) -> Option<Handle<T>> {
+        if let Some(id) = self.loaded_paths.get(path) {
+            info!("{} asset already loaded with id {}", T::asset_name(), id);
+            let data_access = self.loaded.get(id).unwrap().clone();
+            return Some(Handle::strong(*id, self.sender.clone(), data_access));
+        }
+
+        None
     }
 
     pub fn load_asset(&mut self, asset: T) -> Handle<T> {
@@ -163,10 +175,6 @@ where
 
     pub fn get_removed_assets(&self) -> &Vec<HandleID> {
         &self.removed_assets
-        // self.removed_assets
-        //     .iter()
-        //     .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
-        //     .collect()
     }
 
     //----------------------------------------------
@@ -178,29 +186,46 @@ where
     pub fn load_from_file(&mut self, path: String) -> Handle<T> {
         info!("Loading new {} asset from path {}", T::asset_name(), path);
 
-        // Check if file is already loaded. If so, we can create an new handle to
-        // the existing data.
-        if let Some(id) = self.loaded_paths.get(&path) {
-            info!("Asset already loaded with id {}", id);
-            let data_access = self.loaded.get(id).unwrap().clone();
-            return Handle::strong(*id, self.sender.clone(), data_access);
+        // Check if file is already loaded. If so, we can create a new handle to the existing data.
+        if let Some(handle) = self.get_file_loaded(&path) {
+            return handle;
         }
 
         // Otherwise, load and store the data accordingly
         let data = T::load_from_file(format!("{}{}", self.load_path, path.clone()));
-        let next_id = self.get_next_id();
-        let data_access = Arc::new(data);
+        let handle = self.load_asset(data);
 
-        self.loaded.insert(next_id, data_access.clone());
-        self.asset_count.insert(next_id, 0);
-        self.just_added.push(next_id);
+        self.loaded_paths.insert(path.clone(), handle.id());
+        self.asset_paths.insert(handle.id(), path);
 
-        self.loaded_paths.insert(path.clone(), next_id);
-        self.asset_paths.insert(next_id, path);
+        handle
+    }
+}
 
-        info!("Loaded {} asset with id {}", T::asset_name(), next_id,);
+impl<T> AssetStorage<T>
+where
+    T: AssetLoadableData,
+{
+    pub fn load_from_file_data<D>(&mut self, path: String, data: D) -> Handle<T> {
+        info!(
+            "Loading new {} asset with data from path {}",
+            T::asset_name(),
+            path
+        );
 
-        Handle::strong(next_id, self.sender.clone(), data_access)
+        // Check if file is already loaded. If so, we can create a new handle to the existing data.
+        if let Some(handle) = self.get_file_loaded(&path) {
+            return handle;
+        }
+
+        // Otherwise load and store the data accordingly
+        let data = T::load_from_file_data(format!("{}{}", self.load_path, path.clone()), data);
+        let handle = self.load_asset(data);
+
+        self.loaded_paths.insert(path.clone(), handle.id());
+        self.asset_paths.insert(handle.id(), path);
+
+        handle
     }
 }
 
