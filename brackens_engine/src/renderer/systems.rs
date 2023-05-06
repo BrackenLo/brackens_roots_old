@@ -1,20 +1,21 @@
 //===============================================================
 
-use brackens_renderer::{render_tools, textures::RawTextureInstance};
+use brackens_renderer::{
+    render_tools,
+    textures::{RawTextureInstance, RendererTexture},
+};
 
-use brackens_assets::Handle;
 use brackens_renderer::wgpu::SurfaceError;
-use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
+use shipyard::{AllStoragesView, IntoIter, IntoWithId, UniqueView, UniqueViewMut, View, World};
 
-use crate::render_components::*;
-
-use super::{
+use crate::{
     core_components::{Device, Queue, Surface, SurfaceConfig, WindowSize},
-    render_components::{ClearColor, RenderPassTools},
     spatial_components::GlobalTransform,
     tool_components::AssetStorage,
-    UV, UVM,
+    ClearColor, UV, UVM,
 };
+
+use super::components::*;
 
 //===============================================================
 
@@ -65,7 +66,7 @@ pub fn sys_setup_texture_renderer(
 
 pub fn sys_add_new_textures(
     mut renderer: UVM<TextureRenderer>,
-    texture_storage: UV<AssetStorage<LoadedTexture>>,
+    texture_storage: UV<AssetStorage<RendererTexture>>,
 ) {
     for new in texture_storage.0.get_just_added() {
         renderer.add_texture(new);
@@ -73,7 +74,7 @@ pub fn sys_add_new_textures(
 }
 
 pub fn sys_remove_unloaded_textures(
-    texture_storage: UV<AssetStorage<LoadedTexture>>,
+    texture_storage: UV<AssetStorage<RendererTexture>>,
     mut renderer: UVM<TextureRenderer>,
 ) {
     for handle in texture_storage.0.get_removed_assets() {
@@ -129,83 +130,18 @@ pub fn sys_render_textures(
 }
 
 //===============================================================
-// Functions for loading textures
 
-pub fn load_texture<T: AsRef<str>>(
-    world: &mut World,
-    path: T,
-    label: T,
-    sampler: Option<brackens_renderer::wgpu::SamplerDescriptor>,
-) -> Handle<LoadedTexture> {
-    world.run_with_data(
-        |data: (T, T),
-         mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
-         renderer: UV<TextureRenderer>,
-         device: UV<Device>,
-         queue: UV<Queue>| {
-            //--------------------------------------------------
+// pub fn sys_check_models(meshes: View<Mesh>, materials: View<Material>) {
+//     let mut checked = vec![];
+//     for (id, (mesh, material)) in (meshes.modified(), &materials).iter().with_id() {
+//         checked.push(id);
+//     }
 
-            let layout = renderer.get_layout();
-            let sampler = match sampler {
-                Some(val) => val,
-                None => brackens_renderer::wgpu::SamplerDescriptor::default(),
-            };
-
-            let texture = brackens_renderer::textures::Texture::from_file(
-                &device.0,
-                &queue.0,
-                data.0.as_ref(),
-                data.1.as_ref(),
-                &sampler,
-            )
-            .unwrap();
-
-            let loaded_texture = LoadedTexture::load(&device.0, texture, layout);
-            texture_storage.0.load_asset(loaded_texture)
-
-            //--------------------------------------------------
-        },
-        (path, label),
-    )
-}
-
-#[allow(unused)]
-pub fn load_texture_bytes<T: AsRef<str>>(
-    world: &mut World,
-    bytes: &[u8],
-    label: T,
-    sampler: Option<brackens_renderer::wgpu::SamplerDescriptor>,
-) -> Handle<LoadedTexture> {
-    world.run_with_data(
-        |data: (&[u8], T),
-         mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
-         renderer: UV<TextureRenderer>,
-         device: UV<Device>,
-         queue: UV<Queue>| {
-            //--------------------------------------------------
-
-            let layout = renderer.get_layout();
-            let sampler = match sampler {
-                Some(val) => val,
-                None => brackens_renderer::wgpu::SamplerDescriptor::default(),
-            };
-
-            let texture = brackens_renderer::textures::Texture::from_bytes(
-                &device.0,
-                &queue.0,
-                data.0,
-                data.1.as_ref(),
-                &sampler,
-            )
-            .unwrap();
-
-            let loaded_texture = LoadedTexture::load(&device.0, texture, layout);
-            texture_storage.0.load_asset(loaded_texture)
-
-            //--------------------------------------------------
-        },
-        (bytes, label),
-    )
-}
+//     for (id, (mesh, material)) in (&meshes, materials.modified()).iter().with_id() {
+//         if checked.contains(&id) {
+//             continue;
+//         }
+//     }
+// }
 
 //===============================================================

@@ -3,7 +3,9 @@
 use std::collections::{HashMap, HashSet};
 
 use brackens_renderer::{
-    bytemuck, render_tools,
+    bytemuck,
+    models::{self, RendererMaterial, RendererMesh},
+    render_tools,
     textures::{self, RawTextureInstance},
     wgpu::{self, util::DeviceExt},
 };
@@ -14,10 +16,11 @@ use brackens_tools::{glam::Vec2, winit::dpi::PhysicalSize};
 use shipyard::{Component, Unique};
 
 pub use brackens_renderer::{
-    textures::LoadedTexture, textures::TextureDrawCall as FinalTextureDrawCall,
+    textures::RendererTexture, textures::TextureDrawCall as FinalTextureDrawCall,
 };
 
 //===============================================================
+// Core rendering Uniques
 
 #[derive(Unique)]
 pub struct RenderPassTools(pub(crate) render_tools::RenderPassTools);
@@ -26,6 +29,15 @@ pub struct RenderPassTools(pub(crate) render_tools::RenderPassTools);
 pub struct ClearColor(pub [f64; 3]);
 
 //===============================================================
+// Shared Rendering Components
+
+#[derive(Component)]
+pub struct Visible {
+    pub visible: bool,
+}
+
+//===============================================================
+// Texture Rendering
 
 #[derive(Unique)]
 pub struct TextureRenderer {
@@ -34,7 +46,7 @@ pub struct TextureRenderer {
     should_render: HashSet<HandleID>,
     unprocessed_draw_data: HashMap<HandleID, Vec<RawTextureInstance>>,
 
-    texture_data: HashMap<HandleID, Handle<LoadedTexture>>,
+    texture_data: HashMap<HandleID, Handle<RendererTexture>>,
     draw_data: HashMap<HandleID, FinalTextureDrawCall>,
 }
 
@@ -68,7 +80,7 @@ impl TextureRenderer {
 
     //--------------------------------------------------
 
-    pub(crate) fn add_texture(&mut self, handle: Handle<LoadedTexture>) {
+    pub(crate) fn add_texture(&mut self, handle: Handle<RendererTexture>) {
         let handle = handle.clone_weak();
         self.texture_data.insert(handle.id(), handle);
     }
@@ -167,18 +179,55 @@ impl TextureRenderer {
     //--------------------------------------------------
 }
 
-//===============================================================
-
-#[derive(Component)]
-pub struct Visible {
-    pub visible: bool,
-}
+//--------------------------------------------------
+// Texture Components
 
 #[derive(Component)]
 pub struct Texture {
     pub size: Vec2,
-    pub handle: Handle<LoadedTexture>,
+    pub handle: Handle<RendererTexture>,
     pub color: [f32; 4],
 }
+
+//===============================================================
+//===============================================================
+//===============================================================
+// Model Rendering
+
+type MaterialID = HandleID;
+type MeshID = HandleID;
+
+#[derive(Component)]
+pub struct Model {
+    meshes: HashMap<MaterialID, MeshID>,
+}
+
+// #[derive(Component)]
+// #[track(All)]
+// pub struct Mesh {
+//     mesh: Handle<RendererMesh>,
+// }
+
+// #[derive(Component)]
+// #[track(All)]
+// pub struct Material {
+//     material: Handle<RendererMaterial>,
+// }
+
+//--------------------------------------------------
+
+#[derive(Unique)]
+pub struct ModelRenderer {
+    renderer: models::ModelRenderer,
+    // mesh_data: HashMap<HandleID, Handle<
+    // render_data: HashMap<MaterialID, ModelStuff>,
+}
+
+// struct ModelStuff {
+//     references: u32,
+//     model: ModelID,
+//     instances: wgpu::Buffer,
+//     instance_count: u32,
+// }
 
 //===============================================================

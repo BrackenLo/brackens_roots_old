@@ -3,7 +3,7 @@
 use brackens_engine::{
     core_components::KeyManager,
     load_texture,
-    render_components::{Texture, Visible},
+    renderer::components::{Texture, Visible},
     spatial_components::{GlobalTransform, Transform},
     KeyCode, ShipyardGameState, ShipyardRunner,
 };

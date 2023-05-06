@@ -17,18 +17,15 @@ use core_components::*;
 use log::{error, info, warn};
 use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 
-use crate::render_components::ClearColor;
-
 pub mod core_components;
 mod core_systems;
-pub mod render_components;
-mod render_systems;
+pub mod renderer;
 pub mod spatial_components;
 mod spatial_systems;
 pub mod tool_components;
 mod tool_systems;
 
-pub use render_systems::load_texture;
+pub use renderer::{components::ClearColor, tools::load_texture};
 
 //===============================================================
 
@@ -115,7 +112,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         //--------------------------------------------------
 
-        world.run(render_systems::sys_setup_texture_renderer);
+        world.run(renderer::systems::sys_setup_texture_renderer);
 
         //--------------------------------------------------
 
@@ -193,7 +190,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         self.game_state.update(&mut self.world);
         self.post_update();
 
-        if let Err(e) = render_systems::start_render_pass(&mut self.world) {
+        if let Err(e) = renderer::systems::start_render_pass(&mut self.world) {
             match e {
                 // brackens_tools::wgpu::SurfaceError::Timeout => todo!(),
                 // brackens_tools::wgpu::SurfaceError::Outdated => todo!(),
@@ -239,7 +236,7 @@ where
             );
 
             // Resize everything here
-            self.world.run(render_systems::sys_resize_pipeline);
+            self.world.run(renderer::systems::sys_resize_pipeline);
         }
     }
     fn force_resize(&mut self) {
@@ -257,19 +254,20 @@ where
     }
 
     fn pre_render(&mut self) {
-        self.world.run(render_systems::sys_clear_background);
+        self.world.run(renderer::systems::sys_clear_background);
     }
 
     fn post_render(&mut self) {
         // Process Pipelines
         // Render pipelines
 
-        self.world.run(render_systems::sys_process_textures);
-        self.world.run(render_systems::sys_add_new_textures);
-        self.world.run(render_systems::sys_remove_unloaded_textures);
-        self.world.run(render_systems::sys_render_textures);
+        self.world.run(renderer::systems::sys_process_textures);
+        self.world.run(renderer::systems::sys_add_new_textures);
+        self.world
+            .run(renderer::systems::sys_remove_unloaded_textures);
+        self.world.run(renderer::systems::sys_render_textures);
 
-        render_systems::sys_end_render_pass(&mut self.world);
+        renderer::systems::sys_end_render_pass(&mut self.world);
     }
 
     fn end(&mut self) {
