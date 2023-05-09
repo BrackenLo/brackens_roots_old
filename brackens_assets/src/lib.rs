@@ -3,12 +3,14 @@
 
 pub mod asset_handle;
 pub mod asset_storage;
+pub mod default_asset_storage;
 pub mod default_implementations;
+pub mod loadable_asset_storage;
 
 //===============================================================
 
 pub use asset_handle::{Handle, HandleID};
-pub use asset_storage::AssetStorage;
+pub use default_asset_storage::AssetStorage;
 
 //===============================================================
 
@@ -16,13 +18,9 @@ pub trait Asset: 'static + Send + Sync {
     fn asset_name() -> &'static str;
 }
 
-pub trait AssetLoadable: Asset {
-    fn load_from_file(path: String) -> Self;
-    fn load_default() -> Self;
-}
-
-pub trait AssetLoadableData: Asset {
-    fn load_from_file_data<T>(path: String, data: T) -> Self;
+pub trait AssetLoadable<T>: Asset {
+    fn load_from_file(path: String, data: T) -> Self;
+    fn load_default(data: T) -> Self;
 }
 
 //===============================================================

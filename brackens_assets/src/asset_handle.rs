@@ -2,10 +2,8 @@
 
 use std::sync::Arc;
 
-// use parking_lot::{RwLock, RwLockReadGuard};
-
 use super::{
-    asset_storage::{ReferenceCountSignal, SenderType},
+    default_asset_storage::{ReferenceCountSignal, SenderType},
     Asset,
 };
 
