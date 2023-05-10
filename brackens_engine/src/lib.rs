@@ -1,12 +1,11 @@
 //===============================================================
 
-use brackens_renderer::{RenderComponents, RenderPrefs};
+use brackens_renderer::{RenderComponents, RenderPrefs, Size};
 
 use brackens_tools::{
     runner::{Runner, RunnerCore, RunnerLoopEvent},
     winit::{
         self,
-        dpi::PhysicalSize,
         event::{DeviceEvent, DeviceId, WindowEvent},
         event_loop::{EventLoop, EventLoopProxy},
         window::WindowBuilder,
@@ -90,7 +89,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         world.add_unique(Surface(render_components.surface));
         world.add_unique(SurfaceConfig(render_components.config));
 
-        world.add_unique(WindowSize(window.inner_size()));
+        world.add_unique(WindowSize::from(window.inner_size()));
         world.add_unique(Window(window));
 
         //--------------------------------------------------
@@ -135,7 +134,10 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
             | WindowEvent::ScaleFactorChanged {
                 new_inner_size: &mut new_size,
                 ..
-            } => self.resize(new_size),
+            } => self.resize(Size {
+                width: new_size.width,
+                height: new_size.height,
+            }),
 
             //--------------------------------------------------
             // Close pressed or requested
@@ -221,7 +223,7 @@ impl<T> ShipyardCore<T>
 where
     T: ShipyardGameState,
 {
-    fn resize(&mut self, new_size: PhysicalSize<u32>) {
+    fn resize(&mut self, new_size: Size<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.world.run(
                 |mut size: UniqueViewMut<WindowSize>,
@@ -266,6 +268,9 @@ where
         self.world
             .run(renderer::systems::sys_remove_unloaded_textures);
         self.world.run(renderer::systems::sys_render_textures);
+
+        self.world.run(renderer::systems::sys_process_models);
+        self.world.run(renderer::systems::sys_render_models);
 
         renderer::systems::sys_end_render_pass(&mut self.world);
     }

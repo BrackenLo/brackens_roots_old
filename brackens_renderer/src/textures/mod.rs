@@ -156,11 +156,11 @@ impl Texture {
 
 //===============================================================
 
-pub struct LoadedTexture {
+pub struct RendererTexture {
     pub texture: Texture,
     pub bind_group: wgpu::BindGroup,
 }
-impl LoadedTexture {
+impl RendererTexture {
     pub fn load(device: &wgpu::Device, texture: Texture, layout: &wgpu::BindGroupLayout) -> Self {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!("Loaded wgpu texture")),

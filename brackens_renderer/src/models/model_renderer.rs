@@ -5,18 +5,11 @@ use wgpu::util::DeviceExt;
 use crate::{
     pipelines::{PipelineBuilderDescriptor, RawPipeline, Vertex},
     render_tools::RenderPassTools,
-    textures::{LoadedTexture, Texture},
+    textures::Texture,
     Size,
 };
 
-//===============================================================
-
-pub struct Material {
-    pub name: String,
-    pub texture: LoadedTexture,
-}
-
-pub struct Model {}
+use super::RendererMesh;
 
 //===============================================================
 
@@ -103,7 +96,7 @@ pub struct ModelRenderer {
     depth_texture: Texture,
 }
 impl ModelRenderer {
-    pub fn new(device: &wgpu::Device, config: wgpu::SurfaceConfiguration) -> Self {
+    pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
         //----------------------------------------------
 
         let projection_matrix = glam::Mat4::orthographic_rh(0., 640., 0., 360., 0., 100.);
@@ -255,7 +248,7 @@ impl ModelRenderer {
     pub fn render(
         &self,
         render_tools: &mut RenderPassTools,
-        draw_calls: &[(&wgpu::BindGroup, &ModelDrawCall)],
+        draw_calls: &[(&wgpu::BindGroup, Vec<(&RendererMesh, &InstanceData)>)],
     ) {
         let depth_stencil_attachment = wgpu::RenderPassDepthStencilAttachment {
             view: &self.depth_texture.view,
@@ -273,29 +266,32 @@ impl ModelRenderer {
         render_pass.set_bind_group(0, &self.projection_bind_group);
 
         for draw_call in draw_calls {
-            let ModelDrawCall {
-                vertices,
-                indices,
-                index_count,
-                instances,
-                instance_count,
-            } = draw_call.1;
-
+            // Set material for all meshes using this
             render_pass.set_bind_group(1, &draw_call.0);
-            render_pass.set_vertex_buffers([vertices, instances], 0);
-            render_pass.set_index_buffer(indices);
 
-            render_pass.draw_index(0..*index_count, 0..*instance_count);
+            // Render all the meshes using the set material
+            for instance in &draw_call.1 {
+                let RendererMesh {
+                    vertices,
+                    indices,
+                    index_count,
+                } = instance.0;
+
+                let InstanceData {
+                    instances,
+                    instance_count,
+                } = &instance.1;
+
+                render_pass.set_vertex_buffers([vertices, instances], 0);
+                render_pass.set_index_buffer(indices);
+
+                render_pass.draw_index(0..*index_count, 0..*instance_count);
+            }
         }
     }
 }
 
-pub struct ModelDrawCall {
-    pub vertices: wgpu::Buffer,
-
-    pub indices: wgpu::Buffer,
-    pub index_count: u32,
-
+pub struct InstanceData {
     pub instances: wgpu::Buffer,
     pub instance_count: u32,
 }

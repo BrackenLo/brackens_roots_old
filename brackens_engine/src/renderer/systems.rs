@@ -1,12 +1,13 @@
 //===============================================================
 
 use brackens_renderer::{
+    models::{RawMeshInstance, RendererMaterial, RendererMesh},
     render_tools,
     textures::{RawTextureInstance, RendererTexture},
 };
 
 use brackens_renderer::wgpu::SurfaceError;
-use shipyard::{AllStoragesView, IntoIter, IntoWithId, UniqueView, UniqueViewMut, View, World};
+use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
 
 use crate::{
     core_components::{Device, Queue, Surface, SurfaceConfig, WindowSize},
@@ -86,10 +87,13 @@ pub fn sys_remove_unloaded_textures(
 
 pub fn sys_resize_pipeline(
     queue: UniqueView<Queue>,
+    device: UniqueView<Device>,
     window_size: UniqueView<WindowSize>,
     mut renderer: UniqueViewMut<TextureRenderer>,
+    mut renderer2: UniqueViewMut<ModelRenderer>,
 ) {
     renderer.resize(&queue.0, window_size.0);
+    renderer2.resize(&device.0, &queue.0, window_size.0);
 }
 
 //--------------------------------------------------
@@ -127,6 +131,37 @@ pub fn sys_render_textures(
     mut render_tools: UVM<RenderPassTools>,
 ) {
     renderer.render(&mut render_tools.0);
+}
+
+//===============================================================
+
+pub fn sys_process_models(
+    device: UV<Device>,
+    queue: UV<Queue>,
+    mesh_storage: UV<AssetStorage<RendererMesh>>,
+    material_storage: UV<AssetStorage<RendererMaterial>>,
+
+    mut renderer: UVM<ModelRenderer>,
+    models: View<Model>,
+    visible: View<Visible>,
+    transforms: View<GlobalTransform>,
+) {
+    for (model, visible, transform) in (&models, &visible, &transforms).iter() {
+        if !visible.visible {
+            continue;
+        }
+
+        let instance = RawMeshInstance {
+            transform: transform.to_raw(),
+        };
+        renderer.render_model(model, instance);
+    }
+
+    renderer.process_data(&device.0, &queue.0, &mesh_storage, &material_storage)
+}
+
+pub fn sys_render_models(mut renderer: UVM<ModelRenderer>, mut render_tools: UVM<RenderPassTools>) {
+    renderer.render(&mut render_tools.0)
 }
 
 //===============================================================

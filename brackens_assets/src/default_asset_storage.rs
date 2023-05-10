@@ -81,6 +81,17 @@ where
         Handle::strong(next_id, self.sender.clone(), data_access)
     }
 
+    pub fn get_handle(&self, id: &HandleID) -> Option<Handle<T>> {
+        match self.loaded.get(&id) {
+            Some(data) => Some(Handle::strong(
+                id.clone(),
+                self.sender.clone(),
+                data.clone(),
+            )),
+            None => None,
+        }
+    }
+
     //----------------------------------------------
 
     pub fn tick(&mut self) {
