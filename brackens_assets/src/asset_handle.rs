@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use super::{
-    default_asset_storage::{ReferenceCountSignal, SenderType},
+    asset_storage::{ReferenceCountSignal, SenderType},
     Asset,
 };
 

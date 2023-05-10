@@ -50,8 +50,12 @@ where
                 T::asset_name(),
                 id
             );
-            let data_access = self.inner.loaded.get(id).unwrap().clone();
-            return Some(Handle::strong(*id, self.inner.sender.clone(), data_access));
+            let data_access = self.inner.get_loaded().get(id).unwrap().clone();
+            return Some(Handle::strong(
+                *id,
+                self.inner.get_sender().clone(),
+                data_access,
+            ));
         }
 
         None
@@ -67,7 +71,7 @@ where
 
         // Otherwise, load and store the data accordingly
         let data = T::load_from_file(format!("{}{}", self.load_path, &path), data);
-        let handle = self.inner.load_asset(data);
+        let handle = self.inner.add_asset(data);
 
         self.loaded_paths.insert(path.clone(), handle.id());
         self.asset_paths.insert(handle.id(), path);
@@ -90,7 +94,7 @@ where
     }
 
     pub fn load_asset(&mut self, asset: T) -> Handle<T> {
-        self.inner.load_asset(asset)
+        self.inner.add_asset(asset)
     }
 
     //----------------------------------------------

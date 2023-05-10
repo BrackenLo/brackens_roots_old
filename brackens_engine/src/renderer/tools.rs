@@ -5,8 +5,8 @@ use brackens_renderer::textures::RendererTexture;
 use shipyard::World;
 
 use crate::{
+    assets::AssetStorage,
     core_components::{Device, Queue},
-    tool_components::AssetStorage,
     UV, UVM,
 };
 
@@ -45,7 +45,7 @@ pub fn load_texture<T: AsRef<str>>(
             .unwrap();
 
             let loaded_texture = RendererTexture::load(&device.0, texture, layout);
-            texture_storage.0.load_asset(loaded_texture)
+            texture_storage.add_asset(loaded_texture)
 
             //--------------------------------------------------
         },
@@ -84,7 +84,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
             .unwrap();
 
             let loaded_texture = RendererTexture::load(&device.0, texture, layout);
-            texture_storage.0.load_asset(loaded_texture)
+            texture_storage.add_asset(loaded_texture)
 
             //--------------------------------------------------
         },

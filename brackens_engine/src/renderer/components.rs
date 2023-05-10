@@ -20,7 +20,7 @@ pub use brackens_renderer::{
     textures::RendererTexture, textures::TextureDrawCall as FinalTextureDrawCall,
 };
 
-use crate::tool_components::AssetStorage;
+use crate::assets::AssetStorage;
 
 //===============================================================
 // Core rendering Uniques
@@ -281,12 +281,12 @@ impl ModelRenderer {
         self.processed_data.clear();
 
         for (material_id, meshes) in &self.material_data {
-            let material = material_storage.0.get_handle(material_id).unwrap();
+            let material = material_storage.get_handle(material_id).unwrap();
 
             let mut mesh_data = Vec::new();
 
             for (mesh_id, instance_id) in meshes {
-                let mesh = mesh_storage.0.get_handle(mesh_id).unwrap();
+                let mesh = mesh_storage.get_handle(mesh_id).unwrap();
 
                 let instances = instance_id
                     .iter()

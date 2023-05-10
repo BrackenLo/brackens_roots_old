@@ -3,14 +3,13 @@
 
 pub mod asset_handle;
 pub mod asset_storage;
-pub mod default_asset_storage;
 pub mod default_implementations;
 pub mod loadable_asset_storage;
 
 //===============================================================
 
 pub use asset_handle::{Handle, HandleID};
-pub use default_asset_storage::AssetStorage;
+pub use asset_storage::AssetStorage;
 
 //===============================================================
 

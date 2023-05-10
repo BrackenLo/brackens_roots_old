@@ -7,6 +7,8 @@ use shipyard::{
     AllStoragesView, IntoIter, IntoWorkload, UniqueView, UniqueViewMut, ViewMut, Workload,
 };
 
+use crate::assets::AssetStorage;
+
 use super::{core_components::UpkeepTracker, tool_components::*};
 
 //===============================================================
@@ -31,7 +33,7 @@ pub fn wl_reset_asset_storage() -> Workload {
 }
 
 pub fn sys_reset_asset_storage<T: Asset>(mut asset_storage: UniqueViewMut<AssetStorage<T>>) {
-    asset_storage.0.tick();
+    asset_storage.tick();
 }
 
 //===============================================================

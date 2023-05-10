@@ -10,9 +10,9 @@ use brackens_renderer::wgpu::SurfaceError;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
 
 use crate::{
+    assets::AssetStorage,
     core_components::{Device, Queue, Surface, SurfaceConfig, WindowSize},
     spatial_components::GlobalTransform,
-    tool_components::AssetStorage,
     ClearColor, UV, UVM,
 };
 
@@ -69,7 +69,7 @@ pub fn sys_add_new_textures(
     mut renderer: UVM<TextureRenderer>,
     texture_storage: UV<AssetStorage<RendererTexture>>,
 ) {
-    for new in texture_storage.0.get_just_added() {
+    for new in texture_storage.get_just_added() {
         renderer.add_texture(new);
     }
 }
@@ -78,7 +78,7 @@ pub fn sys_remove_unloaded_textures(
     texture_storage: UV<AssetStorage<RendererTexture>>,
     mut renderer: UVM<TextureRenderer>,
 ) {
-    for handle in texture_storage.0.get_removed_assets() {
+    for handle in texture_storage.get_removed_assets() {
         renderer.remove_texture(*handle);
     }
 }

@@ -16,6 +16,7 @@ use core_components::*;
 use log::{error, info, warn};
 use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 
+pub mod assets;
 pub mod core_components;
 mod core_systems;
 pub mod renderer;
