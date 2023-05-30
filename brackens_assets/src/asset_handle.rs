@@ -1,6 +1,6 @@
 //===============================================================
 
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 
 use super::{
     asset_storage::{ReferenceCountSignal, SenderType},
@@ -9,24 +9,83 @@ use super::{
 
 //===============================================================
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct HandleID(pub(crate) u32);
-impl std::fmt::Display for HandleID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.0)
+pub struct HandleID<T: Asset> {
+    pub(crate) id: u32,
+    data: PhantomData<T>,
+}
+
+impl<T> HandleID<T>
+where
+    T: Asset,
+{
+    pub(crate) fn new(id: u32) -> Self {
+        Self {
+            id,
+            data: PhantomData,
+        }
     }
 }
 
-pub enum HandleType {
+//----------------------------------------------
+
+impl<T> std::hash::Hash for HandleID<T>
+where
+    T: Asset,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+//----------------------------------------------
+
+impl<T> Clone for HandleID<T>
+where
+    T: Asset,
+{
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for HandleID<T> where T: Asset {}
+
+//----------------------------------------------
+
+impl<T> PartialEq for HandleID<T>
+where
+    T: Asset,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl<T> Eq for HandleID<T> where T: Asset {}
+
+//----------------------------------------------
+
+impl<T> std::fmt::Display for HandleID<T>
+where
+    T: Asset,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.id)
+    }
+}
+
+//===============================================================
+
+pub enum HandleType<T: Asset> {
     Weak,
-    Strong(SenderType<ReferenceCountSignal>),
+    Strong(SenderType<ReferenceCountSignal<T>>),
 }
 
 //===============================================================
 
 pub struct Handle<T: 'static + Asset> {
-    handle_id: HandleID,
-    handle_type: HandleType,
+    handle_id: HandleID<T>,
+    handle_type: HandleType<T>,
     asset: Arc<T>,
 }
 impl<T> Handle<T>
@@ -36,8 +95,9 @@ where
     //----------------------------------------------
 
     #[inline]
-    pub fn id(&self) -> HandleID {
-        self.handle_id
+    pub fn id(&self) -> HandleID<T> {
+        // self.handle_id
+        todo!()
     }
     #[inline]
     pub fn type_name(&self) -> &'static str {
@@ -52,8 +112,8 @@ where
 
     /// Create a new strong handle. If you want to clone a handle or clone a weak handle use clone or clone_weak
     pub fn strong(
-        handle_id: HandleID,
-        sender: SenderType<ReferenceCountSignal>,
+        handle_id: HandleID<T>,
+        sender: SenderType<ReferenceCountSignal<T>>,
         asset: Arc<T>,
     ) -> Self {
         // When creating a new handle, we need to tell the asset storage
@@ -70,7 +130,7 @@ where
         }
     }
 
-    pub fn weak(handle_id: HandleID, asset: Arc<T>) -> Self {
+    pub fn weak(handle_id: HandleID<T>, asset: Arc<T>) -> Self {
         Self {
             handle_id,
             handle_type: HandleType::Weak,
@@ -83,7 +143,8 @@ where
     /// Create a new weak handle from an existing one
     #[inline]
     pub fn clone_weak(&self) -> Self {
-        Self::weak(self.handle_id, self.asset.clone())
+        // Self::weak(self.handle_id, self.asset.clone())
+        todo!()
     }
 
     /// Convert a strong handle into a weak one. This action cannot currently be reversed.
@@ -128,7 +189,7 @@ where
     T: Asset,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.handle_id == other.handle_id
+        self.handle_id.id == other.handle_id.id
     }
 }
 

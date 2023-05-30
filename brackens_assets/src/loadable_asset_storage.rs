@@ -14,12 +14,12 @@ pub struct LoadableAssetStorage<D, T: AssetLoadable<D>> {
 
     // Hashmap containing path to asset as a key. Used to check if data
     // is already loaded and if so, create a handle to it.
-    loaded_paths: HashMap<String, HandleID>,
+    loaded_paths: HashMap<String, HandleID<T>>,
     // Hashmap that is the opposite of loaded_paths used to access the file
     // path when unloading the data.
     // If a collection did key <-> key instead of key -> value exists, using
     // that would be preferable.
-    asset_paths: HashMap<HandleID, String>,
+    asset_paths: HashMap<HandleID<T>, String>,
 
     load_path: String,
 }

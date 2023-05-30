@@ -46,11 +46,11 @@ pub struct Visible {
 pub struct TextureRenderer {
     renderer: textures::TextureRenderer,
 
-    should_render: HashSet<HandleID>,
-    unprocessed_draw_data: HashMap<HandleID, Vec<RawTextureInstance>>,
+    should_render: HashSet<HandleID<RendererTexture>>,
+    unprocessed_draw_data: HashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
 
-    texture_data: HashMap<HandleID, Handle<RendererTexture>>,
-    draw_data: HashMap<HandleID, FinalTextureDrawCall>,
+    texture_data: HashMap<HandleID<RendererTexture>, Handle<RendererTexture>>,
+    draw_data: HashMap<HandleID<RendererTexture>, FinalTextureDrawCall>,
 }
 
 impl TextureRenderer {
@@ -84,7 +84,7 @@ impl TextureRenderer {
         self.texture_data.insert(handle.id(), handle);
     }
 
-    pub(crate) fn remove_texture(&mut self, id: HandleID) {
+    pub(crate) fn remove_texture(&mut self, id: HandleID<RendererTexture>) {
         self.should_render.remove(&id);
         self.unprocessed_draw_data.remove(&id);
 
@@ -94,7 +94,11 @@ impl TextureRenderer {
 
     //--------------------------------------------------
 
-    pub(crate) fn draw_texture(&mut self, handle_id: HandleID, instance: RawTextureInstance) {
+    pub(crate) fn draw_texture(
+        &mut self,
+        handle_id: HandleID<RendererTexture>,
+        instance: RawTextureInstance,
+    ) {
         match self.unprocessed_draw_data.get_mut(&handle_id) {
             Some(val) => val.push(instance),
             None => {
@@ -193,8 +197,8 @@ pub struct Texture {
 //===============================================================
 // Model Rendering
 
-type MaterialID = HandleID;
-type MeshID = HandleID;
+type MaterialID = HandleID<RendererMaterial>;
+type MeshID = HandleID<RendererMesh>;
 
 #[derive(Component)]
 pub struct Model {

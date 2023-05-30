@@ -96,8 +96,8 @@ pub use model_renderer::{ModelRenderer, RawMeshInstance, RawMeshVertex};
 //     pub material_id: Option<usize>,
 // }
 
-pub type MaterialID = HandleID;
-pub type MeshID = HandleID;
+pub type MaterialID = HandleID<RendererMaterial>;
+pub type MeshID = HandleID<RendererMesh>;
 
 pub struct RendererMaterial {
     pub name: String,

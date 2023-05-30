@@ -16,26 +16,26 @@ use super::{
 pub type SenderType<T> = crossbeam::channel::Sender<T>;
 pub type ReceiverType<T> = crossbeam::channel::Receiver<T>;
 
-pub enum ReferenceCountSignal {
-    Increase(HandleID),
-    Decrease(HandleID),
+pub enum ReferenceCountSignal<T: Asset> {
+    Increase(HandleID<T>),
+    Decrease(HandleID<T>),
 }
 
 //===============================================================
 
 pub struct AssetStorage<T: Asset> {
-    sender: SenderType<ReferenceCountSignal>,
-    receiver: ReceiverType<ReferenceCountSignal>,
+    sender: SenderType<ReferenceCountSignal<T>>,
+    receiver: ReceiverType<ReferenceCountSignal<T>>,
 
-    current_id: HandleID,
+    current_id: HandleID<T>,
 
     // The currently loaded data
-    loaded: HashMap<HandleID, Arc<T>>,
+    loaded: HashMap<HandleID<T>, Arc<T>>,
 
     // Keep track of how many strong handles in existance
-    asset_count: HashMap<HandleID, u32>,
-    just_added: Vec<HandleID>,
-    removed_assets: Vec<HandleID>,
+    asset_count: HashMap<HandleID<T>, u32>,
+    just_added: Vec<HandleID<T>>,
+    removed_assets: Vec<HandleID<T>>,
 }
 
 impl<T> AssetStorage<T>
@@ -51,7 +51,7 @@ where
         Self {
             sender,
             receiver,
-            current_id: HandleID(0),
+            current_id: HandleID::new(0),
             loaded: HashMap::new(),
             asset_count: HashMap::new(),
             just_added: Vec::new(),
@@ -59,20 +59,20 @@ where
         }
     }
 
-    pub fn get_sender(&self) -> &SenderType<ReferenceCountSignal> {
+    pub fn get_sender(&self) -> &SenderType<ReferenceCountSignal<T>> {
         &self.sender
     }
 
-    pub fn get_loaded(&self) -> &HashMap<HandleID, Arc<T>> {
+    pub fn get_loaded(&self) -> &HashMap<HandleID<T>, Arc<T>> {
         &self.loaded
     }
 
     //----------------------------------------------
 
     #[inline]
-    fn get_next_id(&mut self) -> HandleID {
+    fn get_next_id(&mut self) -> HandleID<T> {
         let to_return = self.current_id;
-        self.current_id.0 += 1;
+        self.current_id.id += 1;
         to_return
     }
 
@@ -89,7 +89,7 @@ where
         Handle::strong(next_id, self.sender.clone(), data_access)
     }
 
-    pub fn get_handle(&self, id: &HandleID) -> Option<Handle<T>> {
+    pub fn get_handle(&self, id: &HandleID<T>) -> Option<Handle<T>> {
         match self.loaded.get(&id) {
             Some(data) => Some(Handle::strong(
                 id.clone(),
@@ -166,7 +166,7 @@ where
             .collect()
     }
 
-    pub fn get_removed_assets(&self) -> &Vec<HandleID> {
+    pub fn get_removed_assets(&self) -> &Vec<HandleID<T>> {
         &self.removed_assets
     }
 

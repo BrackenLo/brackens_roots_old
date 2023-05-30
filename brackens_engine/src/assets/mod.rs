@@ -24,12 +24,12 @@ pub struct AssetStorage<T: Asset> {
 
     // Hashmap containing path to asset as a key. Used to check if data
     // is already loaded and if so, create a handle to it.
-    loaded_paths: HashMap<String, HandleID>,
+    loaded_paths: HashMap<String, HandleID<T>>,
     // Hashmap that is the opposite of loaded_paths used to access the file
     // path when unloading the data.
     // If a collection did key <-> key instead of key -> value exists, using
     // that would be preferable.
-    asset_paths: HashMap<HandleID, String>,
+    asset_paths: HashMap<HandleID<T>, String>,
 }
 
 impl<T> AssetStorage<T>
@@ -54,7 +54,7 @@ where
         self.inner.add_asset(asset)
     }
 
-    pub fn get_handle(&self, id: &HandleID) -> Option<Handle<T>> {
+    pub fn get_handle(&self, id: &HandleID<T>) -> Option<Handle<T>> {
         self.inner.get_handle(id)
     }
 
@@ -82,7 +82,7 @@ where
         self.inner.get_just_added()
     }
 
-    pub fn get_removed_assets(&self) -> &Vec<HandleID> {
+    pub fn get_removed_assets(&self) -> &Vec<HandleID<T>> {
         self.inner.get_removed_assets()
     }
 
