@@ -19,4 +19,4 @@ glam = { workspace = true }
 
 anyhow = "1.0"
 image = { workspace = true, features = ["png", "jpeg"] }
-
+tobj = "4.0.0"
