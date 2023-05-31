@@ -5,11 +5,12 @@ use image::GenericImageView;
 
 use crate::Size;
 
-pub mod texture_renderer;
-
 pub use texture_renderer::{
     RawTextureInstance, RawTextureVertex, TextureDrawCall, TextureRenderer,
 };
+
+pub mod assets;
+pub mod texture_renderer;
 
 //===============================================================
 
@@ -161,7 +162,53 @@ pub struct RendererTexture {
     pub bind_group: wgpu::BindGroup,
 }
 impl RendererTexture {
-    pub fn load(device: &wgpu::Device, texture: Texture, layout: &wgpu::BindGroupLayout) -> Self {
+    pub fn from_file(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        path: &str,
+        label: &str,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        match Texture::from_file(device, queue, path, label, sampler) {
+            Ok(texture) => Ok(Self::from_texture(device, texture, layout)),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn from_bytes(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        bytes: &[u8],
+        label: &str,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        match Texture::from_bytes(device, queue, bytes, label, sampler) {
+            Ok(texture) => Ok(Self::from_texture(device, texture, layout)),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn from_image(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        img: &image::DynamicImage,
+        label: Option<&str>,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        match Texture::from_image(device, queue, img, label, sampler) {
+            Ok(texture) => Ok(Self::from_texture(device, texture, layout)),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn from_texture(
+        device: &wgpu::Device,
+        texture: Texture,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Self {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!("Loaded wgpu texture")),
             layout,
