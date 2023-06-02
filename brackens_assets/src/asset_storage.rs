@@ -36,6 +36,15 @@ pub struct AssetStorage<T: Asset> {
     asset_count: HashMap<HandleID<T>, u32>,
     just_added: Vec<HandleID<T>>,
     removed_assets: Vec<HandleID<T>>,
+
+    // Hashmap containing path to asset as a key. Used to check if data
+    // is already loaded and if so, create a handle to it.
+    loaded_paths: HashMap<String, HandleID<T>>,
+    // Hashmap that is the opposite of loaded_paths used to access the file
+    // path when unloading the data.
+    // If a collection did key <-> key instead of key -> value exists, using
+    // that would be preferable.
+    asset_paths: HashMap<HandleID<T>, String>,
 }
 
 impl<T> AssetStorage<T>
@@ -56,6 +65,9 @@ where
             asset_count: HashMap::new(),
             just_added: Vec::new(),
             removed_assets: Vec::new(),
+
+            loaded_paths: HashMap::new(),
+            asset_paths: HashMap::new(),
         }
     }
 
@@ -89,6 +101,15 @@ where
         Handle::strong(next_id, self.sender.clone(), data_access)
     }
 
+    pub fn add_asset_file(&mut self, asset: T, path: String) -> Handle<T> {
+        let handle = self.add_asset(asset);
+
+        self.loaded_paths.insert(path.clone(), handle.id());
+        self.asset_paths.insert(handle.id(), path);
+
+        handle
+    }
+
     pub fn get_handle(&self, id: &HandleID<T>) -> Option<Handle<T>> {
         match self.loaded.get(&id) {
             Some(data) => Some(Handle::strong(
@@ -98,6 +119,20 @@ where
             )),
             None => None,
         }
+    }
+
+    pub fn get_loaded_file(&self, path: &str) -> Option<Handle<T>> {
+        if let Some(id) = self.loaded_paths.get(path) {
+            info!(
+                "Retrieving previously loaded {} asset with id {}",
+                T::asset_name(),
+                id
+            );
+            let data_access = self.loaded.get(id).unwrap().clone();
+            return Some(Handle::strong(*id, self.sender.clone(), data_access));
+        }
+
+        None
     }
 
     //----------------------------------------------
@@ -150,6 +185,11 @@ where
 
             self.loaded.remove(&to_remove); //Remove Asset
             self.asset_count.remove(&to_remove); //Remove Counter
+        }
+
+        for to_remove in &self.removed_assets {
+            self.loaded_paths
+                .remove(&self.asset_paths.remove(&to_remove).unwrap());
         }
     }
 
