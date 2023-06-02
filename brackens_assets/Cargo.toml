@@ -13,6 +13,3 @@ parking_lot = "0.12.1"
 image = { workspace = true }
 glyph_brush = { workspace = true }
 
-[build-dependencies]
-anyhow = "1.0"
-fs_extra = "1.2"
