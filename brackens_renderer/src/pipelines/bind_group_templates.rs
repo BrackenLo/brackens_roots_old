@@ -24,10 +24,6 @@ where
     TextureView(&'a wgpu::TextureView),
 }
 
-// pub enum BindGroupEntryTemp<'a, T>
-// where
-//     T: bytemuck::Pod + bytemuck::Zeroable, {}
-
 //===============================================================
 
 pub struct BindGroupTemplate<T>
