@@ -2,7 +2,7 @@
 
 use brackens_assets::Handle;
 use brackens_renderer::{
-    models::assets::{RendererMaterial, RendererMesh},
+    models::{RendererMaterial, RendererMesh},
     textures::RendererTexture,
 };
 use shipyard::World;

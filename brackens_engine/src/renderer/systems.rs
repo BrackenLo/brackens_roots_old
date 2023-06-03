@@ -1,10 +1,7 @@
 //===============================================================
 
 use brackens_renderer::{
-    models::{
-        assets::{RendererMaterial, RendererMesh},
-        RawMeshInstance,
-    },
+    models::{RawMeshInstance, RendererMaterial, RendererMesh},
     render_tools,
     textures::{RawTextureInstance, RendererTexture},
 };
