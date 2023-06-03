@@ -51,8 +51,8 @@ impl RendererModel {
         queue: &wgpu::Queue,
 
         texture_storage: &mut AssetStorage<RendererTexture>,
-        material_storage: AssetStorage<RendererMaterial>,
-        model_storage: AssetStorage<RendererModel>,
+        _material_storage: AssetStorage<RendererMaterial>,
+        _model_storage: AssetStorage<RendererModel>,
 
         sampler: &wgpu::SamplerDescriptor,
         bind_group_layout: &wgpu::BindGroupLayout,
@@ -64,7 +64,7 @@ impl RendererModel {
         let cursor = Cursor::new(txt);
         let mut reader = BufReader::new(cursor);
 
-        let (models, model_materials) = tobj::load_obj_buf(
+        let (_models, model_materials) = tobj::load_obj_buf(
             &mut reader,
             &tobj::LoadOptions {
                 single_index: true,
@@ -95,7 +95,8 @@ impl RendererModel {
             shininess_texture,
             dissolve_texture,
             illumination_model,
-            unknown_param,
+            // unknown_param,
+            ..
         } in model_materials?
         {
             let ambient_texture = load_texture(

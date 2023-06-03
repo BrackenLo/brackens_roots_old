@@ -98,7 +98,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
 //===============================================================
 
 impl AssetLoadable for RendererMaterial {
-    fn load_asset(world: &World, path: &str) -> Result<Self, crate::assets::AssetLoadError>
+    fn load_asset(_world: &World, _path: &str) -> Result<Self, crate::assets::AssetLoadError>
     where
         Self: Sized,
     {
@@ -107,7 +107,7 @@ impl AssetLoadable for RendererMaterial {
 }
 
 impl AssetLoadable for RendererMesh {
-    fn load_asset(world: &World, path: &str) -> Result<Self, crate::assets::AssetLoadError>
+    fn load_asset(_world: &World, _path: &str) -> Result<Self, crate::assets::AssetLoadError>
     where
         Self: Sized,
     {
@@ -115,7 +115,7 @@ impl AssetLoadable for RendererMesh {
     }
 }
 
-pub fn load_model_path<T: AsRef<str>>(world: &mut World, label: T, path: T) -> Model {
+pub fn load_model_path<T: AsRef<str>>(_world: &mut World, _label: T, _path: T) -> Model {
     todo!()
 }
 

@@ -18,10 +18,10 @@ pub type TextureID = HandleID<RendererTexture>;
 
 //===============================================================
 
-pub struct MaterialBindGroupLayout {
-    inner: wgpu::BindGroupLayout,
-    creation:
-}
+// pub struct MaterialBindGroupLayout {
+//     inner: wgpu::BindGroupLayout,
+//     creation:
+// }
 
 //===============================================================
 
