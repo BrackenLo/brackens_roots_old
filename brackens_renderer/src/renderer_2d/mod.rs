@@ -8,6 +8,8 @@ pub use {
 };
 
 pub mod assets;
+pub mod renderer;
+pub mod renderer_components;
 pub mod texture_renderer;
 
 //===============================================================
