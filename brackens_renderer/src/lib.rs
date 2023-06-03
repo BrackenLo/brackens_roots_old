@@ -2,7 +2,6 @@
 
 use log::info;
 
-mod assets;
 pub mod models;
 pub mod pipelines;
 pub mod textures;

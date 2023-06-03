@@ -4,6 +4,7 @@
 pub mod asset_handle;
 pub mod asset_storage;
 pub mod default_implementations;
+pub mod file_loading;
 pub mod loadable_asset_storage;
 
 //===============================================================

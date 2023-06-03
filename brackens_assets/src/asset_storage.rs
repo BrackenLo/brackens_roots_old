@@ -81,7 +81,6 @@ where
 
     //----------------------------------------------
 
-    #[inline]
     fn get_next_id(&mut self) -> HandleID<T> {
         let to_return = self.current_id;
         self.current_id.id += 1;
@@ -101,14 +100,22 @@ where
         Handle::strong(next_id, self.sender.clone(), data_access)
     }
 
-    pub fn add_asset_file(&mut self, asset: T, path: String) -> Handle<T> {
+    pub fn add_asset_file<P: AsRef<str>>(&mut self, asset: T, path: P) -> Handle<T> {
+        if let Some(handle) = self.get_loaded_file(path.as_ref()) {
+            return handle;
+        }
+
         let handle = self.add_asset(asset);
+
+        let path = path.as_ref().to_string();
 
         self.loaded_paths.insert(path.clone(), handle.id());
         self.asset_paths.insert(handle.id(), path);
 
         handle
     }
+
+    //----------------------------------------------
 
     pub fn get_handle(&self, id: &HandleID<T>) -> Option<Handle<T>> {
         match self.loaded.get(&id) {
@@ -119,6 +126,10 @@ where
             )),
             None => None,
         }
+    }
+
+    pub fn is_file_loaded(&self, path: &str) -> bool {
+        self.loaded_paths.contains_key(path)
     }
 
     pub fn get_loaded_file(&self, path: &str) -> Option<Handle<T>> {

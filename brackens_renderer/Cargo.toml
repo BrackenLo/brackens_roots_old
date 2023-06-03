@@ -17,6 +17,6 @@ bytemuck = {version = "1.13.1", features = ["derive"]}
 log = { workspace = true }
 glam = { workspace = true }
 
-anyhow = "1.0"
+anyhow = { workspace = true }
 image = { workspace = true, features = ["png", "jpeg"] }
 tobj = "4.0.0"

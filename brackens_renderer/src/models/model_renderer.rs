@@ -91,6 +91,9 @@ pub struct ModelRenderer {
     projection_bind_group: wgpu::BindGroup,
     projection_uniform_buffer: wgpu::Buffer,
 
+    // Currently Contains:
+    // Binding1 - Texture
+    // Binding2 - Sampler
     material_bind_group_layout: wgpu::BindGroupLayout,
 
     depth_texture: Texture,

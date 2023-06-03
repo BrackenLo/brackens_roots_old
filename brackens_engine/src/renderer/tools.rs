@@ -1,11 +1,14 @@
 //===============================================================
 
 use brackens_assets::Handle;
-use brackens_renderer::textures::RendererTexture;
+use brackens_renderer::{
+    models::{RendererMaterial, RendererMesh},
+    textures::RendererTexture,
+};
 use shipyard::World;
 
 use crate::{
-    assets::AssetStorage,
+    assets::{AssetLoadable, AssetStorage},
     core_components::{Device, Queue},
     UV, UVM,
 };
@@ -44,7 +47,7 @@ pub fn load_texture<T: AsRef<str>>(
             )
             .unwrap();
 
-            let loaded_texture = RendererTexture::load(&device.0, texture, layout);
+            let loaded_texture = RendererTexture::from_texture(&device.0, texture, layout);
             texture_storage.add_asset(loaded_texture)
 
             //--------------------------------------------------
@@ -83,7 +86,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
             )
             .unwrap();
 
-            let loaded_texture = RendererTexture::load(&device.0, texture, layout);
+            let loaded_texture = RendererTexture::from_texture(&device.0, texture, layout);
             texture_storage.add_asset(loaded_texture)
 
             //--------------------------------------------------
@@ -93,6 +96,24 @@ pub fn load_texture_bytes<T: AsRef<str>>(
 }
 
 //===============================================================
+
+impl AssetLoadable for RendererMaterial {
+    fn load_asset(world: &World, path: &str) -> Result<Self, crate::assets::AssetLoadError>
+    where
+        Self: Sized,
+    {
+        todo!()
+    }
+}
+
+impl AssetLoadable for RendererMesh {
+    fn load_asset(world: &World, path: &str) -> Result<Self, crate::assets::AssetLoadError>
+    where
+        Self: Sized,
+    {
+        todo!()
+    }
+}
 
 pub fn load_model_path<T: AsRef<str>>(world: &mut World, label: T, path: T) -> Model {
     todo!()
