@@ -24,6 +24,10 @@ where
     TextureView(&'a wgpu::TextureView),
 }
 
+// pub enum BindGroupEntryTemp<'a, T>
+// where
+//     T: bytemuck::Pod + bytemuck::Zeroable, {}
+
 //===============================================================
 
 pub struct BindGroupTemplate<T>
@@ -51,13 +55,34 @@ where
         &self,
         device: &wgpu::Device,
         data: Vec<BindGroupEntry<T>>,
-    ) -> wgpu::BindGroup {
+    ) -> (wgpu::BindGroup, Vec<wgpu::Buffer>) {
         let mut binding = 0;
         let mut entries = Vec::new();
 
-        for entry in &self.entries {
-            // Get the value for this entry
-            let value = match data.get(binding) {
+        let mut buffer_index = 0;
+        let mut buffers = Vec::new();
+
+        // Create buffers ahead of time due to immutible borrow errors
+        for value in &data {
+            let entry = match self.entries.get(binding) {
+                Some(val) => val,
+                None => {
+                    panic!("Error: Invalid number of parameters for create bind group template")
+                }
+            };
+
+            match (entry, value) {
+                (BindGroupEntryTypes::Buffer(template), BindGroupEntry::Buffer(data)) => {
+                    let buffer = template.create_buffer(device, data);
+                    buffers.push(buffer);
+                }
+                _ => {}
+            }
+        }
+
+        // Go through all values, make sure they're of the right type and create the wgpu equivelent
+        for value in &data {
+            let entry = match self.entries.get(binding) {
                 Some(val) => val,
                 None => {
                     panic!("Error: Invalid number of parameters for create bind group template")
@@ -65,9 +90,11 @@ where
             };
 
             let resource = match (entry, value) {
-                (BindGroupEntryTypes::Buffer(template), BindGroupEntry::Buffer(data)) => {
-                    // wgpu::BindingResource::Buffer()
-                    todo!()
+                (BindGroupEntryTypes::Buffer(_), BindGroupEntry::Buffer(_)) => {
+                    buffer_index += 1;
+                    wgpu::BindingResource::Buffer(
+                        buffers[buffer_index - 1].as_entire_buffer_binding(),
+                    )
                 }
                 (BindGroupEntryTypes::Sampler, BindGroupEntry::Sampler(sampler)) => {
                     wgpu::BindingResource::Sampler(sampler)
@@ -85,11 +112,15 @@ where
             binding += 1;
         }
 
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
+        // Create the bind group
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&self.label),
             layout: &self.layout,
             entries: entries.as_slice(),
-        })
+        });
+
+        // Return the bind group and any used buffers
+        (bind_group, buffers)
     }
 }
 
@@ -132,10 +163,10 @@ where
         }
     }
 
-    pub fn create_buffer(&self, device: &wgpu::Device, data: T) -> wgpu::Buffer {
+    pub fn create_buffer(&self, device: &wgpu::Device, data: &T) -> wgpu::Buffer {
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some(&format!("Buffer Template: {}", &self.label)),
-            contents: bytemuck::cast_slice(&[data]),
+            contents: bytemuck::cast_slice(&[*data]),
             usage: self.usage,
         })
     }
