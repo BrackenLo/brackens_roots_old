@@ -5,11 +5,12 @@ use wgpu::util::DeviceExt;
 use crate::{
     pipelines::{instance_pipeline::RawInstancePipeline, PipelineBuilderDescriptor},
     render_tools::RenderPassTools,
+    Size,
 };
 
 use super::{
-    renderer_components::{RawTextureVertex, TEXTURE_INDICES, TEXTURE_VERTICES},
-    RawTextureInstance, TextureDrawCall,
+    renderer_components::{RawTextureVertex, TextureDrawCall, TEXTURE_INDICES, TEXTURE_VERTICES},
+    RawTextureInstance,
 };
 
 //===============================================================
@@ -111,7 +112,7 @@ impl Renderer2D {
 
     pub fn set_global_buffer(&mut self, device: &wgpu::Device, data: &[u8]) {
         self.global_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("Renderer2D: {} - uniform buffer", self.name())),
+            label: Some(&format!("Renderer2D: {} - Uniform buffer", self.name())),
             contents: data,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
@@ -138,6 +139,99 @@ impl Renderer2D {
             render_pass.draw_instanced(Some(&draw_call.1.instances), draw_call.1.instance_count);
         }
     }
+}
+
+//===============================================================
+
+pub struct TextureRenderer {
+    inner: Renderer2D,
+}
+
+impl TextureRenderer {
+    //----------------------------------------------
+
+    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
+        let projection_matrix = glam::Mat4::orthographic_rh(0., 640., 0., 360., 0., 100.);
+        let projection_uniform_buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Renderer2D: Texture Renderer - Uniform Buffer"),
+                contents: bytemuck::cast_slice(&projection_matrix.to_cols_array()),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
+        let projection_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Renderer2D: Texture Renderer - Global Bind Group Layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+
+        let projection_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Renderer2D: Texture Renderer - Global Bind Group"),
+            layout: &projection_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(
+                    projection_uniform_buffer.as_entire_buffer_binding(),
+                ),
+            }],
+        });
+
+        let inner = Renderer2D::new(
+            device,
+            format,
+            projection_bind_group_layout,
+            projection_bind_group,
+            projection_uniform_buffer,
+            wgpu::ShaderSource::Wgsl(include_str!("../shaders/texture_shader.wgsl").into()),
+            "Texture Renderer",
+        );
+
+        Self { inner }
+    }
+
+    //----------------------------------------------
+
+    pub fn resize(&mut self, queue: &wgpu::Queue, new_size: Size<u32>) {
+        self.inner.update_global_buffer(
+            queue,
+            bytemuck::cast_slice(
+                &glam::Mat4::orthographic_rh(
+                    0.,
+                    new_size.width as f32,
+                    0.,
+                    new_size.height as f32,
+                    0.,
+                    100.,
+                )
+                .to_cols_array(),
+            ),
+        )
+    }
+
+    pub fn get_texture_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.inner.get_texture_layout()
+    }
+
+    //----------------------------------------------
+
+    pub fn render(
+        &self,
+        render_tools: &mut RenderPassTools,
+        draw_calls: &[(&wgpu::BindGroup, &TextureDrawCall)],
+    ) {
+        self.inner.render(render_tools, draw_calls);
+    }
+
+    //----------------------------------------------
 }
 
 //===============================================================
