@@ -1,10 +1,15 @@
 //===============================================================
 
-use crate::pipelines::{instance_pipeline::RawInstancePipeline, PipelineBuilderDescriptor};
+use wgpu::util::DeviceExt;
+
+use crate::{
+    pipelines::{instance_pipeline::RawInstancePipeline, PipelineBuilderDescriptor},
+    render_tools::RenderPassTools,
+};
 
 use super::{
     renderer_components::{RawTextureVertex, TEXTURE_INDICES, TEXTURE_VERTICES},
-    RawTextureInstance,
+    RawTextureInstance, TextureDrawCall,
 };
 
 //===============================================================
@@ -98,6 +103,40 @@ impl Renderer2D {
         }
 
         //----------------------------------------------
+    }
+
+    pub fn update_global_buffer(&mut self, queue: &wgpu::Queue, data: &[u8]) {
+        queue.write_buffer(&self.global_uniform_buffer, 0, data)
+    }
+
+    pub fn set_global_buffer(&mut self, device: &wgpu::Device, data: &[u8]) {
+        self.global_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some(&format!("Renderer2D: {} - uniform buffer", self.name())),
+            contents: data,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+    }
+
+    pub fn name(&self) -> &str {
+        &self.pipeline.name()
+    }
+
+    pub fn get_texture_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.texture_bind_group_layout
+    }
+
+    pub fn render(
+        &self,
+        render_tools: &mut RenderPassTools,
+        draw_calls: &[(&wgpu::BindGroup, &TextureDrawCall)],
+    ) {
+        let mut render_pass = self.pipeline.start_render_pass(render_tools, None);
+
+        render_pass.set_bind_group(0, &self.global_bind_group);
+        for draw_call in draw_calls {
+            render_pass.set_bind_group(1, &draw_call.0);
+            render_pass.draw_instanced(Some(&draw_call.1.instances), draw_call.1.instance_count);
+        }
     }
 }
 
