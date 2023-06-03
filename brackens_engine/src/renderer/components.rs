@@ -4,7 +4,12 @@ use std::collections::{HashMap, HashSet};
 
 use brackens_renderer::{
     bytemuck,
-    models::{self, model_renderer::InstanceData, RawMeshInstance, RendererMaterial, RendererMesh},
+    models::{
+        self,
+        assets::{RendererMaterial, RendererMesh},
+        model_renderer::InstanceData,
+        RawMeshInstance,
+    },
     render_tools,
     textures::{self, RawTextureInstance},
     wgpu::{self, util::DeviceExt},
