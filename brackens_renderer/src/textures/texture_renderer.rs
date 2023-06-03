@@ -188,7 +188,9 @@ impl TextureRenderer {
             ]),
             shader: device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Texture Renderer Shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("texture_shader.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(
+                    include_str!("../shaders/texture_shader.wgsl").into(),
+                ),
             }),
             primitive: wgpu::PrimitiveState {
                 cull_mode: Some(wgpu::Face::Back),

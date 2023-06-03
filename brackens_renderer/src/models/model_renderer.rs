@@ -180,7 +180,9 @@ impl ModelRenderer {
             ]),
             shader: device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Model Renderer Shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("model_shader.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(
+                    include_str!("../shaders/model_shader.wgsl").into(),
+                ),
             }),
             primitive: wgpu::PrimitiveState {
                 cull_mode: Some(wgpu::Face::Back),
