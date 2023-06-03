@@ -10,6 +10,10 @@ log = { workspace = true }
 crossbeam = "0.8.2"
 parking_lot = "0.12.1"
 
+
 image = { workspace = true }
 glyph_brush = { workspace = true }
+anyhow = { workspace = true }
+cfg-if = { workspace = true }
+
 

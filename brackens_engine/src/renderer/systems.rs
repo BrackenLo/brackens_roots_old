@@ -1,20 +1,22 @@
 //===============================================================
 
-use brackens_renderer::{render_tools, texture_renderer::RawTextureInstance};
+use brackens_renderer::{
+    models::{RawMeshInstance, RendererMaterial, RendererMesh},
+    render_tools,
+    textures::{RawTextureInstance, RendererTexture},
+};
 
-use brackens_assets::Handle;
 use brackens_renderer::wgpu::SurfaceError;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View, World};
 
-use crate::render_components::*;
-
-use super::{
+use crate::{
+    assets::AssetStorage,
     core_components::{Device, Queue, Surface, SurfaceConfig, WindowSize},
-    render_components::{ClearColor, RenderPassTools},
     spatial_components::GlobalTransform,
-    tool_components::AssetStorage,
-    UV, UVM,
+    ClearColor, UV, UVM,
 };
+
+use super::components::*;
 
 //===============================================================
 
@@ -65,18 +67,18 @@ pub fn sys_setup_texture_renderer(
 
 pub fn sys_add_new_textures(
     mut renderer: UVM<TextureRenderer>,
-    texture_storage: UV<AssetStorage<LoadedTexture>>,
+    texture_storage: UV<AssetStorage<RendererTexture>>,
 ) {
-    for new in texture_storage.0.get_just_added() {
+    for new in texture_storage.get_just_added() {
         renderer.add_texture(new);
     }
 }
 
 pub fn sys_remove_unloaded_textures(
-    texture_storage: UV<AssetStorage<LoadedTexture>>,
+    texture_storage: UV<AssetStorage<RendererTexture>>,
     mut renderer: UVM<TextureRenderer>,
 ) {
-    for handle in texture_storage.0.get_removed_assets() {
+    for handle in texture_storage.get_removed_assets() {
         renderer.remove_texture(*handle);
     }
 }
@@ -85,10 +87,13 @@ pub fn sys_remove_unloaded_textures(
 
 pub fn sys_resize_pipeline(
     queue: UniqueView<Queue>,
+    device: UniqueView<Device>,
     window_size: UniqueView<WindowSize>,
     mut renderer: UniqueViewMut<TextureRenderer>,
+    mut renderer2: UniqueViewMut<ModelRenderer>,
 ) {
     renderer.resize(&queue.0, window_size.0);
+    renderer2.resize(&device.0, &queue.0, window_size.0);
 }
 
 //--------------------------------------------------
@@ -129,83 +134,49 @@ pub fn sys_render_textures(
 }
 
 //===============================================================
-// Functions for loading textures
 
-pub fn load_texture<T: AsRef<str>>(
-    world: &mut World,
-    path: T,
-    label: T,
-    sampler: Option<brackens_renderer::wgpu::SamplerDescriptor>,
-) -> Handle<LoadedTexture> {
-    world.run_with_data(
-        |data: (T, T),
-         mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
-         renderer: UV<TextureRenderer>,
-         device: UV<Device>,
-         queue: UV<Queue>| {
-            //--------------------------------------------------
+pub fn sys_process_models(
+    device: UV<Device>,
+    queue: UV<Queue>,
+    mesh_storage: UV<AssetStorage<RendererMesh>>,
+    material_storage: UV<AssetStorage<RendererMaterial>>,
 
-            let layout = renderer.get_layout();
-            let sampler = match sampler {
-                Some(val) => val,
-                None => brackens_renderer::wgpu::SamplerDescriptor::default(),
-            };
+    mut renderer: UVM<ModelRenderer>,
+    models: View<Model>,
+    visible: View<Visible>,
+    transforms: View<GlobalTransform>,
+) {
+    for (model, visible, transform) in (&models, &visible, &transforms).iter() {
+        if !visible.visible {
+            continue;
+        }
 
-            let texture = brackens_renderer::texture::Texture::from_file(
-                &device.0,
-                &queue.0,
-                data.0.as_ref(),
-                data.1.as_ref(),
-                &sampler,
-            )
-            .unwrap();
+        let instance = RawMeshInstance {
+            transform: transform.to_raw(),
+        };
+        renderer.render_model(model, instance);
+    }
 
-            let loaded_texture = LoadedTexture::load(&device.0, texture, layout);
-            texture_storage.0.load_asset(loaded_texture)
-
-            //--------------------------------------------------
-        },
-        (path, label),
-    )
+    renderer.process_data(&device.0, &queue.0, &mesh_storage, &material_storage)
 }
 
-#[allow(unused)]
-pub fn load_texture_bytes<T: AsRef<str>>(
-    world: &mut World,
-    bytes: &[u8],
-    label: T,
-    sampler: Option<brackens_renderer::wgpu::SamplerDescriptor>,
-) -> Handle<LoadedTexture> {
-    world.run_with_data(
-        |data: (&[u8], T),
-         mut texture_storage: UVM<AssetStorage<LoadedTexture>>,
-         renderer: UV<TextureRenderer>,
-         device: UV<Device>,
-         queue: UV<Queue>| {
-            //--------------------------------------------------
-
-            let layout = renderer.get_layout();
-            let sampler = match sampler {
-                Some(val) => val,
-                None => brackens_renderer::wgpu::SamplerDescriptor::default(),
-            };
-
-            let texture = brackens_renderer::texture::Texture::from_bytes(
-                &device.0,
-                &queue.0,
-                data.0,
-                data.1.as_ref(),
-                &sampler,
-            )
-            .unwrap();
-
-            let loaded_texture = LoadedTexture::load(&device.0, texture, layout);
-            texture_storage.0.load_asset(loaded_texture)
-
-            //--------------------------------------------------
-        },
-        (bytes, label),
-    )
+pub fn sys_render_models(mut renderer: UVM<ModelRenderer>, mut render_tools: UVM<RenderPassTools>) {
+    renderer.render(&mut render_tools.0)
 }
+
+//===============================================================
+
+// pub fn sys_check_models(meshes: View<Mesh>, materials: View<Material>) {
+//     let mut checked = vec![];
+//     for (id, (mesh, material)) in (meshes.modified(), &materials).iter().with_id() {
+//         checked.push(id);
+//     }
+
+//     for (id, (mesh, material)) in (&meshes, materials.modified()).iter().with_id() {
+//         if checked.contains(&id) {
+//             continue;
+//         }
+//     }
+// }
 
 //===============================================================

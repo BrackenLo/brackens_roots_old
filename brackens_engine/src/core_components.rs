@@ -1,6 +1,6 @@
 //===============================================================
 
-use brackens_renderer::wgpu;
+use brackens_renderer::{wgpu, Size};
 
 use brackens_tools::{
     input, upkeep,
@@ -26,7 +26,16 @@ pub struct Surface(pub(crate) wgpu::Surface);
 pub struct SurfaceConfig(pub(crate) wgpu::SurfaceConfiguration);
 
 #[derive(Unique)]
-pub struct WindowSize(pub(crate) PhysicalSize<u32>);
+pub struct WindowSize(pub(crate) Size<u32>);
+
+impl From<PhysicalSize<u32>> for WindowSize {
+    fn from(value: PhysicalSize<u32>) -> Self {
+        Self(Size {
+            width: value.width,
+            height: value.height,
+        })
+    }
+}
 
 #[derive(Unique)]
 pub struct Window(pub(crate) brackens_tools::winit::window::Window);

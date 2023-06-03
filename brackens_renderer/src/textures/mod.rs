@@ -3,6 +3,15 @@
 use anyhow::Result;
 use image::GenericImageView;
 
+use crate::Size;
+
+pub use texture_renderer::{
+    RawTextureInstance, RawTextureVertex, TextureDrawCall, TextureRenderer,
+};
+
+pub mod assets;
+pub mod texture_renderer;
+
 //===============================================================
 
 pub struct Texture {
@@ -80,8 +89,6 @@ impl Texture {
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(4 * dimensions.0),
-                // rows_per_image: Some(dimensions.1),
-                // bytes_per_row: None,
                 rows_per_image: None,
             },
             size,
@@ -93,29 +100,6 @@ impl Texture {
 
         let sampler = device.create_sampler(sampler);
 
-        // let sampler = match sampler {
-        //     Some(val) => device.create_sampler(val),
-        //     None => device.create_sampler(&wgpu::SamplerDescriptor {
-        //         address_mode_u: wgpu::AddressMode::ClampToEdge,
-        //         address_mode_v: wgpu::AddressMode::ClampToEdge,
-        //         address_mode_w: wgpu::AddressMode::ClampToEdge,
-        //         mag_filter: wgpu::FilterMode::Nearest,
-        //         min_filter: wgpu::FilterMode::Nearest,
-        //         mipmap_filter: wgpu::FilterMode::Nearest,
-        //         ..Default::default()
-        //     }),
-        // };
-
-        // let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        //     address_mode_u: wgpu::AddressMode::ClampToEdge,
-        //     address_mode_v: wgpu::AddressMode::ClampToEdge,
-        //     address_mode_w: wgpu::AddressMode::ClampToEdge,
-        //     mag_filter: wgpu::FilterMode::Nearest,
-        //     min_filter: wgpu::FilterMode::Nearest,
-        //     mipmap_filter: wgpu::FilterMode::Nearest,
-        //     ..Default::default()
-        // });
-
         //----------------------------------------------
 
         Ok(Self {
@@ -126,16 +110,105 @@ impl Texture {
 
         //----------------------------------------------
     }
+
+    pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
+    pub fn create_depth_texture(
+        device: &wgpu::Device,
+        window_size: Size<u32>,
+        label: &str,
+    ) -> Self {
+        let size = wgpu::Extent3d {
+            width: window_size.width,
+            height: window_size.height,
+            depth_or_array_layers: 1,
+        };
+
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: Self::DEPTH_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[wgpu::TextureFormat::Depth32Float],
+        });
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some(label),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 100.,
+            compare: Some(wgpu::CompareFunction::LessEqual),
+            ..Default::default()
+        });
+
+        Self {
+            texture,
+            view,
+            sampler,
+        }
+    }
 }
 
 //===============================================================
 
-pub struct LoadedTexture {
+pub struct RendererTexture {
     pub texture: Texture,
     pub bind_group: wgpu::BindGroup,
 }
-impl LoadedTexture {
-    pub fn load(device: &wgpu::Device, texture: Texture, layout: &wgpu::BindGroupLayout) -> Self {
+impl RendererTexture {
+    pub fn from_file(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        path: &str,
+        label: &str,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        match Texture::from_file(device, queue, path, label, sampler) {
+            Ok(texture) => Ok(Self::from_texture(device, texture, layout)),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn from_bytes(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        bytes: &[u8],
+        label: &str,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        match Texture::from_bytes(device, queue, bytes, label, sampler) {
+            Ok(texture) => Ok(Self::from_texture(device, texture, layout)),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn from_image(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        img: &image::DynamicImage,
+        label: Option<&str>,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        match Texture::from_image(device, queue, img, label, sampler) {
+            Ok(texture) => Ok(Self::from_texture(device, texture, layout)),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn from_texture(
+        device: &wgpu::Device,
+        texture: Texture,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Self {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!("Loaded wgpu texture")),
             layout,

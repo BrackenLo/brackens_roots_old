@@ -8,7 +8,7 @@ use log::info;
 
 use super::{
     asset_handle::{Handle, HandleID},
-    Asset, AssetLoadable,
+    Asset,
 };
 
 //===============================================================
@@ -16,36 +16,35 @@ use super::{
 pub type SenderType<T> = crossbeam::channel::Sender<T>;
 pub type ReceiverType<T> = crossbeam::channel::Receiver<T>;
 
-pub enum ReferenceCountSignal {
-    Increase(HandleID),
-    Decrease(HandleID),
+pub enum ReferenceCountSignal<T: Asset> {
+    Increase(HandleID<T>),
+    Decrease(HandleID<T>),
 }
 
 //===============================================================
 
 pub struct AssetStorage<T: Asset> {
-    sender: SenderType<ReferenceCountSignal>,
-    receiver: ReceiverType<ReferenceCountSignal>,
+    sender: SenderType<ReferenceCountSignal<T>>,
+    receiver: ReceiverType<ReferenceCountSignal<T>>,
 
-    current_id: HandleID,
+    current_id: HandleID<T>,
 
     // The currently loaded data
-    loaded: HashMap<HandleID, Arc<T>>,
+    loaded: HashMap<HandleID<T>, Arc<T>>,
+
+    // Keep track of how many strong handles in existance
+    asset_count: HashMap<HandleID<T>, u32>,
+    just_added: Vec<HandleID<T>>,
+    removed_assets: Vec<HandleID<T>>,
+
     // Hashmap containing path to asset as a key. Used to check if data
     // is already loaded and if so, create a handle to it.
-    loaded_paths: HashMap<String, HandleID>,
+    loaded_paths: HashMap<String, HandleID<T>>,
     // Hashmap that is the opposite of loaded_paths used to access the file
     // path when unloading the data.
     // If a collection did key <-> key instead of key -> value exists, using
     // that would be preferable.
-    asset_paths: HashMap<HandleID, String>,
-
-    // Keep track of how many strong handles in existance
-    asset_count: HashMap<HandleID, u32>,
-    just_added: Vec<HandleID>,
-    removed_assets: Vec<HandleID>,
-
-    load_path: String,
+    asset_paths: HashMap<HandleID<T>, String>,
 }
 
 impl<T> AssetStorage<T>
@@ -61,28 +60,34 @@ where
         Self {
             sender,
             receiver,
-            current_id: HandleID(0),
+            current_id: HandleID::new(0),
             loaded: HashMap::new(),
-            loaded_paths: HashMap::new(),
-            asset_paths: HashMap::new(),
             asset_count: HashMap::new(),
             just_added: Vec::new(),
             removed_assets: Vec::new(),
 
-            load_path: "".into(),
+            loaded_paths: HashMap::new(),
+            asset_paths: HashMap::new(),
         }
+    }
+
+    pub fn get_sender(&self) -> &SenderType<ReferenceCountSignal<T>> {
+        &self.sender
+    }
+
+    pub fn get_loaded(&self) -> &HashMap<HandleID<T>, Arc<T>> {
+        &self.loaded
     }
 
     //----------------------------------------------
 
-    #[inline]
-    fn get_next_id(&mut self) -> HandleID {
+    fn get_next_id(&mut self) -> HandleID<T> {
         let to_return = self.current_id;
-        self.current_id.0 += 1;
+        self.current_id.id += 1;
         to_return
     }
 
-    pub fn load_asset(&mut self, asset: T) -> Handle<T> {
+    pub fn add_asset(&mut self, asset: T) -> Handle<T> {
         let next_id = self.get_next_id();
         let data_access = Arc::new(asset);
 
@@ -95,13 +100,59 @@ where
         Handle::strong(next_id, self.sender.clone(), data_access)
     }
 
+    pub fn add_asset_file<P: AsRef<str>>(&mut self, asset: T, path: P) -> Handle<T> {
+        if let Some(handle) = self.get_loaded_file(path.as_ref()) {
+            return handle;
+        }
+
+        let handle = self.add_asset(asset);
+
+        let path = path.as_ref().to_string();
+
+        self.loaded_paths.insert(path.clone(), handle.id());
+        self.asset_paths.insert(handle.id(), path);
+
+        handle
+    }
+
+    //----------------------------------------------
+
+    pub fn get_handle(&self, id: &HandleID<T>) -> Option<Handle<T>> {
+        match self.loaded.get(&id) {
+            Some(data) => Some(Handle::strong(
+                id.clone(),
+                self.sender.clone(),
+                data.clone(),
+            )),
+            None => None,
+        }
+    }
+
+    pub fn is_file_loaded(&self, path: &str) -> bool {
+        self.loaded_paths.contains_key(path)
+    }
+
+    pub fn get_loaded_file(&self, path: &str) -> Option<Handle<T>> {
+        if let Some(id) = self.loaded_paths.get(path) {
+            info!(
+                "Retrieving previously loaded {} asset with id {}",
+                T::asset_name(),
+                id
+            );
+            let data_access = self.loaded.get(id).unwrap().clone();
+            return Some(Handle::strong(*id, self.sender.clone(), data_access));
+        }
+
+        None
+    }
+
     //----------------------------------------------
 
     pub fn tick(&mut self) {
         self.check_asset_changes();
         self.remove_pending_assets();
 
-        self.just_added.clear();
+        self.clear_just_added();
     }
 
     pub fn check_asset_changes(&mut self) {
@@ -145,11 +196,16 @@ where
 
             self.loaded.remove(&to_remove); //Remove Asset
             self.asset_count.remove(&to_remove); //Remove Counter
+        }
 
-            // Remove id -> path and then path -> id
+        for to_remove in &self.removed_assets {
             self.loaded_paths
                 .remove(&self.asset_paths.remove(&to_remove).unwrap());
         }
+    }
+
+    pub fn clear_just_added(&mut self) {
+        self.just_added.clear();
     }
 
     //----------------------------------------------
@@ -161,47 +217,11 @@ where
             .collect()
     }
 
-    pub fn get_removed_assets(&self) -> &Vec<HandleID> {
+    pub fn get_removed_assets(&self) -> &Vec<HandleID<T>> {
         &self.removed_assets
-        // self.removed_assets
-        //     .iter()
-        //     .map(|id| Handle::weak(*id, self.loaded.get(id).unwrap().clone()))
-        //     .collect()
     }
 
     //----------------------------------------------
-}
-impl<T> AssetStorage<T>
-where
-    T: AssetLoadable,
-{
-    pub fn load_from_file(&mut self, path: String) -> Handle<T> {
-        info!("Loading new {} asset from path {}", T::asset_name(), path);
-
-        // Check if file is already loaded. If so, we can create an new handle to
-        // the existing data.
-        if let Some(id) = self.loaded_paths.get(&path) {
-            info!("Asset already loaded with id {}", id);
-            let data_access = self.loaded.get(id).unwrap().clone();
-            return Handle::strong(*id, self.sender.clone(), data_access);
-        }
-
-        // Otherwise, load and store the data accordingly
-        let data = T::load_from_file(format!("{}{}", self.load_path, path.clone()));
-        let next_id = self.get_next_id();
-        let data_access = Arc::new(data);
-
-        self.loaded.insert(next_id, data_access.clone());
-        self.asset_count.insert(next_id, 0);
-        self.just_added.push(next_id);
-
-        self.loaded_paths.insert(path.clone(), next_id);
-        self.asset_paths.insert(next_id, path);
-
-        info!("Loaded {} asset with id {}", T::asset_name(), next_id,);
-
-        Handle::strong(next_id, self.sender.clone(), data_access)
-    }
 }
 
 //===============================================================
