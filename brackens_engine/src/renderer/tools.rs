@@ -13,7 +13,7 @@ use crate::{
     UV, UVM,
 };
 
-use super::components::{Model, TextureRenderer};
+use super::{components_2d::TextureRenderer, components_3d::Model};
 
 //===============================================================
 // Functions for loading textures

@@ -112,7 +112,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         //--------------------------------------------------
 
-        world.run(renderer::systems::sys_setup_texture_renderer);
+        world.run(renderer::systems_2d::sys_setup_texture_renderer);
 
         //--------------------------------------------------
 
@@ -239,7 +239,7 @@ where
             );
 
             // Resize everything here
-            self.world.run(renderer::systems::sys_resize_pipeline);
+            self.world.run(renderer::systems_2d::sys_resize_pipeline);
         }
     }
     fn force_resize(&mut self) {
@@ -264,14 +264,14 @@ where
         // Process Pipelines
         // Render pipelines
 
-        self.world.run(renderer::systems::sys_process_textures);
-        self.world.run(renderer::systems::sys_add_new_textures);
+        self.world.run(renderer::systems_2d::sys_process_textures);
+        self.world.run(renderer::systems_2d::sys_add_new_textures);
         self.world
-            .run(renderer::systems::sys_remove_unloaded_textures);
-        self.world.run(renderer::systems::sys_render_textures);
+            .run(renderer::systems_2d::sys_remove_unloaded_textures);
+        self.world.run(renderer::systems_2d::sys_render_textures);
 
-        self.world.run(renderer::systems::sys_process_models);
-        self.world.run(renderer::systems::sys_render_models);
+        self.world.run(renderer::systems_3d::sys_process_models);
+        self.world.run(renderer::systems_3d::sys_render_models);
 
         renderer::systems::sys_end_render_pass(&mut self.world);
     }
