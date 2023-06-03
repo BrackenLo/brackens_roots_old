@@ -1,5 +1,6 @@
 //===============================================================
 
+pub mod bind_group_templates;
 pub mod instance_pipeline;
 pub mod raw_pipeline;
 
@@ -22,5 +23,7 @@ pub struct PipelineBuilderDescriptor<'a> {
     pub fragment_targets: Vec<Option<wgpu::ColorTargetState>>,
     pub multiview: Option<std::num::NonZeroU32>,
 }
+
+//===============================================================
 
 //===============================================================
