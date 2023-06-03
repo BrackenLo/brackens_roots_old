@@ -13,7 +13,6 @@ use crate::{
 use super::{
     components::{RenderPassTools, Visible},
     components_2d::*,
-    components_3d::ModelRenderer,
 };
 
 //===============================================================
@@ -55,10 +54,8 @@ pub fn sys_resize_pipeline(
     queue: UniqueView<Queue>,
     window_size: UniqueView<WindowSize>,
     mut renderer: UniqueViewMut<TextureRenderer>,
-    mut renderer2: UniqueViewMut<ModelRenderer>,
 ) {
     renderer.resize(&device.0, &queue.0, window_size.0);
-    renderer2.resize(&device.0, &queue.0, window_size.0);
 }
 
 //--------------------------------------------------

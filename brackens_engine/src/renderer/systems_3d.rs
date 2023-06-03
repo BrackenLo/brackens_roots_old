@@ -1,11 +1,11 @@
 //===============================================================
 
 use brackens_renderer::renderer_3d::{RawMeshInstance, RendererMaterial, RendererMesh};
-use shipyard::{IntoIter, View};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View};
 
 use crate::{
     assets::AssetStorage,
-    core_components::{Device, Queue},
+    core_components::{Device, Queue, WindowSize},
     spatial_components::GlobalTransform,
     UV, UVM,
 };
@@ -14,6 +14,17 @@ use super::{
     components::{RenderPassTools, Visible},
     components_3d::{Model, ModelRenderer},
 };
+
+//===============================================================
+
+pub fn sys_resize_pipeline(
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
+    window_size: UniqueView<WindowSize>,
+    mut renderer: UniqueViewMut<ModelRenderer>,
+) {
+    renderer.resize(&device.0, &queue.0, window_size.0);
+}
 
 //===============================================================
 

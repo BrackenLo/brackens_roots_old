@@ -25,7 +25,7 @@ mod spatial_systems;
 pub mod tool_components;
 mod tool_systems;
 
-pub use renderer::{components::ClearColor, tools::load_texture};
+pub use renderer::components::ClearColor;
 
 //===============================================================
 
@@ -112,7 +112,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         //--------------------------------------------------
 
-        world.run(renderer::systems_2d::sys_setup_texture_renderer);
+        renderer::run_startup_systems(&mut world);
 
         //--------------------------------------------------
 
@@ -239,7 +239,7 @@ where
             );
 
             // Resize everything here
-            self.world.run(renderer::systems_2d::sys_resize_pipeline);
+            renderer::run_resize_systems(&mut self.world);
         }
     }
     fn force_resize(&mut self) {
@@ -264,16 +264,7 @@ where
         // Process Pipelines
         // Render pipelines
 
-        self.world.run(renderer::systems_2d::sys_process_textures);
-        self.world.run(renderer::systems_2d::sys_add_new_textures);
-        self.world
-            .run(renderer::systems_2d::sys_remove_unloaded_textures);
-        self.world.run(renderer::systems_2d::sys_render_textures);
-
-        self.world.run(renderer::systems_3d::sys_process_models);
-        self.world.run(renderer::systems_3d::sys_render_models);
-
-        renderer::systems::sys_end_render_pass(&mut self.world);
+        renderer::run_post_render_systems(&mut self.world);
     }
 
     fn end(&mut self) {

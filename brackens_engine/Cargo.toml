@@ -9,7 +9,7 @@ edition = "2021"
 default = ["2d", "3d"]
 debug = []
 2d = []
-3d = []
+3d = ["2d"]
 
 [dependencies]
 brackens_tools = { path = "../brackens_tools" }
@@ -18,4 +18,6 @@ brackens_assets = { path = "../brackens_assets" }
 
 shipyard = "0.6.2"
 log = "0.4.17"
+
+cfg-if = { workspace = true }
 
