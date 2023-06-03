@@ -8,9 +8,8 @@ use crate::{
     Size,
 };
 
-use super::{
-    renderer_components::{RawTextureVertex, TextureDrawCall, TEXTURE_INDICES, TEXTURE_VERTICES},
-    RawTextureInstance,
+use super::renderer_components::{
+    RawTextureInstance, RawTextureVertex, TextureDrawCall, TEXTURE_INDICES, TEXTURE_VERTICES,
 };
 
 //===============================================================

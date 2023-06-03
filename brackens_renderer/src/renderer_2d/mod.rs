@@ -4,13 +4,13 @@ use brackens_assets::HandleID;
 
 pub use {
     assets::{RendererTexture, Texture},
-    texture_renderer::{RawTextureInstance, RawTextureVertex, TextureDrawCall, TextureRenderer},
+    renderer::{Renderer2D, TextureRenderer},
+    renderer_components::{RawTextureInstance, TextureDrawCall},
 };
 
 pub mod assets;
 pub mod renderer;
 pub mod renderer_components;
-pub mod texture_renderer;
 
 //===============================================================
 
