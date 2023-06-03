@@ -2,9 +2,9 @@
 
 use log::info;
 
-pub mod models;
 pub mod pipelines;
-pub mod textures;
+pub mod renderer_2d;
+pub mod renderer_3d;
 
 pub use bytemuck;
 pub use image;

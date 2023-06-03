@@ -1,6 +1,6 @@
 //===============================================================
 
-use crate::textures::RendererTexture;
+use crate::renderer_2d::RendererTexture;
 
 use brackens_assets::HandleID;
 

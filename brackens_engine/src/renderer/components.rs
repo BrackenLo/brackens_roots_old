@@ -3,10 +3,11 @@
 use std::collections::{HashMap, HashSet};
 
 use brackens_renderer::{
-    bytemuck,
-    models::{self, model_renderer::InstanceData, RawMeshInstance, RendererMaterial, RendererMesh},
-    render_tools,
-    textures::{self, RawTextureInstance},
+    bytemuck, render_tools,
+    renderer_2d::{self, RawTextureInstance},
+    renderer_3d::{
+        self, model_renderer::InstanceData, RawMeshInstance, RendererMaterial, RendererMesh,
+    },
     wgpu::{self, util::DeviceExt},
     Size,
 };
@@ -17,7 +18,7 @@ use brackens_tools::glam::Vec2;
 use shipyard::{Component, Unique};
 
 pub use brackens_renderer::{
-    textures::RendererTexture, textures::TextureDrawCall as FinalTextureDrawCall,
+    renderer_2d::RendererTexture, renderer_2d::TextureDrawCall as FinalTextureDrawCall,
 };
 
 use crate::assets::AssetStorage;
@@ -44,7 +45,7 @@ pub struct Visible {
 
 #[derive(Unique)]
 pub struct TextureRenderer {
-    renderer: textures::TextureRenderer,
+    renderer: renderer_2d::TextureRenderer,
 
     should_render: HashSet<HandleID<RendererTexture>>,
     unprocessed_draw_data: HashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
@@ -58,7 +59,7 @@ impl TextureRenderer {
 
     pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
         Self {
-            renderer: textures::TextureRenderer::new(device, config.format),
+            renderer: renderer_2d::TextureRenderer::new(device, config.format),
             should_render: HashSet::new(),
             unprocessed_draw_data: HashMap::new(),
 
@@ -209,7 +210,7 @@ pub struct Model {
 
 #[derive(Unique)]
 pub struct ModelRenderer {
-    renderer: models::ModelRenderer,
+    renderer: renderer_3d::ModelRenderer,
 
     instance_id: u16,
     instance_data: HashMap<u16, RawMeshInstance>,
@@ -225,7 +226,7 @@ impl ModelRenderer {
 
     pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
         Self {
-            renderer: models::ModelRenderer::new(device, config),
+            renderer: renderer_3d::ModelRenderer::new(device, config),
             instance_id: 0,
             instance_data: HashMap::new(),
             material_data: HashMap::new(),

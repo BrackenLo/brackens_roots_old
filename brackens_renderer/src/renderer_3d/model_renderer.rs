@@ -5,7 +5,7 @@ use wgpu::util::DeviceExt;
 use crate::{
     pipelines::{PipelineBuilderDescriptor, RawPipeline, Vertex},
     render_tools::RenderPassTools,
-    textures::Texture,
+    renderer_2d::Texture,
     Size,
 };
 

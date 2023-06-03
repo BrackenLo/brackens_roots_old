@@ -9,7 +9,7 @@ use std::{
 };
 use tobj::load_mtl_buf;
 
-use crate::textures::{RendererTexture, Texture};
+use crate::renderer_2d::{RendererTexture, Texture};
 
 use super::{MaterialID, MeshID, TextureID};
 

@@ -1,9 +1,9 @@
 //===============================================================
 
 use brackens_renderer::{
-    models::{RawMeshInstance, RendererMaterial, RendererMesh},
     render_tools,
-    textures::{RawTextureInstance, RendererTexture},
+    renderer_2d::{RawTextureInstance, RendererTexture},
+    renderer_3d::{RawMeshInstance, RendererMaterial, RendererMesh},
 };
 
 use brackens_renderer::wgpu::SurfaceError;

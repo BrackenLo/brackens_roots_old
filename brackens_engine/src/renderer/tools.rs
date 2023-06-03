@@ -2,8 +2,8 @@
 
 use brackens_assets::Handle;
 use brackens_renderer::{
-    models::{RendererMaterial, RendererMesh},
-    textures::RendererTexture,
+    renderer_2d::RendererTexture,
+    renderer_3d::{RendererMaterial, RendererMesh},
 };
 use shipyard::World;
 
@@ -38,7 +38,7 @@ pub fn load_texture<T: AsRef<str>>(
                 None => brackens_renderer::wgpu::SamplerDescriptor::default(),
             };
 
-            let texture = brackens_renderer::textures::Texture::from_file(
+            let texture = brackens_renderer::renderer_2d::Texture::from_file(
                 &device.0,
                 &queue.0,
                 data.0.as_ref(),
@@ -77,7 +77,7 @@ pub fn load_texture_bytes<T: AsRef<str>>(
                 None => brackens_renderer::wgpu::SamplerDescriptor::default(),
             };
 
-            let texture = brackens_renderer::textures::Texture::from_bytes(
+            let texture = brackens_renderer::renderer_2d::Texture::from_bytes(
                 &device.0,
                 &queue.0,
                 data.0,
