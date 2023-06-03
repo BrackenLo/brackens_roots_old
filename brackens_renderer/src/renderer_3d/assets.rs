@@ -1,7 +1,7 @@
 //===============================================================
 
 use anyhow::Result;
-use brackens_assets::{file_loading::load_string, Asset, AssetStorage, Handle, HandleID};
+use brackens_assets::{file_loading::load_string, Asset, AssetStorage, Handle};
 use std::{
     collections::HashMap,
     fs::File,
@@ -9,9 +9,9 @@ use std::{
 };
 use tobj::load_mtl_buf;
 
-use crate::renderer_2d::{RendererTexture, Texture};
+use crate::renderer_2d::{RendererTexture, Texture, TextureID};
 
-use super::{MaterialID, MeshID, TextureID};
+use super::{MaterialID, MeshID};
 
 //===============================================================
 
@@ -244,7 +244,7 @@ fn load_texture(
 
     name: &str,
     texture: Option<String>,
-) -> Result<Option<HandleID<RendererTexture>>> {
+) -> Result<Option<TextureID>> {
     let texture = match texture {
         Some(path) => match texture_storage.get_loaded_file(&path) {
             Some(handle) => Some(handle.id()),

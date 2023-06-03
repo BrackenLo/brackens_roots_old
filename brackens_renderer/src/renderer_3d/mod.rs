@@ -1,7 +1,5 @@
 //===============================================================
 
-use crate::renderer_2d::RendererTexture;
-
 use brackens_assets::HandleID;
 
 pub mod assets;
@@ -16,7 +14,6 @@ pub use {
 
 pub type MaterialID = HandleID<RendererMaterial>;
 pub type MeshID = HandleID<RendererMesh>;
-pub type TextureID = HandleID<RendererTexture>;
 
 //===============================================================
 
