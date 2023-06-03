@@ -74,8 +74,13 @@ impl TextureRenderer {
 
     //--------------------------------------------------
 
-    pub(crate) fn resize(&mut self, queue: &wgpu::Queue, new_size: Size<u32>) {
-        self.renderer.resize(queue, new_size)
+    pub(crate) fn resize(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        new_size: Size<u32>,
+    ) {
+        self.renderer.resize(device, queue, new_size)
     }
 
     //--------------------------------------------------

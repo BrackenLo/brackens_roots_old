@@ -8,8 +8,11 @@ use crate::{
     Size,
 };
 
-use super::renderer_components::{
-    RawTextureInstance, RawTextureVertex, TextureDrawCall, TEXTURE_INDICES, TEXTURE_VERTICES,
+use super::{
+    renderer_components::{
+        RawTextureInstance, RawTextureVertex, TextureDrawCall, TEXTURE_INDICES, TEXTURE_VERTICES,
+    },
+    Texture,
 };
 
 //===============================================================
@@ -36,6 +39,7 @@ impl Renderer2D {
         global_uniform_buffer: wgpu::Buffer,
 
         shader: wgpu::ShaderSource,
+        use_depth_texture: bool,
         label: &str,
     ) -> Self {
         //----------------------------------------------
@@ -65,6 +69,18 @@ impl Renderer2D {
 
         //----------------------------------------------
 
+        let depth_stencil = if use_depth_texture {
+            Some(wgpu::DepthStencilState {
+                format: Texture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            })
+        } else {
+            None
+        };
+
         let builder = PipelineBuilderDescriptor {
             name: format!("Renderer2D: {}", label),
             bind_group_layouts: Some(vec![&global_bind_group_layout, &texture_bind_group_layout]),
@@ -76,7 +92,7 @@ impl Renderer2D {
                 cull_mode: Some(wgpu::Face::Back),
                 ..Default::default()
             },
-            depth_stencil: None,
+            depth_stencil,
             multisample: wgpu::MultisampleState::default(),
             fragment_targets: vec![Some(wgpu::ColorTargetState {
                 format,
@@ -129,8 +145,9 @@ impl Renderer2D {
         &self,
         render_tools: &mut RenderPassTools,
         draw_calls: &[(&wgpu::BindGroup, &TextureDrawCall)],
+        depth_texture: Option<wgpu::RenderPassDepthStencilAttachment>,
     ) {
-        let mut render_pass = self.pipeline.start_render_pass(render_tools, None);
+        let mut render_pass = self.pipeline.start_render_pass(render_tools, depth_texture);
 
         render_pass.set_bind_group(0, &self.global_bind_group);
         for draw_call in draw_calls {
@@ -144,6 +161,7 @@ impl Renderer2D {
 
 pub struct TextureRenderer {
     inner: Renderer2D,
+    depth_texture: Texture,
 }
 
 impl TextureRenderer {
@@ -191,15 +209,22 @@ impl TextureRenderer {
             projection_bind_group,
             projection_uniform_buffer,
             wgpu::ShaderSource::Wgsl(include_str!("../shaders/texture_shader.wgsl").into()),
+            true,
             "Texture Renderer",
         );
 
-        Self { inner }
+        let depth_texture =
+            Texture::create_depth_texture(device, Size::new(640, 360), "Texture Renderer");
+
+        Self {
+            inner,
+            depth_texture,
+        }
     }
 
     //----------------------------------------------
 
-    pub fn resize(&mut self, queue: &wgpu::Queue, new_size: Size<u32>) {
+    pub fn resize(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, new_size: Size<u32>) {
         self.inner.update_global_buffer(
             queue,
             bytemuck::cast_slice(
@@ -213,7 +238,8 @@ impl TextureRenderer {
                 )
                 .to_cols_array(),
             ),
-        )
+        );
+        self.depth_texture = Texture::create_depth_texture(device, new_size, "Texture Renderer");
     }
 
     pub fn get_texture_layout(&self) -> &wgpu::BindGroupLayout {
@@ -227,7 +253,18 @@ impl TextureRenderer {
         render_tools: &mut RenderPassTools,
         draw_calls: &[(&wgpu::BindGroup, &TextureDrawCall)],
     ) {
-        self.inner.render(render_tools, draw_calls);
+        self.inner.render(
+            render_tools,
+            draw_calls,
+            Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &self.depth_texture.view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
+        );
     }
 
     //----------------------------------------------

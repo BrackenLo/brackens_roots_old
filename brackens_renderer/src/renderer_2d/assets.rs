@@ -123,7 +123,7 @@ impl Texture {
         };
 
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some(label),
+            label: Some(&format!("{} - Depth Texture", label)),
             size,
             mip_level_count: 1,
             sample_count: 1,
