@@ -180,6 +180,27 @@ pub struct Texture {
     pub handle: Handle<RendererTexture>,
     pub color: [f32; 4],
 }
+impl Texture {
+    pub fn new(handle: Handle<RendererTexture>, width: f32, height: f32) -> Self {
+        Texture {
+            size: Vec2::new(width, height),
+            handle,
+            color: [1., 1., 1., 1.],
+        }
+    }
+    pub fn new_color(
+        handle: Handle<RendererTexture>,
+        width: f32,
+        height: f32,
+        color: [f32; 4],
+    ) -> Self {
+        Texture {
+            size: Vec2::new(width, height),
+            handle,
+            color,
+        }
+    }
+}
 
 //===============================================================
 
