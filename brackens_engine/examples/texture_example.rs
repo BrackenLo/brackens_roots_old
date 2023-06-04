@@ -2,7 +2,11 @@
 
 use brackens_engine::{
     core_components::KeyManager,
-    renderer::{components::Visible, components_2d::Texture, tools_2d::load_texture},
+    renderer::{
+        components::Visible,
+        components_2d::Texture,
+        tools_2d::{load_texture, LoadTextureDescriptor},
+    },
     spatial_components::{GlobalTransform, Transform},
     KeyCode, ShipyardGameState, ShipyardRunner,
 };
@@ -20,7 +24,14 @@ fn main() {
 struct Game;
 impl ShipyardGameState for Game {
     fn new(world: &mut shipyard::World) -> Self {
-        let texture = load_texture(world, "res/bossFace.png", "BossFace", None);
+        let texture = world.run_with_data(
+            load_texture,
+            LoadTextureDescriptor {
+                label: "Boss Face",
+                path: "res/bossFace.png",
+                sampler: None,
+            },
+        );
 
         world.add_entity((
             Visible { visible: true },

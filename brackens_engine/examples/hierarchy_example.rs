@@ -1,6 +1,9 @@
 //===============================================================
 
-use brackens_engine::{prelude::*, renderer::tools_2d::load_blank_texture};
+use brackens_engine::{
+    prelude::*,
+    renderer::tools_2d::{load_blank_texture, BlankTextureDescriptor, LoadTextureDescriptor},
+};
 
 //===============================================================
 
@@ -13,8 +16,15 @@ fn main() {
 struct Game;
 impl ShipyardGameState for Game {
     fn new(world: &mut shipyard::World) -> Self {
-        let texture1 = load_texture(world, "res/bossFace.png", "BossFace", None);
-        let texture2 = load_blank_texture(world, "BlankTexture", [1., 1., 1.], None);
+        let texture1 = world.run_with_data(
+            load_texture,
+            LoadTextureDescriptor {
+                label: "Boss Face",
+                path: "res/bossFace.png",
+                sampler: None,
+            },
+        );
+        let texture2 = world.run_with_data(load_blank_texture, BlankTextureDescriptor::default());
 
         let parent = world.add_entity((
             GlobalTransform::default(),

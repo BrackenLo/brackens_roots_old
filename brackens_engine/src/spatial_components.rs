@@ -142,11 +142,6 @@ impl std::ops::AddAssign for GlobalTransform {
 
 //===============================================================
 
-// pub struct TransformView<'v> {
-//     transform_view: View<'v, Transform>,
-//     global_transform_view: View<'v, GlobalTransform>,
-// }
-
 pub struct TransformBundleViewMut<'v> {
     vm_transform: ViewMut<'v, Transform>,
     vm_global_transform: ViewMut<'v, GlobalTransform>,
