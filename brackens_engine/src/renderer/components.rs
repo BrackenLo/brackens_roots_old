@@ -24,5 +24,10 @@ pub struct ClearColor(pub [f64; 3]);
 pub struct Visible {
     pub visible: bool,
 }
+impl Default for Visible {
+    fn default() -> Self {
+        Self { visible: true }
+    }
+}
 
 //===============================================================

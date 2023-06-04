@@ -30,6 +30,25 @@ pub use renderer::components::ClearColor;
 
 //===============================================================
 
+pub mod prelude {
+    pub use crate::core_components::{UpkeepTracker, WindowSize};
+    pub use crate::renderer::components::Visible;
+    pub use crate::spatial_components::{
+        GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
+    };
+    pub use crate::{ShipyardGameState, ShipyardRunner};
+
+    pub use brackens_tools::glam::{Vec2, Vec3};
+    pub use shipyard::{
+        Component, IntoIter, IntoWithId, Unique, UniqueView, UniqueViewMut, View, ViewMut,
+    };
+
+    #[cfg(feature = "2d")]
+    pub use crate::renderer::{components_2d::Texture, tools_2d::load_texture};
+}
+
+//===============================================================
+
 pub type UV<'a, T> = shipyard::UniqueView<'a, T>;
 pub type UVM<'a, T> = shipyard::UniqueViewMut<'a, T>;
 
@@ -251,6 +270,7 @@ where
     }
 
     fn pre_update(&mut self) {
+        self.world.run(core_systems::sys_update_tracker);
         self.world.run(tool_systems::sys_tick_timers);
     }
 

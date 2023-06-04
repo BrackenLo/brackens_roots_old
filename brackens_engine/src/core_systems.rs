@@ -10,6 +10,12 @@ use super::core_components::*;
 
 //===============================================================
 
+pub fn sys_update_tracker(mut tracker: UniqueViewMut<UpkeepTracker>) {
+    tracker.0.tick()
+}
+
+//===============================================================
+
 pub fn sys_manage_keyboard_input(
     KeyboardInput {
         state,

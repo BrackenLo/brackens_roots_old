@@ -36,6 +36,17 @@ impl From<PhysicalSize<u32>> for WindowSize {
         })
     }
 }
+impl WindowSize {
+    pub fn width(&self) -> u32 {
+        self.0.width
+    }
+    pub fn height(&self) -> u32 {
+        self.0.height
+    }
+    pub fn size(&self) -> Size<u32> {
+        self.0
+    }
+}
 
 #[derive(Unique)]
 pub struct Window(pub(crate) brackens_tools::winit::window::Window);
