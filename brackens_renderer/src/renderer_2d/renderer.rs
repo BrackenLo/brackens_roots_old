@@ -33,19 +33,21 @@ where
     // Underlying pipeline
     pipeline: RawInstancePipeline,
 
+    // Bind Group Layout textures (and texture instance stuff) must adhere to
+    texture_bind_group_layout: wgpu::BindGroupLayout,
+
     // Bind Group and buffer containing constant data (projection, time, etc.):
     phantom_data: PhantomData<T>,
     global_bind_group: wgpu::BindGroup,
     global_uniform_buffers: Option<wgpu::Buffer>,
-
-    // Bind Group Layout textures (and texture instance stuff) must adhere to
-    texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl<T> Renderer2D<T>
 where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
+    //===============================================================
+
     pub fn new(
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
@@ -55,6 +57,57 @@ where
 
         shader: wgpu::ShaderSource,
         use_depth_texture: bool,
+        label: &str,
+    ) -> Self {
+        //----------------------------------------------
+
+        let depth_stencil = if use_depth_texture {
+            Some(wgpu::DepthStencilState {
+                format: Texture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            })
+        } else {
+            None
+        };
+
+        let builder = PipelineBuilderDescriptor {
+            name: format!("Renderer2D: {}", label),
+            bind_group_layouts: None,
+            shader: device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(&format!("Renderer2D: {} - Shader", label)),
+                source: shader,
+            }),
+            primitive: wgpu::PrimitiveState {
+                cull_mode: Some(wgpu::Face::Back),
+                ..Default::default()
+            },
+            depth_stencil,
+            multisample: wgpu::MultisampleState::default(),
+            fragment_targets: vec![Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::REPLACE),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            multiview: None,
+        };
+
+        //----------------------------------------------
+
+        Self::new_custom(device, global_bind_group_template, data, builder, label)
+
+        //----------------------------------------------
+    }
+
+    //===============================================================
+
+    pub fn new_custom(
+        device: &wgpu::Device,
+        global_bind_group_template: BindGroupTemplate<T>,
+        data: Vec<BindGroupEntry<T>>,
+        builder: PipelineBuilderDescriptor,
         label: &str,
     ) -> Self {
         //----------------------------------------------
@@ -90,44 +143,32 @@ where
 
         //----------------------------------------------
 
-        let depth_stencil = if use_depth_texture {
-            Some(wgpu::DepthStencilState {
-                format: Texture::DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            })
-        } else {
-            None
-        };
-
-        let builder = PipelineBuilderDescriptor {
-            name: format!("Renderer2D: {}", label),
-            bind_group_layouts: Some(vec![layout, &texture_bind_group_layout]),
-            shader: device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some(&format!("Renderer2D: {} - Shader", label)),
-                source: shader,
-            }),
-            primitive: wgpu::PrimitiveState {
-                cull_mode: Some(wgpu::Face::Back),
-                ..Default::default()
-            },
+        let PipelineBuilderDescriptor {
+            name,
+            // bind_group_layouts,
+            shader,
+            primitive,
             depth_stencil,
-            multisample: wgpu::MultisampleState::default(),
-            fragment_targets: vec![Some(wgpu::ColorTargetState {
-                format,
-                blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-            multiview: None,
-        };
+            multisample,
+            fragment_targets,
+            multiview,
+            ..
+        } = builder;
 
-        //----------------------------------------------
+        let new_builder = PipelineBuilderDescriptor {
+            name,
+            bind_group_layouts: Some(vec![layout, &texture_bind_group_layout]),
+            shader,
+            primitive,
+            depth_stencil,
+            multisample,
+            fragment_targets,
+            multiview,
+        };
 
         let pipeline = RawInstancePipeline::new::<RawTextureVertex, RawTextureInstance>(
             device,
-            builder,
+            new_builder,
             &TEXTURE_VERTICES,
             &TEXTURE_INDICES,
         );
@@ -139,9 +180,9 @@ where
             global_bind_group,
             global_uniform_buffers,
         }
-
-        //----------------------------------------------
     }
+
+    //===============================================================
 
     pub fn update_global_buffer(&mut self, queue: &wgpu::Queue, data: &[T]) {
         if let Some(buffer) = &self.global_uniform_buffers {
