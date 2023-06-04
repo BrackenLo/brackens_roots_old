@@ -5,12 +5,11 @@ use brackens_renderer::{
     renderer_2d::RendererTexture,
     renderer_3d::{RendererMaterial, RendererMesh},
 };
-use shipyard::World;
+use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::{
     assets::{AssetLoadable, AssetStorage},
     core_components::{Device, Queue},
-    UV, UVM,
 };
 
 use super::{components_2d::TextureRenderer, components_3d::Model};
@@ -26,10 +25,10 @@ pub fn load_texture_bytes<T: AsRef<str>>(
 ) -> Handle<RendererTexture> {
     world.run_with_data(
         |data: (&[u8], T),
-         mut texture_storage: UVM<AssetStorage<RendererTexture>>,
-         renderer: UV<TextureRenderer>,
-         device: UV<Device>,
-         queue: UV<Queue>| {
+         mut texture_storage: UniqueViewMut<AssetStorage<RendererTexture>>,
+         renderer: UniqueView<TextureRenderer>,
+         device: UniqueView<Device>,
+         queue: UniqueView<Queue>| {
             //--------------------------------------------------
 
             let layout = renderer.get_layout();

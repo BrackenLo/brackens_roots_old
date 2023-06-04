@@ -139,10 +139,10 @@ impl Component for Spin {
 
 fn sys_center(
     screen: UniqueView<WindowSize>,
-    centers: View<Center>,
+    v_centers: View<Center>,
     mut transforms: ViewMut<Transform>,
 ) {
-    for (_, mut transform) in (&centers, &mut transforms).iter() {
+    for (_, mut transform) in (&v_centers, &mut transforms).iter() {
         *transform.translation() =
             Vec3::new(screen.width() as f32 / 2., screen.height() as f32 / 2., 0.);
     }
@@ -157,11 +157,11 @@ fn sys_progress(tracker: UniqueView<UpkeepTracker>, mut progresses: ViewMut<Prog
 
 fn sys_move(
     screen: UniqueView<WindowSize>,
-    moves: View<Move>,
-    progresses: View<Progress>,
-    mut transforms: ViewMut<Transform>,
+    v_move: View<Move>,
+    v_progress: View<Progress>,
+    mut vm_transform: ViewMut<Transform>,
 ) {
-    for (_, progress, mut transform) in (&moves, &progresses, &mut transforms).iter() {
+    for (_, progress, mut transform) in (&v_move, &v_progress, &mut vm_transform).iter() {
         let half_size = Vec2::new(screen.width() as f32 / 2., screen.height() as f32 / 2.);
 
         *transform.translation() = Vec3::new(
@@ -172,8 +172,8 @@ fn sys_move(
     }
 }
 
-fn sys_spin(spins: View<Spin>, progresses: View<Progress>, mut transforms: ViewMut<Transform>) {
-    for (spin, progress, mut transform) in (&spins, &progresses, &mut transforms).iter() {
+fn sys_spin(v_spin: View<Spin>, v_progress: View<Progress>, mut vm_transform: ViewMut<Transform>) {
+    for (spin, progress, mut transform) in (&v_spin, &v_progress, &mut vm_transform).iter() {
         *transform.translation() =
             Vec3::new(progress.0.sin() * spin.0, progress.0.cos() * spin.0, 0.);
     }

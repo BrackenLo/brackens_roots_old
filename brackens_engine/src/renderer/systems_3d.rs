@@ -7,7 +7,6 @@ use crate::{
     assets::AssetStorage,
     core_components::{Device, Queue, WindowSize},
     spatial_components::GlobalTransform,
-    UV, UVM,
 };
 
 use super::{
@@ -29,17 +28,17 @@ pub fn sys_resize_pipeline(
 //===============================================================
 
 pub fn sys_process_models(
-    device: UV<Device>,
-    queue: UV<Queue>,
-    mesh_storage: UV<AssetStorage<RendererMesh>>,
-    material_storage: UV<AssetStorage<RendererMaterial>>,
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
+    mesh_storage: UniqueView<AssetStorage<RendererMesh>>,
+    material_storage: UniqueView<AssetStorage<RendererMaterial>>,
 
-    mut renderer: UVM<ModelRenderer>,
-    models: View<Model>,
-    visible: View<Visible>,
-    transforms: View<GlobalTransform>,
+    mut renderer: UniqueViewMut<ModelRenderer>,
+    v_model: View<Model>,
+    v_visible: View<Visible>,
+    v_transform: View<GlobalTransform>,
 ) {
-    for (model, visible, transform) in (&models, &visible, &transforms).iter() {
+    for (model, visible, transform) in (&v_model, &v_visible, &v_transform).iter() {
         if !visible.visible {
             continue;
         }
@@ -53,7 +52,10 @@ pub fn sys_process_models(
     renderer.process_data(&device.0, &queue.0, &mesh_storage, &material_storage)
 }
 
-pub fn sys_render_models(mut renderer: UVM<ModelRenderer>, mut render_tools: UVM<RenderPassTools>) {
+pub fn sys_render_models(
+    mut renderer: UniqueViewMut<ModelRenderer>,
+    mut render_tools: UniqueViewMut<RenderPassTools>,
+) {
     renderer.render(&mut render_tools.0)
 }
 

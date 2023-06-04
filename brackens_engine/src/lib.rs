@@ -49,12 +49,6 @@ mod tool_systems;
 
 //===============================================================
 
-pub type UV<'a, T> = shipyard::UniqueView<'a, T>;
-pub type UVM<'a, T> = shipyard::UniqueViewMut<'a, T>;
-
-pub type CV<'a, T> = shipyard::View<'a, T>;
-pub type CVM<'a, T> = shipyard::ViewMut<'a, T>;
-
 pub type KeyCode = winit::event::VirtualKeyCode;
 
 //===============================================================

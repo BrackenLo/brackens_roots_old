@@ -2,11 +2,11 @@
 
 use brackens_assets::Handle;
 use brackens_renderer::{renderer_2d::RendererTexture, wgpu};
+use shipyard::{UniqueView, UniqueViewMut};
 
 use crate::{
     assets::AssetStorage,
     core_components::{Device, Queue},
-    UV, UVM,
 };
 
 use super::components_2d::TextureRenderer;
@@ -23,10 +23,10 @@ pub struct LoadTextureDescriptor<'a> {
 
 pub fn load_texture(
     data: LoadTextureDescriptor,
-    mut texture_storage: UVM<AssetStorage<RendererTexture>>,
-    renderer: UV<TextureRenderer>,
-    device: UV<Device>,
-    queue: UV<Queue>,
+    mut texture_storage: UniqueViewMut<AssetStorage<RendererTexture>>,
+    renderer: UniqueView<TextureRenderer>,
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
 ) -> Handle<RendererTexture> {
     let layout = renderer.get_layout();
     let sampler = match data.sampler {
@@ -42,9 +42,9 @@ pub fn load_texture(
 
 pub fn load_texture_custom_layout(
     data: (LoadTextureDescriptor, &wgpu::BindGroupLayout),
-    mut texture_storage: UVM<AssetStorage<RendererTexture>>,
-    device: UV<Device>,
-    queue: UV<Queue>,
+    mut texture_storage: UniqueViewMut<AssetStorage<RendererTexture>>,
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
 ) -> Handle<RendererTexture> {
     let sampler = match data.0.sampler {
         Some(val) => val,
@@ -86,10 +86,10 @@ impl<'a> Default for BlankTextureDescriptor<'a> {
 /// Run using world.run_with_data where data is a BlankTextureDescriptor struct
 pub fn load_blank_texture(
     data: BlankTextureDescriptor,
-    mut texture_storage: UVM<AssetStorage<RendererTexture>>,
-    renderer: UV<TextureRenderer>,
-    device: UV<Device>,
-    queue: UV<Queue>,
+    mut texture_storage: UniqueViewMut<AssetStorage<RendererTexture>>,
+    renderer: UniqueView<TextureRenderer>,
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
 ) -> Handle<RendererTexture> {
     let sampler = match data.sampler {
         Some(val) => val,
@@ -126,9 +126,9 @@ pub fn load_blank_texture(
 /// Run using world.run_with_data where data is a tuple with a BlankTextureDescriptor struct with a bind group layout
 pub fn load_blank_texture_custom_layout(
     data: (BlankTextureDescriptor, &wgpu::BindGroupLayout),
-    mut texture_storage: UVM<AssetStorage<RendererTexture>>,
-    device: UV<Device>,
-    queue: UV<Queue>,
+    mut texture_storage: UniqueViewMut<AssetStorage<RendererTexture>>,
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
 ) -> Handle<RendererTexture> {
     let sampler = match data.0.sampler {
         Some(val) => val,

@@ -63,7 +63,7 @@ impl ShipyardGameState for Game {
         world.run(
             |keys: UniqueView<KeyManager>,
              mut transforms: ViewMut<Transform>,
-             movables: View<Movable>| {
+             v_movable: View<Movable>| {
                 let mut dir = Vec3::ZERO;
                 if keys.pressed(KeyCode::A) {
                     dir.x -= 1.;
@@ -78,7 +78,7 @@ impl ShipyardGameState for Game {
                     dir.y -= 1.;
                 }
 
-                for (mut transform, movable) in (&mut transforms, &movables).iter() {
+                for (mut transform, movable) in (&mut transforms, &v_movable).iter() {
                     *transform.translation() += dir * movable.0;
                 }
             },

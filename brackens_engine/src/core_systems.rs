@@ -36,9 +36,9 @@ pub fn sys_manager_mouse_key_input(
 
 pub fn sys_manage_mouse_movement(
     input: (f64, f64),
-    mut mouse_pos: UniqueViewMut<MousePositionManager>,
+    mut mouse_pos_manager: UniqueViewMut<MousePositionManager>,
 ) {
-    mouse_pos.0.add_movement(input);
+    mouse_pos_manager.0.add_movement(input);
 }
 
 pub fn sys_manager_mouse_position(

@@ -38,9 +38,9 @@ pub fn sys_reset_asset_storage<T: Asset>(mut asset_storage: UniqueViewMut<AssetS
 
 //===============================================================
 
-pub fn sys_tick_timers(upkeep: UniqueView<UpkeepTracker>, mut timers: ViewMut<Timer>) {
+pub fn sys_tick_timers(upkeep: UniqueView<UpkeepTracker>, mut vm_timer: ViewMut<Timer>) {
     let delta = upkeep.delta();
-    for timer in (&mut timers).iter() {
+    for timer in (&mut vm_timer).iter() {
         timer.0.tick(delta);
     }
 }

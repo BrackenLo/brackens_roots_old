@@ -7,7 +7,6 @@ use crate::{
     assets::AssetStorage,
     core_components::{Device, Queue, SurfaceConfig, WindowSize},
     spatial_components::GlobalTransform,
-    UV, UVM,
 };
 
 use super::{
@@ -21,8 +20,8 @@ use super::{
 
 pub fn sys_setup_texture_renderer(
     all_storages: AllStoragesView,
-    device: UV<Device>,
-    config: UV<SurfaceConfig>,
+    device: UniqueView<Device>,
+    config: UniqueView<SurfaceConfig>,
     window_size: UniqueView<WindowSize>,
 ) {
     all_storages.add_unique(TextureRenderer::new(&device.0, &config.0, window_size.0));
@@ -31,8 +30,8 @@ pub fn sys_setup_texture_renderer(
 //--------------------------------------------------
 
 pub fn sys_add_new_textures(
-    mut renderer: UVM<TextureRenderer>,
-    texture_storage: UV<AssetStorage<RendererTexture>>,
+    mut renderer: UniqueViewMut<TextureRenderer>,
+    texture_storage: UniqueView<AssetStorage<RendererTexture>>,
 ) {
     for new in texture_storage.get_just_added() {
         renderer.add_texture(new);
@@ -40,8 +39,8 @@ pub fn sys_add_new_textures(
 }
 
 pub fn sys_remove_unloaded_textures(
-    texture_storage: UV<AssetStorage<RendererTexture>>,
-    mut renderer: UVM<TextureRenderer>,
+    texture_storage: UniqueView<AssetStorage<RendererTexture>>,
+    mut renderer: UniqueViewMut<TextureRenderer>,
 ) {
     for handle in texture_storage.get_removed_assets() {
         renderer.remove_texture(*handle);
@@ -62,15 +61,15 @@ pub fn sys_resize_pipeline(
 //--------------------------------------------------
 
 pub fn sys_process_textures(
-    device: UV<Device>,
-    queue: UV<Queue>,
+    device: UniqueView<Device>,
+    queue: UniqueView<Queue>,
 
-    mut renderer: UVM<TextureRenderer>,
-    textures: View<Texture>,
-    visible: View<Visible>,
-    global_transforms: View<GlobalTransform>,
+    mut renderer: UniqueViewMut<TextureRenderer>,
+    v_texture: View<Texture>,
+    v_visible: View<Visible>,
+    v_global_transform: View<GlobalTransform>,
 ) {
-    for (texture, visible, transform) in (&textures, &visible, &global_transforms).iter() {
+    for (texture, visible, transform) in (&v_texture, &v_visible, &v_global_transform).iter() {
         // If a texture is invisible, ignore it
         if !visible.visible {
             continue;
@@ -90,8 +89,8 @@ pub fn sys_process_textures(
 }
 
 pub fn sys_render_textures(
-    mut renderer: UVM<TextureRenderer>,
-    mut render_tools: UVM<RenderPassTools>,
+    mut renderer: UniqueViewMut<TextureRenderer>,
+    mut render_tools: UniqueViewMut<RenderPassTools>,
 ) {
     renderer.render(&mut render_tools.0);
 }
