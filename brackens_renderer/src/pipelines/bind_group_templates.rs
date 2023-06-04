@@ -244,12 +244,4 @@ where
     }
 }
 
-// Example ?
-// pub fn create_projection(device: &wgpu::Device, matrix: glam::Mat4) -> wgpu::Buffer {
-//     let template = BufferTemplate::<[f32; 16]>::new("Projection Buffer");
-//     template.create_buffer(device, matrix.to_cols_array());
-
-//     todo!()
-// }
-
 //===============================================================

@@ -34,7 +34,6 @@ where
     pipeline: RawInstancePipeline,
 
     // Bind Group and buffer containing constant data (projection, time, etc.):
-    // global_bind_group_template: BindGroupTemplate<T>,
     phantom_data: PhantomData<T>,
     global_bind_group: wgpu::BindGroup,
     global_uniform_buffers: Option<wgpu::Buffer>,
@@ -197,41 +196,9 @@ impl TextureRenderer {
     //----------------------------------------------
 
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, window_size: Size<u32>) -> Self {
-        // let projection_uniform_buffer =
-        //     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        //         label: Some("Renderer2D: Texture Renderer - Uniform Buffer"),
-        //         contents: bytemuck::cast_slice(&projection_matrix.to_cols_array()),
-        //         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        //     });
-
-        // let projection_bind_group_layout =
-        //     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        //         label: Some("Renderer2D: Texture Renderer - Global Bind Group Layout"),
-        //         entries: &[wgpu::BindGroupLayoutEntry {
-        //             binding: 0,
-        //             visibility: wgpu::ShaderStages::VERTEX,
-        //             ty: wgpu::BindingType::Buffer {
-        //                 ty: wgpu::BufferBindingType::Uniform,
-        //                 has_dynamic_offset: false,
-        //                 min_binding_size: None,
-        //             },
-        //             count: None,
-        //         }],
-        //     });
-
-        // let projection_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        //     label: Some("Renderer2D: Texture Renderer - Global Bind Group"),
-        //     layout: &projection_bind_group_layout,
-        //     entries: &[wgpu::BindGroupEntry {
-        //         binding: 0,
-        //         resource: wgpu::BindingResource::Buffer(
-        //             projection_uniform_buffer.as_entire_buffer_binding(),
-        //         ),
-        //     }],
-        // });
+        //----------------------------------------------
 
         let buffer_template = BufferTemplate::new("Texture Renderer");
-
         let bind_group_template = BindGroupTemplate::new(
             device,
             "Texture Renderer",
@@ -253,6 +220,8 @@ impl TextureRenderer {
 
         let data = BindGroupEntry::Buffer(projection_matrix);
 
+        //----------------------------------------------
+
         let inner = Renderer2D::new(
             device,
             format,
@@ -262,6 +231,8 @@ impl TextureRenderer {
             true,
             "Texture Renderer",
         );
+
+        //----------------------------------------------
 
         let depth_texture = Texture::create_depth_texture(
             device,
@@ -273,6 +244,8 @@ impl TextureRenderer {
             inner,
             depth_texture,
         }
+
+        //----------------------------------------------
     }
 
     //----------------------------------------------
