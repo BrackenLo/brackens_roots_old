@@ -210,7 +210,7 @@ pub struct TextureBundleViewMut<'v> {
     vm_texture: ViewMut<'v, Texture>,
 }
 impl<'v> TextureBundleViewMut<'v> {
-    pub fn create_texture(
+    pub fn new_texture(
         &mut self,
         entities: &mut EntitiesViewMut,
         transform: Transform,
