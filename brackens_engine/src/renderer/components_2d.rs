@@ -12,7 +12,11 @@ use brackens_renderer::{
     Size,
 };
 use brackens_tools::glam::Vec2;
-use shipyard::{Component, Unique};
+use shipyard::{Borrow, Component, EntitiesViewMut, EntityId, IntoBorrow, Unique, ViewMut};
+
+use crate::{prelude::Transform, spatial_components::TransformBundleViewMut};
+
+use super::components::Visible;
 
 //===============================================================
 
@@ -175,6 +179,83 @@ pub struct Texture {
     pub size: Vec2,
     pub handle: Handle<RendererTexture>,
     pub color: [f32; 4],
+}
+
+//===============================================================
+
+pub struct TextureBundleViewMut<'v> {
+    vm_transform_bundle: TransformBundleViewMut<'v>,
+    vm_visible: ViewMut<'v, Visible>,
+    vm_texture: ViewMut<'v, Texture>,
+}
+impl<'v> TextureBundleViewMut<'v> {
+    pub fn create_texture(
+        &mut self,
+        entities: &mut EntitiesViewMut,
+        transform: Transform,
+        texture: Texture,
+    ) -> EntityId {
+        let id = self
+            .vm_transform_bundle
+            .create_transform(entities, transform);
+
+        entities.add_component(
+            id,
+            (&mut self.vm_visible, &mut self.vm_texture),
+            (Visible::default(), texture),
+        );
+
+        id
+    }
+
+    pub fn add_texture(
+        &mut self,
+        entities: &mut EntitiesViewMut,
+        entity: EntityId,
+        transform: Transform,
+        texture: Texture,
+    ) {
+        self.vm_transform_bundle
+            .add_transform(entities, entity, transform);
+
+        entities.add_component(
+            entity,
+            (&mut self.vm_visible, &mut self.vm_texture),
+            (Visible::default(), texture),
+        );
+    }
+}
+
+pub struct TextureBundleViewMutBorrower;
+impl<'v> IntoBorrow for TextureBundleViewMut<'_> {
+    type Borrow = TextureBundleViewMutBorrower;
+}
+
+type TextureBundleViewMutComponents<'v> = (
+    TransformBundleViewMut<'v>,
+    ViewMut<'v, Visible>,
+    ViewMut<'v, Texture>,
+);
+
+impl<'v> Borrow<'v> for TextureBundleViewMutBorrower {
+    type View = TextureBundleViewMut<'v>;
+
+    fn borrow(
+        world: &'v shipyard::World,
+        last_run: Option<u32>,
+        current: u32,
+    ) -> Result<Self::View, shipyard::error::GetStorage> {
+        let (vm_transform_bundle, vm_visible, vm_texture) =
+            <TextureBundleViewMutComponents as IntoBorrow>::Borrow::borrow(
+                world, last_run, current,
+            )?;
+
+        Ok(TextureBundleViewMut {
+            vm_transform_bundle,
+            vm_visible,
+            vm_texture,
+        })
+    }
 }
 
 //===============================================================

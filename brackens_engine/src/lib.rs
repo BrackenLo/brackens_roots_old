@@ -14,8 +14,29 @@ use brackens_tools::{
 
 use core_components::*;
 use log::{error, info, warn};
-pub use shipyard;
+use prelude::ClearColor;
 use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
+
+//===============================================================
+
+pub mod prelude {
+    pub use crate::core_components::{UpkeepTracker, WindowSize};
+    pub use crate::renderer::components::{ClearColor, Visible};
+    pub use crate::spatial_components::{
+        GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
+    };
+    pub use crate::{ShipyardGameState, ShipyardRunner};
+
+    pub use brackens_tools::glam::{Vec2, Vec3};
+    pub use shipyard::{
+        self, Component, IntoIter, IntoWithId, Unique, UniqueView, UniqueViewMut, View, ViewMut,
+    };
+
+    #[cfg(feature = "2d")]
+    pub use crate::renderer::{components_2d::Texture, tools_2d::load_texture};
+}
+
+//===============================================================
 
 pub mod assets;
 pub mod core_components;
@@ -25,27 +46,6 @@ pub mod spatial_components;
 mod spatial_systems;
 pub mod tool_components;
 mod tool_systems;
-
-pub use renderer::components::ClearColor;
-
-//===============================================================
-
-pub mod prelude {
-    pub use crate::core_components::{UpkeepTracker, WindowSize};
-    pub use crate::renderer::components::Visible;
-    pub use crate::spatial_components::{
-        GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
-    };
-    pub use crate::{ShipyardGameState, ShipyardRunner};
-
-    pub use brackens_tools::glam::{Vec2, Vec3};
-    pub use shipyard::{
-        Component, IntoIter, IntoWithId, Unique, UniqueView, UniqueViewMut, View, ViewMut,
-    };
-
-    #[cfg(feature = "2d")]
-    pub use crate::renderer::{components_2d::Texture, tools_2d::load_texture};
-}
 
 //===============================================================
 
