@@ -111,6 +111,8 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         world.run(tool_systems::sys_setup_asset_storage);
         world.add_workload(tool_systems::wl_reset_asset_storage);
 
+        world.add_workload(spatial_systems::workload_update_tranforms);
+
         //--------------------------------------------------
 
         renderer::run_startup_systems(&mut world);
@@ -253,7 +255,9 @@ where
     }
 
     fn post_update(&mut self) {
-        self.world.run(spatial_systems::sys_update_transforms);
+        self.world
+            .run_workload(spatial_systems::workload_update_tranforms)
+            .unwrap();
         self.world.run(core_systems::sys_reset_input);
     }
 
