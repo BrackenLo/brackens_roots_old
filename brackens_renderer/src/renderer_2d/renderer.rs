@@ -168,7 +168,7 @@ impl TextureRenderer {
     //----------------------------------------------
 
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, window_size: Size<u32>) -> Self {
-        let projection_matrix = glam::Mat4::orthographic_rh(
+        let projection_matrix = glam::Mat4::orthographic_lh(
             0.,
             window_size.width as f32,
             0.,
@@ -238,7 +238,7 @@ impl TextureRenderer {
         self.inner.update_global_buffer(
             queue,
             bytemuck::cast_slice(
-                &glam::Mat4::orthographic_rh(
+                &glam::Mat4::orthographic_lh(
                     0.,
                     new_size.width as f32,
                     0.,

@@ -24,7 +24,7 @@ impl ShipyardGameState for Game {
 
         world.add_entity((
             Visible { visible: true },
-            Transform::from_translation(Vec3::new(0., 0., -99.)),
+            Transform::from_translation(Vec3::new(0., 0., 99.)),
             GlobalTransform::default(),
             Texture {
                 size: Vec2::new(32., 32.),
