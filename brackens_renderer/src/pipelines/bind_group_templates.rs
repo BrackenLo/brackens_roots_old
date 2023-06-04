@@ -28,8 +28,8 @@ pub struct BindGroupEntryLayout<T>
 where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
-    entry_type: BindGroupEntryType<T>,
-    visibility: wgpu::ShaderStages,
+    pub entry_type: BindGroupEntryType<T>,
+    pub visibility: wgpu::ShaderStages,
 }
 
 //===============================================================
@@ -48,8 +48,8 @@ where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
     pub fn new(
-        label: &str,
         device: &wgpu::Device,
+        label: &str,
         new_layout: Vec<BindGroupEntryLayout<T>>,
     ) -> Self {
         let mut entries = Vec::new();
@@ -88,6 +88,7 @@ where
                 ty,
                 count: None,
             });
+            binding += 1;
         }
 
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -110,26 +111,33 @@ where
         &self,
         device: &wgpu::Device,
         data: Vec<BindGroupEntry<T>>,
-    ) -> (wgpu::BindGroup, Vec<wgpu::Buffer>) {
+    ) -> (wgpu::BindGroup, Option<wgpu::Buffer>) {
         let mut binding = 0;
         let mut entries = Vec::new();
 
-        let mut buffer_index = 0;
-        let mut buffers = Vec::new();
+        let mut buffer = None;
 
         // Create buffers ahead of time due to immutible borrow errors
         for value in &data {
             let entry = match self.layout_entries.get(binding) {
                 Some(val) => val,
                 None => {
-                    panic!("Error: Invalid number of parameters for create bind group template")
+                    panic!(
+                        "Error: Invalid number of parameters for create bind group template - {}",
+                        self.label
+                    )
                 }
             };
 
             match (entry, value) {
                 (BindGroupEntryType::Buffer(template), BindGroupEntry::Buffer(data)) => {
-                    let buffer = template.create_buffer(device, data);
-                    buffers.push(buffer);
+                    if buffer.is_some() {
+                        panic!(
+                            "Error: Only one uniform buffer is allowed in bind group template - {}",
+                            self.label
+                        )
+                    }
+                    buffer = Some(template.create_buffer(device, data));
                 }
                 _ => {}
             }
@@ -140,15 +148,17 @@ where
             let entry = match self.layout_entries.get(binding) {
                 Some(val) => val,
                 None => {
-                    panic!("Error: Invalid number of parameters for create bind group template")
+                    panic!(
+                        "Error: Invalid number of parameters for create bind group template - {}",
+                        self.label
+                    )
                 }
             };
 
             let resource = match (entry, value) {
                 (BindGroupEntryType::Buffer(_), BindGroupEntry::Buffer(_)) => {
-                    buffer_index += 1;
                     wgpu::BindingResource::Buffer(
-                        buffers[buffer_index - 1].as_entire_buffer_binding(),
+                        buffer.as_ref().unwrap().as_entire_buffer_binding(),
                     )
                 }
                 (BindGroupEntryType::Sampler, BindGroupEntry::Sampler(sampler)) => {
@@ -157,7 +167,10 @@ where
                 (BindGroupEntryType::TextureView, BindGroupEntry::TextureView(view)) => {
                     wgpu::BindingResource::TextureView(view)
                 }
-                _ => panic!("Error: Incompatible Parameter type for create bind group template"),
+                _ => panic!(
+                    "Error: Incompatible Parameter type for create bind group template {}",
+                    self.label
+                ),
             };
 
             entries.push(wgpu::BindGroupEntry {
@@ -175,7 +188,7 @@ where
         });
 
         // Return the bind group and any used buffers
-        (bind_group, buffers)
+        (bind_group, buffer)
     }
 }
 

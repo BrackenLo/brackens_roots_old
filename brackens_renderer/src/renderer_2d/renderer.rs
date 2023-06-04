@@ -1,9 +1,18 @@
 //===============================================================
 
+use std::marker::PhantomData;
+
 use wgpu::util::DeviceExt;
 
 use crate::{
-    pipelines::{instance_pipeline::RawInstancePipeline, PipelineBuilderDescriptor},
+    pipelines::{
+        bind_group_templates::{
+            BindGroupEntry, BindGroupEntryLayout, BindGroupEntryType, BindGroupTemplate,
+            BufferTemplate,
+        },
+        instance_pipeline::RawInstancePipeline,
+        PipelineBuilderDescriptor,
+    },
     render_tools::RenderPassTools,
     Size,
 };
@@ -17,26 +26,33 @@ use super::{
 
 //===============================================================
 
-pub struct Renderer2D {
+pub struct Renderer2D<T>
+where
+    T: bytemuck::Pod + bytemuck::Zeroable,
+{
     // Underlying pipeline
     pipeline: RawInstancePipeline,
 
     // Bind Group and buffer containing constant data (projection, time, etc.):
+    // global_bind_group_template: BindGroupTemplate<T>,
+    phantom_data: PhantomData<T>,
     global_bind_group: wgpu::BindGroup,
-    global_uniform_buffer: wgpu::Buffer,
+    global_uniform_buffers: Option<wgpu::Buffer>,
 
     // Bind Group Layout textures (and texture instance stuff) must adhere to
     texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
-impl Renderer2D {
+impl<T> Renderer2D<T>
+where
+    T: bytemuck::Pod + bytemuck::Zeroable,
+{
     pub fn new(
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
 
-        global_bind_group_layout: wgpu::BindGroupLayout,
-        global_bind_group: wgpu::BindGroup,
-        global_uniform_buffer: wgpu::Buffer,
+        global_bind_group_template: BindGroupTemplate<T>,
+        data: Vec<BindGroupEntry<T>>,
 
         shader: wgpu::ShaderSource,
         use_depth_texture: bool,
@@ -69,6 +85,12 @@ impl Renderer2D {
 
         //----------------------------------------------
 
+        let layout = global_bind_group_template.get_layout();
+        let (global_bind_group, global_uniform_buffers) =
+            global_bind_group_template.create_bind_group(device, data);
+
+        //----------------------------------------------
+
         let depth_stencil = if use_depth_texture {
             Some(wgpu::DepthStencilState {
                 format: Texture::DEPTH_FORMAT,
@@ -83,7 +105,7 @@ impl Renderer2D {
 
         let builder = PipelineBuilderDescriptor {
             name: format!("Renderer2D: {}", label),
-            bind_group_layouts: Some(vec![&global_bind_group_layout, &texture_bind_group_layout]),
+            bind_group_layouts: Some(vec![layout, &texture_bind_group_layout]),
             shader: device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some(&format!("Renderer2D: {} - Shader", label)),
                 source: shader,
@@ -113,24 +135,31 @@ impl Renderer2D {
 
         Self {
             pipeline,
-            global_bind_group,
-            global_uniform_buffer,
             texture_bind_group_layout,
+            phantom_data: PhantomData,
+            global_bind_group,
+            global_uniform_buffers,
         }
 
         //----------------------------------------------
     }
 
-    pub fn update_global_buffer(&mut self, queue: &wgpu::Queue, data: &[u8]) {
-        queue.write_buffer(&self.global_uniform_buffer, 0, data)
+    pub fn update_global_buffer(&mut self, queue: &wgpu::Queue, data: &[T]) {
+        if let Some(buffer) = &self.global_uniform_buffers {
+            queue.write_buffer(buffer, 0, bytemuck::cast_slice(data))
+        }
     }
 
-    pub fn set_global_buffer(&mut self, device: &wgpu::Device, data: &[u8]) {
-        self.global_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("Renderer2D: {} - Uniform buffer", self.name())),
-            contents: data,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
+    pub fn set_global_buffer(&mut self, device: &wgpu::Device, data: &[T]) {
+        let name = String::from(self.name());
+
+        if let Some(buffer) = &mut self.global_uniform_buffers {
+            *buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(&format!("Renderer2D: {} - Uniform Buffer", name)),
+                contents: bytemuck::cast_slice(data),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+        }
     }
 
     pub fn name(&self) -> &str {
@@ -160,7 +189,7 @@ impl Renderer2D {
 //===============================================================
 
 pub struct TextureRenderer {
-    inner: Renderer2D,
+    inner: Renderer2D<[f32; 16]>,
     depth_texture: Texture,
 }
 
@@ -168,6 +197,50 @@ impl TextureRenderer {
     //----------------------------------------------
 
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, window_size: Size<u32>) -> Self {
+        // let projection_uniform_buffer =
+        //     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //         label: Some("Renderer2D: Texture Renderer - Uniform Buffer"),
+        //         contents: bytemuck::cast_slice(&projection_matrix.to_cols_array()),
+        //         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //     });
+
+        // let projection_bind_group_layout =
+        //     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        //         label: Some("Renderer2D: Texture Renderer - Global Bind Group Layout"),
+        //         entries: &[wgpu::BindGroupLayoutEntry {
+        //             binding: 0,
+        //             visibility: wgpu::ShaderStages::VERTEX,
+        //             ty: wgpu::BindingType::Buffer {
+        //                 ty: wgpu::BufferBindingType::Uniform,
+        //                 has_dynamic_offset: false,
+        //                 min_binding_size: None,
+        //             },
+        //             count: None,
+        //         }],
+        //     });
+
+        // let projection_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        //     label: Some("Renderer2D: Texture Renderer - Global Bind Group"),
+        //     layout: &projection_bind_group_layout,
+        //     entries: &[wgpu::BindGroupEntry {
+        //         binding: 0,
+        //         resource: wgpu::BindingResource::Buffer(
+        //             projection_uniform_buffer.as_entire_buffer_binding(),
+        //         ),
+        //     }],
+        // });
+
+        let buffer_template = BufferTemplate::new("Texture Renderer");
+
+        let bind_group_template = BindGroupTemplate::new(
+            device,
+            "Texture Renderer",
+            vec![BindGroupEntryLayout {
+                entry_type: BindGroupEntryType::Buffer(buffer_template),
+                visibility: wgpu::ShaderStages::VERTEX,
+            }],
+        );
+
         let projection_matrix = glam::Mat4::orthographic_lh(
             0.,
             window_size.width as f32,
@@ -175,46 +248,16 @@ impl TextureRenderer {
             window_size.height as f32,
             0.,
             100.,
-        );
-        let projection_uniform_buffer =
-            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Renderer2D: Texture Renderer - Uniform Buffer"),
-                contents: bytemuck::cast_slice(&projection_matrix.to_cols_array()),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
+        )
+        .to_cols_array();
 
-        let projection_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Renderer2D: Texture Renderer - Global Bind Group Layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-
-        let projection_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Renderer2D: Texture Renderer - Global Bind Group"),
-            layout: &projection_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(
-                    projection_uniform_buffer.as_entire_buffer_binding(),
-                ),
-            }],
-        });
+        let data = BindGroupEntry::Buffer(projection_matrix);
 
         let inner = Renderer2D::new(
             device,
             format,
-            projection_bind_group_layout,
-            projection_bind_group,
-            projection_uniform_buffer,
+            bind_group_template,
+            vec![data],
             wgpu::ShaderSource::Wgsl(include_str!("../shaders/texture_shader.wgsl").into()),
             true,
             "Texture Renderer",
