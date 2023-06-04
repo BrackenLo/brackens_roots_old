@@ -6,7 +6,7 @@ use wgpu::util::DeviceExt;
 
 //===============================================================
 
-pub enum BindGroupEntryTypes<T>
+pub enum BindGroupEntryType<T>
 where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
@@ -24,23 +24,82 @@ where
     TextureView(&'a wgpu::TextureView),
 }
 
+pub struct BindGroupEntryLayout<T>
+where
+    T: bytemuck::Pod + bytemuck::Zeroable,
+{
+    entry_type: BindGroupEntryType<T>,
+    visibility: wgpu::ShaderStages,
+}
+
 //===============================================================
 
 pub struct BindGroupTemplate<T>
 where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
-    layout: wgpu::BindGroupLayout,
     label: String,
-    entries: Vec<BindGroupEntryTypes<T>>,
+    layout: wgpu::BindGroupLayout,
+    layout_entries: Vec<BindGroupEntryType<T>>,
 }
 
 impl<T> BindGroupTemplate<T>
 where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
-    pub fn new() -> Self {
-        todo!()
+    pub fn new(
+        label: &str,
+        device: &wgpu::Device,
+        new_layout: Vec<BindGroupEntryLayout<T>>,
+    ) -> Self {
+        let mut entries = Vec::new();
+        let mut binding = 0;
+
+        let mut layout_entries = Vec::new();
+
+        for entry in new_layout {
+            let ty = match entry.entry_type {
+                BindGroupEntryType::Buffer(val) => {
+                    layout_entries.push(BindGroupEntryType::Buffer(val));
+
+                    wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    }
+                }
+                BindGroupEntryType::Sampler => {
+                    layout_entries.push(BindGroupEntryType::Sampler);
+                    wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+                }
+                BindGroupEntryType::TextureView => {
+                    layout_entries.push(BindGroupEntryType::TextureView);
+                    wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    }
+                }
+            };
+
+            entries.push(wgpu::BindGroupLayoutEntry {
+                binding,
+                visibility: entry.visibility,
+                ty,
+                count: None,
+            });
+        }
+
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some(&format!("{} - Bind Group Template Layout", label)),
+            entries: &entries,
+        });
+
+        Self {
+            label: label.into(),
+            layout,
+            layout_entries,
+        }
     }
 
     pub fn get_layout(&self) -> &wgpu::BindGroupLayout {
@@ -60,7 +119,7 @@ where
 
         // Create buffers ahead of time due to immutible borrow errors
         for value in &data {
-            let entry = match self.entries.get(binding) {
+            let entry = match self.layout_entries.get(binding) {
                 Some(val) => val,
                 None => {
                     panic!("Error: Invalid number of parameters for create bind group template")
@@ -68,7 +127,7 @@ where
             };
 
             match (entry, value) {
-                (BindGroupEntryTypes::Buffer(template), BindGroupEntry::Buffer(data)) => {
+                (BindGroupEntryType::Buffer(template), BindGroupEntry::Buffer(data)) => {
                     let buffer = template.create_buffer(device, data);
                     buffers.push(buffer);
                 }
@@ -78,7 +137,7 @@ where
 
         // Go through all values, make sure they're of the right type and create the wgpu equivelent
         for value in &data {
-            let entry = match self.entries.get(binding) {
+            let entry = match self.layout_entries.get(binding) {
                 Some(val) => val,
                 None => {
                     panic!("Error: Invalid number of parameters for create bind group template")
@@ -86,16 +145,16 @@ where
             };
 
             let resource = match (entry, value) {
-                (BindGroupEntryTypes::Buffer(_), BindGroupEntry::Buffer(_)) => {
+                (BindGroupEntryType::Buffer(_), BindGroupEntry::Buffer(_)) => {
                     buffer_index += 1;
                     wgpu::BindingResource::Buffer(
                         buffers[buffer_index - 1].as_entire_buffer_binding(),
                     )
                 }
-                (BindGroupEntryTypes::Sampler, BindGroupEntry::Sampler(sampler)) => {
+                (BindGroupEntryType::Sampler, BindGroupEntry::Sampler(sampler)) => {
                     wgpu::BindingResource::Sampler(sampler)
                 }
-                (BindGroupEntryTypes::TextureView, BindGroupEntry::TextureView(view)) => {
+                (BindGroupEntryType::TextureView, BindGroupEntry::TextureView(view)) => {
                     wgpu::BindingResource::TextureView(view)
                 }
                 _ => panic!("Error: Incompatible Parameter type for create bind group template"),
