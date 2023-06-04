@@ -167,8 +167,15 @@ pub struct TextureRenderer {
 impl TextureRenderer {
     //----------------------------------------------
 
-    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
-        let projection_matrix = glam::Mat4::orthographic_rh(0., 640., 0., 360., 0., 100.);
+    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, window_size: Size<u32>) -> Self {
+        let projection_matrix = glam::Mat4::orthographic_rh(
+            0.,
+            window_size.width as f32,
+            0.,
+            window_size.height as f32,
+            0.,
+            100.,
+        );
         let projection_uniform_buffer =
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Renderer2D: Texture Renderer - Uniform Buffer"),
@@ -213,8 +220,11 @@ impl TextureRenderer {
             "Texture Renderer",
         );
 
-        let depth_texture =
-            Texture::create_depth_texture(device, Size::new(640, 360), "Texture Renderer");
+        let depth_texture = Texture::create_depth_texture(
+            device,
+            Size::new(window_size.width, window_size.height),
+            "Texture Renderer",
+        );
 
         Self {
             inner,

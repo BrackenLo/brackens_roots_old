@@ -32,9 +32,13 @@ pub struct TextureRenderer {
 impl TextureRenderer {
     //--------------------------------------------------
 
-    pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        config: &wgpu::SurfaceConfiguration,
+        window_size: Size<u32>,
+    ) -> Self {
         Self {
-            renderer: renderer_2d::TextureRenderer::new(device, config.format),
+            renderer: renderer_2d::TextureRenderer::new(device, config.format, window_size),
             should_render: HashSet::new(),
             unprocessed_draw_data: HashMap::new(),
 

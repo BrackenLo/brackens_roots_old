@@ -96,8 +96,8 @@ where
 
     #[inline]
     pub fn id(&self) -> HandleID<T> {
-        // self.handle_id
-        todo!()
+        self.handle_id
+        // todo!()
     }
     #[inline]
     pub fn type_name(&self) -> &'static str {
@@ -143,8 +143,7 @@ where
     /// Create a new weak handle from an existing one
     #[inline]
     pub fn clone_weak(&self) -> Self {
-        // Self::weak(self.handle_id, self.asset.clone())
-        todo!()
+        Self::weak(self.handle_id, self.asset.clone())
     }
 
     /// Convert a strong handle into a weak one. This action cannot currently be reversed.

@@ -24,14 +24,25 @@ impl ShipyardGameState for Game {
 
         world.add_entity((
             Visible { visible: true },
-            Transform::default(),
+            Transform::from_translation(Vec3::new(0., 0., -99.)),
             GlobalTransform::default(),
             Texture {
                 size: Vec2::new(32., 32.),
-                handle: texture,
+                handle: texture.clone(),
                 color: [1., 0., 1., 1.],
             },
             Movable(5.),
+        ));
+
+        world.add_entity((
+            Visible { visible: true },
+            Transform::from_translation(Vec3::new(100., 100., 0.)),
+            GlobalTransform::default(),
+            Texture {
+                size: Vec2::new(64., 64.),
+                handle: texture,
+                color: [1., 0., 0., 1.],
+            },
         ));
 
         Self

@@ -23,8 +23,9 @@ pub fn sys_setup_texture_renderer(
     all_storages: AllStoragesView,
     device: UV<Device>,
     config: UV<SurfaceConfig>,
+    window_size: UniqueView<WindowSize>,
 ) {
-    all_storages.add_unique(TextureRenderer::new(&device.0, &config.0));
+    all_storages.add_unique(TextureRenderer::new(&device.0, &config.0, window_size.0));
 }
 
 //--------------------------------------------------
