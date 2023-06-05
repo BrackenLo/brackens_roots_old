@@ -45,16 +45,16 @@ pub enum CameraProjection {
         right: f32,
         bottom: f32,
         top: f32,
-        near: f32,
-        far: f32,
+        z_near: f32,
+        z_far: f32,
     },
     Perspective {
         target: Vec3,
         up: Vec3,
         aspect: f32,
         fovy: f32,
-        znear: f32,
-        zfar: f32,
+        z_near: f32,
+        z_far: f32,
     },
 }
 
@@ -63,8 +63,8 @@ pub struct OrthographicCameraDescriptor {
     pub right: f32,
     pub bottom: f32,
     pub top: f32,
-    pub near: f32,
-    pub far: f32,
+    pub z_near: f32,
+    pub z_far: f32,
 }
 impl Default for OrthographicCameraDescriptor {
     fn default() -> Self {
@@ -73,8 +73,8 @@ impl Default for OrthographicCameraDescriptor {
             right: 1920.,
             bottom: 0.,
             top: 1080.,
-            near: 0.,
-            far: 100.,
+            z_near: 0.,
+            z_far: 1000.,
         }
     }
 }
@@ -84,8 +84,8 @@ pub struct PerspectiveCameraDescriptor {
     pub up: Vec3,
     pub aspect: f32,
     pub fovy: f32,
-    pub znear: f32,
-    pub zfar: f32,
+    pub z_near: f32,
+    pub z_far: f32,
 }
 impl Default for PerspectiveCameraDescriptor {
     fn default() -> Self {
@@ -94,8 +94,8 @@ impl Default for PerspectiveCameraDescriptor {
             up: Vec3::Y,
             aspect: 1.77777777778,
             fovy: 45.,
-            znear: 0.1,
-            zfar: 100.,
+            z_near: 0.1,
+            z_far: 1000.,
         }
     }
 }
@@ -107,8 +107,8 @@ impl Camera {
             right,
             bottom,
             top,
-            near,
-            far,
+            z_near,
+            z_far,
         }: OrthographicCameraDescriptor,
     ) -> Self {
         Self {
@@ -117,8 +117,8 @@ impl Camera {
                 right,
                 bottom,
                 top,
-                near,
-                far,
+                z_near,
+                z_far,
             },
         }
     }
@@ -129,8 +129,8 @@ impl Camera {
             up,
             aspect,
             fovy,
-            znear,
-            zfar,
+            z_near,
+            z_far,
         }: PerspectiveCameraDescriptor,
     ) -> Self {
         Self {
@@ -139,8 +139,8 @@ impl Camera {
                 up,
                 aspect,
                 fovy,
-                znear,
-                zfar,
+                z_near,
+                z_far,
             },
         }
     }
@@ -186,11 +186,11 @@ impl<'v> CameraBundleView<'v> {
                     right,
                     top,
                     bottom,
-                    near,
-                    far,
+                    z_near,
+                    z_far,
                 } => {
                     let projection_matrix =
-                        Mat4::orthographic_rh(left, right, bottom, top, near, far);
+                        Mat4::orthographic_rh(left, right, bottom, top, z_near, z_far);
 
                     let transform_position = *global_transform.translation();
                     let transform_rotation = *global_transform.rotation();
@@ -205,13 +205,13 @@ impl<'v> CameraBundleView<'v> {
                     up,
                     aspect,
                     fovy,
-                    znear,
-                    zfar,
+                    z_near,
+                    z_far,
                 } => {
                     let transform_position = *global_transform.translation();
 
                     let view = Mat4::look_at_rh(transform_position, target, up);
-                    let proj = Mat4::perspective_rh_gl(fovy, aspect, znear, zfar);
+                    let proj = Mat4::perspective_rh_gl(fovy, aspect, z_near, z_far);
 
                     proj * view
                 }
