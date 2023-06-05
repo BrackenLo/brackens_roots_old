@@ -59,7 +59,18 @@ pub fn sys_resize_camera(
             CameraProjection::Perspective { aspect, .. } => {
                 *aspect = window_size.width() as f32 / window_size.height() as f32;
             }
-            _ => {}
+            CameraProjection::Orthographic {
+                left,
+                right,
+                bottom,
+                top,
+                ..
+            } => {
+                *left = window_size.width() as f32 / -2.;
+                *right = window_size.width() as f32 / 2.;
+                *bottom = window_size.height() as f32 / -2.;
+                *top = window_size.height() as f32 / 2.;
+            }
         }
     }
 }

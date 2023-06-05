@@ -9,7 +9,7 @@ use brackens_engine::{
         tools_2d::{load_blank_texture, BlankTextureDescriptor},
     },
     spatial_components::{GlobalTransform, Transform},
-    tool_components::{Activated, AutoUpdate},
+    tool_components::{Active, AutoUpdate},
     KeyCode, ShipyardGameState, ShipyardRunner,
 };
 use shipyard::{Component, EntitiesViewMut, IntoIter, UniqueView, View, ViewMut};
@@ -42,7 +42,7 @@ impl ShipyardGameState for Game {
             GlobalTransform::default(),
             Camera::new_perspective(PerspectiveCameraDescriptor::default()),
             AutoUpdate,
-            Activated,
+            Active,
             Movable(5.),
         ));
 

@@ -9,7 +9,7 @@ pub use brackens_renderer::{
     renderer_2d::RendererTexture, renderer_2d::TextureDrawCall as FinalTextureDrawCall,
 };
 
-use crate::{prelude::GlobalTransform, tool_components::Activated};
+use crate::{prelude::GlobalTransform, tool_components::Active};
 
 //===============================================================
 // Core rendering Uniques
@@ -149,7 +149,7 @@ impl Camera {
 pub struct CameraBundleView<'v> {
     v_global_transform: View<'v, GlobalTransform>,
     v_camera: View<'v, Camera>,
-    v_active: View<'v, Activated>,
+    v_active: View<'v, Active>,
 }
 impl<'v> CameraBundleView<'v> {
     pub fn has_camera(&self) -> bool {
@@ -230,7 +230,7 @@ impl<'v> IntoBorrow for CameraBundleView<'_> {
 type CameraBundleViewComponents<'v> = (
     View<'v, GlobalTransform>,
     View<'v, Camera>,
-    View<'v, Activated>,
+    View<'v, Active>,
 );
 
 impl<'v> Borrow<'v> for CameraBundleViewBorrower {
