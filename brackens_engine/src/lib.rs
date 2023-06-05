@@ -21,7 +21,9 @@ use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 
 pub mod prelude {
     pub use crate::core_components::{UpkeepTracker, WindowSize};
-    pub use crate::renderer::components::{ClearColor, Visible};
+    pub use crate::renderer::components::{
+        Camera, ClearColor, OrthographicCameraDescriptor, PerspectiveCameraDescriptor, Visible,
+    };
     pub use crate::spatial_components::{
         GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
     };
