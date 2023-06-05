@@ -36,6 +36,31 @@ impl Transform {
         Self(general::Transform::from_scale(scale))
     }
 
+    pub fn from_translation_rotation(translation: Vec3, rotation: Quat) -> Self {
+        Self(general::Transform::from_translation_rotatation(
+            translation,
+            rotation,
+        ))
+    }
+    pub fn from_translation_scale(translation: Vec3, scale: Vec3) -> Self {
+        Self(general::Transform::from_translation_scale(
+            translation,
+            scale,
+        ))
+    }
+
+    pub fn from_rotation_scale(rotation: Quat, scale: Vec3) -> Self {
+        Self(general::Transform::from_rotation_scale(rotation, scale))
+    }
+
+    pub fn from_translation_rotation_scale(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
+        Self(general::Transform::from_translation_rotatation_scale(
+            translation,
+            rotation,
+            scale,
+        ))
+    }
+
     //--------------------------------------------------
 
     pub fn translation(&self) -> &Vec3 {
@@ -111,6 +136,26 @@ impl GlobalTransform {
 
     pub fn from_scale(scale: Vec3) -> Self {
         Self(Transform::from_scale(scale))
+    }
+
+    pub fn from_translation_rotation(translation: Vec3, rotation: Quat) -> Self {
+        Self(Transform::from_translation_rotation(translation, rotation))
+    }
+
+    pub fn from_translation_scale(translation: Vec3, scale: Vec3) -> Self {
+        Self(Transform::from_translation_scale(translation, scale))
+    }
+
+    pub fn from_rotation_scale(rotation: Quat, scale: Vec3) -> Self {
+        Self(Transform::from_rotation_scale(rotation, scale))
+    }
+
+    pub fn from_translation_rotation_scale(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
+        Self(Transform::from_translation_rotation_scale(
+            translation,
+            rotation,
+            scale,
+        ))
     }
 
     //--------------------------------------------------

@@ -4,7 +4,7 @@ use brackens_engine::{
     core_components::KeyManager,
     prelude::{Texture, Vec3},
     renderer::{
-        components::Camera,
+        components::{Camera, PerspectiveCameraDescriptor},
         components_2d::TextureBundleViewMut,
         tools_2d::{load_blank_texture, BlankTextureDescriptor},
     },
@@ -38,9 +38,9 @@ impl ShipyardGameState for Game {
         );
 
         world.add_entity((
-            Transform::default(),
+            Transform::from_translation(Vec3::new(0., 0., 80.)),
             GlobalTransform::default(),
-            Camera::new_orthographic(-300., 300., -200., 200., 0., 100.),
+            Camera::new_perspective(PerspectiveCameraDescriptor::default()),
             AutoUpdate,
             Activated,
             Movable(5.),

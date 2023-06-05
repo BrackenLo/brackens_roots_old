@@ -39,14 +39,77 @@ pub struct Camera {
     pub projection: CameraProjection,
 }
 
-impl Camera {
-    pub fn new_orthographic(
+pub enum CameraProjection {
+    Orthographic {
         left: f32,
         right: f32,
         bottom: f32,
         top: f32,
         near: f32,
         far: f32,
+    },
+    Perspective {
+        target: Vec3,
+        up: Vec3,
+        aspect: f32,
+        fovy: f32,
+        znear: f32,
+        zfar: f32,
+    },
+}
+
+pub struct OrthographicCameraDescriptor {
+    pub left: f32,
+    pub right: f32,
+    pub bottom: f32,
+    pub top: f32,
+    pub near: f32,
+    pub far: f32,
+}
+impl Default for OrthographicCameraDescriptor {
+    fn default() -> Self {
+        Self {
+            left: 0.,
+            right: 1920.,
+            bottom: 0.,
+            top: 1080.,
+            near: 0.,
+            far: 100.,
+        }
+    }
+}
+
+pub struct PerspectiveCameraDescriptor {
+    pub target: Vec3,
+    pub up: Vec3,
+    pub aspect: f32,
+    pub fovy: f32,
+    pub znear: f32,
+    pub zfar: f32,
+}
+impl Default for PerspectiveCameraDescriptor {
+    fn default() -> Self {
+        Self {
+            target: Vec3::ZERO,
+            up: Vec3::Y,
+            aspect: 1.77777777778,
+            fovy: 45.,
+            znear: 0.1,
+            zfar: 100.,
+        }
+    }
+}
+
+impl Camera {
+    pub fn new_orthographic(
+        OrthographicCameraDescriptor {
+            left,
+            right,
+            bottom,
+            top,
+            near,
+            far,
+        }: OrthographicCameraDescriptor,
     ) -> Self {
         Self {
             projection: CameraProjection::Orthographic {
@@ -61,16 +124,18 @@ impl Camera {
     }
 
     pub fn new_perspective(
-        dir: Vec3,
-        up: Vec3,
-        aspect: f32,
-        fovy: f32,
-        znear: f32,
-        zfar: f32,
+        PerspectiveCameraDescriptor {
+            target,
+            up,
+            aspect,
+            fovy,
+            znear,
+            zfar,
+        }: PerspectiveCameraDescriptor,
     ) -> Self {
         Self {
             projection: CameraProjection::Perspective {
-                dir,
+                target,
                 up,
                 aspect,
                 fovy,
@@ -79,25 +144,6 @@ impl Camera {
             },
         }
     }
-}
-
-pub enum CameraProjection {
-    Orthographic {
-        left: f32,
-        right: f32,
-        bottom: f32,
-        top: f32,
-        near: f32,
-        far: f32,
-    },
-    Perspective {
-        dir: Vec3,
-        up: Vec3,
-        aspect: f32,
-        fovy: f32,
-        znear: f32,
-        zfar: f32,
-    },
 }
 
 pub struct CameraBundleView<'v> {
@@ -144,35 +190,27 @@ impl<'v> CameraBundleView<'v> {
                     far,
                 } => {
                     let projection_matrix =
-                        Mat4::orthographic_lh(left, right, bottom, top, near, far);
+                        Mat4::orthographic_rh(left, right, bottom, top, near, far);
 
-                    let transform_position = global_transform.translation();
-                    let transform_rotation = global_transform.rotation();
+                    let transform_position = *global_transform.translation();
+                    let transform_rotation = *global_transform.rotation();
 
                     let transform_matrix =
-                        Mat4::from_rotation_translation(*transform_rotation, -*transform_position);
+                        Mat4::from_rotation_translation(transform_rotation, -transform_position);
 
                     projection_matrix * transform_matrix
                 }
                 CameraProjection::Perspective {
-                    dir,
+                    target,
                     up,
                     aspect,
                     fovy,
                     znear,
                     zfar,
                 } => {
-                    let eye = *global_transform.translation();
+                    let transform_position = *global_transform.translation();
 
-                    // let view = Mat4::look_to_lh(eye, dir, up);
-
-                    // let view =
-
-                    // let (sin_pitch, cos_pitch) = pitch.sin_cos();
-                    // let (sin_yaw, cos_yaw) = yaw.sin_cos();
-
-                    let view = Mat4::look_at_rh(eye, Vec3::new(0., 0., 0.), up);
-
+                    let view = Mat4::look_at_rh(transform_position, target, up);
                     let proj = Mat4::perspective_rh_gl(fovy, aspect, znear, zfar);
 
                     proj * view

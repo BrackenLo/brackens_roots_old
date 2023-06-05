@@ -32,6 +32,42 @@ impl Transform {
         }
     }
 
+    pub fn from_translation_rotatation(translation: glam::Vec3, rotation: glam::Quat) -> Self {
+        Self {
+            translation,
+            rotation,
+            ..Default::default()
+        }
+    }
+
+    pub fn from_translation_scale(translation: glam::Vec3, scale: glam::Vec3) -> Self {
+        Self {
+            translation,
+            scale,
+            ..Default::default()
+        }
+    }
+
+    pub fn from_rotation_scale(rotation: glam::Quat, scale: glam::Vec3) -> Self {
+        Self {
+            rotation,
+            scale,
+            ..Default::default()
+        }
+    }
+
+    pub fn from_translation_rotatation_scale(
+        translation: glam::Vec3,
+        rotation: glam::Quat,
+        scale: glam::Vec3,
+    ) -> Self {
+        Self {
+            translation,
+            rotation,
+            scale,
+        }
+    }
+
     //--------------------------------------------------
 
     pub fn to_raw(&self) -> [f32; 16] {
