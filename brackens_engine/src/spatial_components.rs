@@ -83,6 +83,12 @@ impl Transform {
 
     //--------------------------------------------------
 
+    pub fn lerp(&mut self, target: &Transform, s: f32) {
+        self.0.lerp(&target.0, s);
+    }
+
+    //--------------------------------------------------
+
     pub fn to_raw(&self) -> [f32; 16] {
         self.0.to_raw()
     }
@@ -176,6 +182,12 @@ impl GlobalTransform {
     }
     pub fn scale_mut(&mut self) -> &mut Vec3 {
         self.0.scale_mut()
+    }
+
+    //--------------------------------------------------
+
+    pub fn lerp(&mut self, target: &GlobalTransform, s: f32) {
+        self.0.lerp(&target.0, s);
     }
 
     //--------------------------------------------------

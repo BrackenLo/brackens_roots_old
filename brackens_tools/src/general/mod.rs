@@ -8,6 +8,7 @@ pub struct Transform {
     pub rotation: glam::Quat,
     pub scale: glam::Vec3,
 }
+
 impl Transform {
     //--------------------------------------------------
 
@@ -66,6 +67,14 @@ impl Transform {
             rotation,
             scale,
         }
+    }
+
+    //--------------------------------------------------
+
+    pub fn lerp(&mut self, target: &Transform, s: f32) {
+        self.translation = self.translation.lerp(target.translation, s);
+        self.rotation = self.rotation.lerp(target.rotation, s);
+        self.scale = self.scale.lerp(target.scale, s);
     }
 
     //--------------------------------------------------
