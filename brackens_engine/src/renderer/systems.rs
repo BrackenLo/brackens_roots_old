@@ -3,10 +3,11 @@
 use brackens_renderer::render_tools;
 
 use brackens_renderer::wgpu::SurfaceError;
-use shipyard::{UniqueView, UniqueViewMut, World};
+use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, ViewMut, World};
 
 use crate::{
-    core_components::{Device, Queue, Surface},
+    core_components::{Device, Queue, Surface, WindowSize},
+    tool_components::AutoUpdate,
     ClearColor,
 };
 
@@ -47,5 +48,20 @@ pub fn sys_end_render_pass(world: &mut World) {
 }
 
 //===============================================================
+
+pub fn sys_resize_camera(
+    window_size: UniqueView<WindowSize>,
+    mut vm_camera: ViewMut<Camera>,
+    v_auto_update: View<AutoUpdate>,
+) {
+    for (mut camera, _) in (&mut vm_camera, &v_auto_update).iter() {
+        match &mut camera.projection {
+            CameraProjection::Perspective { aspect, .. } => {
+                *aspect = window_size.width() as f32 / window_size.height() as f32;
+            }
+            _ => {}
+        }
+    }
+}
 
 //===============================================================

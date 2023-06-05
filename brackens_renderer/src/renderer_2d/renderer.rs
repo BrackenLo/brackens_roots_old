@@ -291,22 +291,33 @@ impl TextureRenderer {
 
     //----------------------------------------------
 
-    pub fn resize(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, new_size: Size<u32>) {
-        self.inner.update_global_buffer(
+    pub fn resize_depth(&mut self, device: &wgpu::Device, new_size: Size<u32>) {
+        self.depth_texture = Texture::create_depth_texture(device, new_size, "Texture Renderer");
+    }
+
+    pub fn set_projection(&mut self, queue: &wgpu::Queue, matrix: &glam::Mat4) {
+        self.inner
+            .update_global_buffer(queue, bytemuck::cast_slice(&matrix.to_cols_array()));
+    }
+
+    pub fn resize_depth_projection(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        new_size: Size<u32>,
+    ) {
+        self.resize_depth(device, new_size);
+        self.set_projection(
             queue,
-            bytemuck::cast_slice(
-                &glam::Mat4::orthographic_lh(
-                    0.,
-                    new_size.width as f32,
-                    0.,
-                    new_size.height as f32,
-                    0.,
-                    100.,
-                )
-                .to_cols_array(),
+            &glam::Mat4::orthographic_lh(
+                0.,
+                new_size.width as f32,
+                0.,
+                new_size.height as f32,
+                0.,
+                100.,
             ),
         );
-        self.depth_texture = Texture::create_depth_texture(device, new_size, "Texture Renderer");
     }
 
     pub fn get_texture_layout(&self) -> &wgpu::BindGroupLayout {

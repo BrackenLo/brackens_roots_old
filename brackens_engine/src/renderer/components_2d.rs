@@ -11,7 +11,7 @@ use brackens_renderer::{
     wgpu::{self, util::DeviceExt},
     Size,
 };
-use brackens_tools::glam::Vec2;
+use brackens_tools::glam::{self, Vec2};
 use shipyard::{Borrow, Component, EntitiesViewMut, EntityId, IntoBorrow, Unique, ViewMut};
 
 use crate::{prelude::Transform, spatial_components::TransformBundleViewMut};
@@ -57,13 +57,22 @@ impl TextureRenderer {
 
     //--------------------------------------------------
 
-    pub(crate) fn resize(
+    pub(crate) fn resize_depth(&mut self, device: &wgpu::Device, new_size: Size<u32>) {
+        self.renderer.resize_depth(device, new_size);
+    }
+
+    pub(crate) fn resize_projection(&mut self, queue: &wgpu::Queue, matrix: &glam::Mat4) {
+        self.renderer.set_projection(queue, matrix);
+    }
+
+    pub(crate) fn resize_both(
         &mut self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         new_size: Size<u32>,
     ) {
-        self.renderer.resize(device, queue, new_size)
+        self.renderer
+            .resize_depth_projection(device, queue, new_size);
     }
 
     //--------------------------------------------------

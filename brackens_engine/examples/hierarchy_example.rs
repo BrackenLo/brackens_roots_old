@@ -1,6 +1,7 @@
 //===============================================================
 
 use brackens_engine::{
+    core_components::KeyManager,
     prelude::*,
     renderer::tools_2d::{load_blank_texture, BlankTextureDescriptor, LoadTextureDescriptor},
 };
@@ -143,12 +144,20 @@ fn sys_center(
     mut transforms: ViewMut<Transform>,
 ) {
     for (_, mut transform) in (&v_centers, &mut transforms).iter() {
-        *transform.translation() =
+        *transform.translation_mut() =
             Vec3::new(screen.width() as f32 / 2., screen.height() as f32 / 2., 0.);
     }
 }
 
-fn sys_progress(tracker: UniqueView<UpkeepTracker>, mut progresses: ViewMut<Progress>) {
+fn sys_progress(
+    keys: UniqueView<KeyManager>,
+    tracker: UniqueView<UpkeepTracker>,
+    mut progresses: ViewMut<Progress>,
+) {
+    // Pause for debug
+    if keys.pressed(brackens_tools::winit::event::VirtualKeyCode::E) {
+        return;
+    }
     let delta = tracker.delta();
     for mut progress in (&mut progresses).iter() {
         progress.0 += delta * progress.1;
@@ -164,7 +173,7 @@ fn sys_move(
     for (_, progress, mut transform) in (&v_move, &v_progress, &mut vm_transform).iter() {
         let half_size = Vec2::new(screen.width() as f32 / 2., screen.height() as f32 / 2.);
 
-        *transform.translation() = Vec3::new(
+        *transform.translation_mut() = Vec3::new(
             half_size.x * progress.0.sin() * 0.7 + half_size.x,
             half_size.y * progress.0.cos() * 0.7 + half_size.y,
             0.,
@@ -174,7 +183,7 @@ fn sys_move(
 
 fn sys_spin(v_spin: View<Spin>, v_progress: View<Progress>, mut vm_transform: ViewMut<Transform>) {
     for (spin, progress, mut transform) in (&v_spin, &v_progress, &mut vm_transform).iter() {
-        *transform.translation() =
+        *transform.translation_mut() =
             Vec3::new(progress.0.sin() * spin.0, progress.0.cos() * spin.0, 0.);
     }
 }

@@ -2,7 +2,7 @@
 
 use brackens_tools::{
     general,
-    glam::{Quat, Vec3},
+    glam::{Mat4, Quat, Vec3},
 };
 use shipyard::{
     Borrow, BorrowInfo, Component, EntitiesViewMut, EntityId, Get, IntoBorrow, Remove, ViewMut,
@@ -38,13 +38,23 @@ impl Transform {
 
     //--------------------------------------------------
 
-    pub fn translation(&mut self) -> &mut Vec3 {
+    pub fn translation(&self) -> &Vec3 {
+        &self.0.translation
+    }
+    pub fn rotation(&self) -> &Quat {
+        &self.0.rotation
+    }
+    pub fn scale(&self) -> &Vec3 {
+        &self.0.scale
+    }
+
+    pub fn translation_mut(&mut self) -> &mut Vec3 {
         &mut self.0.translation
     }
-    pub fn rotation(&mut self) -> &mut Quat {
+    pub fn rotation_mut(&mut self) -> &mut Quat {
         &mut self.0.rotation
     }
-    pub fn scale(&mut self) -> &mut Vec3 {
+    pub fn scale_mut(&mut self) -> &mut Vec3 {
         &mut self.0.scale
     }
 
@@ -52,6 +62,10 @@ impl Transform {
 
     pub fn to_raw(&self) -> [f32; 16] {
         self.0.to_raw()
+    }
+
+    pub fn to_mat4(&self) -> Mat4 {
+        self.0.to_mat4()
     }
 
     //--------------------------------------------------
@@ -78,6 +92,7 @@ impl std::ops::AddAssign for Transform {
 }
 
 #[derive(Component, Default)]
+#[track(All)]
 pub struct GlobalTransform(pub(crate) Transform);
 impl GlobalTransform {
     //--------------------------------------------------
@@ -100,20 +115,34 @@ impl GlobalTransform {
 
     //--------------------------------------------------
 
-    pub fn translation(&mut self) -> &mut Vec3 {
+    pub fn translation(&self) -> &Vec3 {
         self.0.translation()
     }
-    pub fn rotation(&mut self) -> &mut Quat {
+    pub fn rotation(&self) -> &Quat {
         self.0.rotation()
     }
-    pub fn scale(&mut self) -> &mut Vec3 {
+    pub fn scale(&self) -> &Vec3 {
         self.0.scale()
+    }
+
+    pub fn translation_mut(&mut self) -> &mut Vec3 {
+        self.0.translation_mut()
+    }
+    pub fn rotation_mut(&mut self) -> &mut Quat {
+        self.0.rotation_mut()
+    }
+    pub fn scale_mut(&mut self) -> &mut Vec3 {
+        self.0.scale_mut()
     }
 
     //--------------------------------------------------
 
     pub fn to_raw(&self) -> [f32; 16] {
         self.0.to_raw()
+    }
+
+    pub fn to_mat4(&self) -> Mat4 {
+        self.0.to_mat4()
     }
 
     //--------------------------------------------------

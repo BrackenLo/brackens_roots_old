@@ -8,6 +8,15 @@ use shipyard::Component;
 //===============================================================
 
 #[derive(Component)]
+#[track(Modification)]
+pub struct Activated;
+
+#[derive(Component)]
+pub struct AutoUpdate;
+
+//===============================================================
+
+#[derive(Component)]
 pub struct Timer(pub(crate) general::Timer);
 impl Timer {
     //--------------------------------------------------

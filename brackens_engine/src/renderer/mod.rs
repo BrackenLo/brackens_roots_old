@@ -1,7 +1,7 @@
 //===============================================================
 
 use cfg_if::cfg_if;
-use shipyard::World;
+use shipyard::{IntoWorkload, Workload, World};
 
 //===============================================================
 
@@ -32,11 +32,21 @@ pub(crate) fn run_startup_systems(world: &mut World) {
 }
 
 pub(crate) fn run_resize_systems(world: &mut World) {
-    #[cfg(feature = "2d")]
-    world.run(systems_2d::sys_resize_pipeline);
+    world.run(systems::sys_resize_camera);
+
+    cfg_if! {
+    if #[cfg(feature = "2d")] {
+            world.run(systems_2d::sys_resize_pipeline);
+        }
+    }
 
     #[cfg(feature = "3d")]
     world.run(systems_3d::sys_resize_pipeline);
+}
+
+pub(crate) fn workload_post_update_systems() -> Workload {
+    // #[cfg(feature = "2d")]
+    (systems_2d::sys_update_camera).into_workload()
 }
 
 //===============================================================

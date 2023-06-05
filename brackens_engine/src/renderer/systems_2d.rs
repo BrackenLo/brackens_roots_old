@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::{
-    components::{RenderPassTools, Visible},
+    components::{CameraBundleView, RenderPassTools, Visible},
     components_2d::*,
 };
 
@@ -54,8 +54,24 @@ pub fn sys_resize_pipeline(
     queue: UniqueView<Queue>,
     window_size: UniqueView<WindowSize>,
     mut renderer: UniqueViewMut<TextureRenderer>,
+
+    v_camera_bundle: CameraBundleView,
 ) {
-    renderer.resize(&device.0, &queue.0, window_size.0);
+    if !v_camera_bundle.has_camera() {
+        renderer.resize_both(&device.0, &queue.0, window_size.size());
+        return;
+    }
+    renderer.resize_depth(&device.0, window_size.size());
+}
+
+pub fn sys_update_camera(
+    queue: UniqueView<Queue>,
+    mut renderer: UniqueViewMut<TextureRenderer>,
+    v_camera_bundle: CameraBundleView,
+) {
+    if v_camera_bundle.has_changed() {
+        renderer.resize_projection(&queue.0, &v_camera_bundle.get_projection());
+    }
 }
 
 //--------------------------------------------------

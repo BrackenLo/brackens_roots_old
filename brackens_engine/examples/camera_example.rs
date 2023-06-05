@@ -1,19 +1,18 @@
 //===============================================================
 
-mod camera_example;
-
 use brackens_engine::{
     core_components::KeyManager,
+    prelude::{Texture, Vec3},
     renderer::{
-        components::Visible,
-        components_2d::Texture,
-        tools_2d::{load_texture, LoadTextureDescriptor},
+        components::Camera,
+        components_2d::TextureBundleViewMut,
+        tools_2d::{load_blank_texture, BlankTextureDescriptor},
     },
     spatial_components::{GlobalTransform, Transform},
+    tool_components::{Activated, AutoUpdate},
     KeyCode, ShipyardGameState, ShipyardRunner,
 };
-use brackens_tools::glam::{Vec2, Vec3};
-use shipyard::{Component, IntoIter, UniqueView, View, ViewMut};
+use shipyard::{Component, EntitiesViewMut, IntoIter, UniqueView, View, ViewMut};
 
 //===============================================================
 
@@ -26,36 +25,25 @@ fn main() {
 struct Game;
 impl ShipyardGameState for Game {
     fn new(world: &mut shipyard::World) -> Self {
-        let texture = world.run_with_data(
-            load_texture,
-            LoadTextureDescriptor {
-                label: "Boss Face",
-                path: "res/bossFace.png",
-                sampler: None,
+        let texture = world.run_with_data(load_blank_texture, BlankTextureDescriptor::default());
+
+        world.run(
+            |mut entities: EntitiesViewMut, mut vm_texture_bundle: TextureBundleViewMut| {
+                vm_texture_bundle.new_texture(
+                    &mut entities,
+                    Transform::default(),
+                    Texture::new_color(texture, 32., 32., [1., 0., 0., 1.]),
+                );
             },
         );
 
         world.add_entity((
-            Visible { visible: true },
-            Transform::from_translation(Vec3::new(0., 0., 99.)),
+            Transform::default(),
             GlobalTransform::default(),
-            Texture {
-                size: Vec2::new(32., 32.),
-                handle: texture.clone(),
-                color: [1., 0., 1., 1.],
-            },
+            Camera::new_orthographic(-300., 300., -200., 200., 0., 100.),
+            AutoUpdate,
+            Activated,
             Movable(5.),
-        ));
-
-        world.add_entity((
-            Visible { visible: true },
-            Transform::from_translation(Vec3::new(100., 100., 0.)),
-            GlobalTransform::default(),
-            Texture {
-                size: Vec2::new(64., 64.),
-                handle: texture,
-                color: [1., 0., 0., 1.],
-            },
         ));
 
         Self
@@ -64,7 +52,7 @@ impl ShipyardGameState for Game {
     fn update(&mut self, world: &mut shipyard::World) {
         world.run(
             |keys: UniqueView<KeyManager>,
-             mut transforms: ViewMut<Transform>,
+             mut vm_transforms: ViewMut<Transform>,
              v_movable: View<Movable>| {
                 let mut dir = Vec3::ZERO;
                 if keys.pressed(KeyCode::A) {
@@ -80,15 +68,17 @@ impl ShipyardGameState for Game {
                     dir.y -= 1.;
                 }
 
-                for (mut transform, movable) in (&mut transforms, &v_movable).iter() {
+                if dir.length() == 0. {
+                    return;
+                }
+
+                for (mut transform, movable) in (&mut vm_transforms, &v_movable).iter() {
                     *transform.translation_mut() += dir * movable.0;
                 }
             },
         );
     }
 }
-
-//===============================================================
 
 #[derive(Component)]
 struct Movable(f32);

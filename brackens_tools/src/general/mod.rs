@@ -38,6 +38,10 @@ impl Transform {
         glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
             .to_cols_array()
     }
+
+    pub fn to_mat4(&self) -> glam::Mat4 {
+        glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
+    }
 }
 impl Default for Transform {
     fn default() -> Self {
