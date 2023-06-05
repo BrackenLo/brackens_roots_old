@@ -7,6 +7,7 @@ use shipyard::{IntoWorkload, Workload, World};
 
 pub mod components;
 pub(crate) mod systems;
+pub mod tools;
 
 cfg_if! {
     if #[cfg(feature = "2d")] {

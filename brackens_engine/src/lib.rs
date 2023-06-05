@@ -46,6 +46,7 @@ mod core_systems;
 pub mod renderer;
 pub mod spatial_components;
 mod spatial_systems;
+pub mod spatial_tools;
 pub mod tool_components;
 mod tool_systems;
 

@@ -14,7 +14,7 @@ use brackens_renderer::{
 use brackens_tools::glam::{self, Vec2};
 use shipyard::{Borrow, Component, EntitiesViewMut, EntityId, IntoBorrow, Unique, ViewMut};
 
-use crate::{prelude::Transform, spatial_components::TransformBundleViewMut};
+use crate::{prelude::Transform, spatial_tools::TransformBundleViewMut};
 
 use super::components::Visible;
 

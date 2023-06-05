@@ -10,8 +10,9 @@ use crate::{
 };
 
 use super::{
-    components::{CameraBundleView, RenderPassTools, Visible},
+    components::{RenderPassTools, Visible},
     components_2d::*,
+    tools::CameraBundleView,
 };
 
 //===============================================================
