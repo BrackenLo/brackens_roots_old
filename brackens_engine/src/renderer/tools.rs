@@ -8,11 +8,12 @@ use shipyard::{
 use crate::{
     prelude::{GlobalTransform, Transform},
     spatial_tools::TransformBundleViewMut,
-    tool_components::{Active, AutoUpdate},
+    tool_components::AutoUpdate,
 };
 
 use super::components::{
-    Camera, CameraProjection, OrthographicCameraDescriptor, PerspectiveCameraDescriptor,
+    Camera, CameraActive, CameraProjection, OrthographicCameraDescriptor,
+    PerspectiveCameraDescriptor,
 };
 
 //===============================================================
@@ -20,7 +21,7 @@ use super::components::{
 pub struct CameraBundleView<'v> {
     v_global_transform: View<'v, GlobalTransform>,
     v_camera: View<'v, Camera>,
-    v_active: View<'v, Active>,
+    v_active: View<'v, CameraActive>,
 }
 impl<'v> CameraBundleView<'v> {
     pub fn has_camera(&self) -> bool {
@@ -101,7 +102,7 @@ impl<'v> IntoBorrow for CameraBundleView<'_> {
 type CameraBundleViewComponents<'v> = (
     View<'v, GlobalTransform>,
     View<'v, Camera>,
-    View<'v, Active>,
+    View<'v, CameraActive>,
 );
 
 impl<'v> Borrow<'v> for CameraBundleViewBorrower {
@@ -134,7 +135,7 @@ unsafe impl BorrowInfo for CameraBundleView<'_> {
 pub struct CameraBundleViewMut<'v> {
     vm_transform_bundle: TransformBundleViewMut<'v>,
     vm_camera: ViewMut<'v, Camera>,
-    vm_active: ViewMut<'v, Active>,
+    vm_active: ViewMut<'v, CameraActive>,
     vm_auto_update: ViewMut<'v, AutoUpdate>,
 }
 
@@ -188,12 +189,21 @@ impl<'v> CameraBundleViewMut<'v> {
         entities.add_component(id, &mut self.vm_camera, camera);
 
         if is_active {
-            entities.add_component(id, &mut self.vm_active, Active);
+            entities.add_component(id, &mut self.vm_active, CameraActive);
         }
         if auto_updated {
             entities.add_component(id, &mut self.vm_auto_update, AutoUpdate);
         }
         id
+    }
+
+    pub fn activate_camera(&mut self, entities: &mut EntitiesViewMut, camera_id: EntityId) {
+        if !self.vm_camera.contains(camera_id) {
+            panic!("Error activating camera. Provided entity doesn't have the camera component.");
+        }
+
+        self.vm_active.clear();
+        entities.add_component(camera_id, &mut self.vm_active, CameraActive);
     }
 }
 
@@ -205,7 +215,7 @@ impl<'v> IntoBorrow for CameraBundleViewMut<'_> {
 type CameraBundleViewMutComponents<'v> = (
     TransformBundleViewMut<'v>,
     ViewMut<'v, Camera>,
-    ViewMut<'v, Active>,
+    ViewMut<'v, CameraActive>,
     ViewMut<'v, AutoUpdate>,
 );
 

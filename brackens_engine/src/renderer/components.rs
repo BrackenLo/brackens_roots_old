@@ -33,6 +33,10 @@ impl Default for Visible {
 
 #[derive(Component)]
 #[track(Modification)]
+pub struct CameraActive;
+
+#[derive(Component)]
+#[track(Modification)]
 pub struct Camera {
     pub projection: CameraProjection,
 }

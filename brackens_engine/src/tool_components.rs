@@ -8,10 +8,6 @@ use shipyard::Component;
 //===============================================================
 
 #[derive(Component)]
-#[track(Modification)]
-pub struct Active;
-
-#[derive(Component)]
 pub struct AutoUpdate;
 
 //===============================================================
