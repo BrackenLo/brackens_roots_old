@@ -72,7 +72,7 @@ impl ShipyardRunner {
 #[allow(unused_variables)]
 pub trait ShipyardGameState {
     fn new(world: &mut shipyard::World) -> Self;
-    fn resize(&mut self, new_size: (u32, u32)) {}
+    fn resize(&mut self, new_size: Size<u32>) {}
     fn update(&mut self, world: &mut shipyard::World);
     fn render(&mut self, world: &mut shipyard::World) {}
 }
