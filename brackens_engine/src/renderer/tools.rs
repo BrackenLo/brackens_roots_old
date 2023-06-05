@@ -1,11 +1,19 @@
 //===============================================================
 
 use brackens_tools::glam::Mat4;
-use shipyard::{Borrow, BorrowInfo, IntoBorrow, IntoIter, IntoWithId, View};
+use shipyard::{
+    Borrow, BorrowInfo, EntitiesViewMut, EntityId, IntoBorrow, IntoIter, IntoWithId, View, ViewMut,
+};
 
-use crate::{prelude::GlobalTransform, tool_components::Active};
+use crate::{
+    prelude::{GlobalTransform, Transform},
+    spatial_tools::TransformBundleViewMut,
+    tool_components::{Active, AutoUpdate},
+};
 
-use super::components::{Camera, CameraProjection};
+use super::components::{
+    Camera, CameraProjection, OrthographicCameraDescriptor, PerspectiveCameraDescriptor,
+};
 
 //===============================================================
 
@@ -118,6 +126,108 @@ impl<'v> Borrow<'v> for CameraBundleViewBorrower {
 unsafe impl BorrowInfo for CameraBundleView<'_> {
     fn borrow_info(info: &mut Vec<shipyard::info::TypeInfo>) {
         <CameraBundleViewComponents>::borrow_info(info);
+    }
+}
+
+//===============================================================
+
+pub struct CameraBundleViewMut<'v> {
+    vm_transform_bundle: TransformBundleViewMut<'v>,
+    vm_camera: ViewMut<'v, Camera>,
+    vm_active: ViewMut<'v, Active>,
+    vm_auto_update: ViewMut<'v, AutoUpdate>,
+}
+
+impl<'v> CameraBundleViewMut<'v> {
+    pub fn create_camera_orographic(
+        &mut self,
+        entities: &mut EntitiesViewMut,
+        transform: Transform,
+        orthographic_descriptor: OrthographicCameraDescriptor,
+        is_active: bool,
+        auto_updated: bool,
+    ) -> EntityId {
+        self.create_base(
+            entities,
+            transform,
+            is_active,
+            auto_updated,
+            Camera::new_orthographic(orthographic_descriptor),
+        )
+    }
+
+    pub fn create_camera_perspective(
+        &mut self,
+        entities: &mut EntitiesViewMut,
+        transform: Transform,
+        perspective_descriptor: PerspectiveCameraDescriptor,
+        is_active: bool,
+        auto_updated: bool,
+    ) -> EntityId {
+        self.create_base(
+            entities,
+            transform,
+            is_active,
+            auto_updated,
+            Camera::new_perspective(perspective_descriptor),
+        )
+    }
+
+    fn create_base(
+        &mut self,
+        entities: &mut EntitiesViewMut,
+        transform: Transform,
+        is_active: bool,
+        auto_updated: bool,
+        camera: Camera,
+    ) -> EntityId {
+        let id = self
+            .vm_transform_bundle
+            .create_transform(entities, transform);
+
+        entities.add_component(id, &mut self.vm_camera, camera);
+
+        if is_active {
+            entities.add_component(id, &mut self.vm_active, Active);
+        }
+        if auto_updated {
+            entities.add_component(id, &mut self.vm_auto_update, AutoUpdate);
+        }
+        id
+    }
+}
+
+pub struct CameraBundleViewMutBorrower;
+impl<'v> IntoBorrow for CameraBundleViewMut<'_> {
+    type Borrow = CameraBundleViewMutBorrower;
+}
+
+type CameraBundleViewMutComponents<'v> = (
+    TransformBundleViewMut<'v>,
+    ViewMut<'v, Camera>,
+    ViewMut<'v, Active>,
+    ViewMut<'v, AutoUpdate>,
+);
+
+impl<'v> Borrow<'v> for CameraBundleViewMutBorrower {
+    type View = CameraBundleViewMut<'v>;
+
+    fn borrow(
+        world: &'v shipyard::World,
+        last_run: Option<u32>,
+        current: u32,
+    ) -> Result<Self::View, shipyard::error::GetStorage> {
+        let (vm_transform_bundle, vm_camera, vm_active, vm_auto_update) =
+            <CameraBundleViewMutComponents as IntoBorrow>::Borrow::borrow(
+                world, last_run, current,
+            )?;
+
+        Ok(CameraBundleViewMut {
+            vm_transform_bundle,
+            vm_camera,
+            vm_active,
+            vm_auto_update,
+        })
     }
 }
 
