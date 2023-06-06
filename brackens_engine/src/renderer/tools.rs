@@ -62,7 +62,7 @@ impl<'v> CameraBundleView<'v> {
                     z_far,
                 } => {
                     let projection_matrix =
-                        Mat4::orthographic_rh(left, right, bottom, top, z_near, z_far);
+                        Mat4::orthographic_lh(left, right, bottom, top, z_near, z_far);
 
                     let transform_position = *global_transform.translation();
                     let transform_rotation = *global_transform.rotation();
@@ -82,8 +82,8 @@ impl<'v> CameraBundleView<'v> {
                 } => {
                     let transform_position = *global_transform.translation();
 
-                    let view = Mat4::look_at_rh(transform_position, target, up);
-                    let proj = Mat4::perspective_rh_gl(fovy, aspect, z_near, z_far);
+                    let view = Mat4::look_at_lh(transform_position, target, up);
+                    let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
 
                     proj * view
                 }
