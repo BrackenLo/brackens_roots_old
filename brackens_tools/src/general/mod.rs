@@ -73,10 +73,12 @@ impl Transform {
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn forward(&self) -> Vec3 {
         self.rotation * Vec3::Z
     }
 
+    #[inline]
     pub fn right(&self) -> Vec3 {
         self.rotation * Vec3::X
     }
@@ -91,11 +93,13 @@ impl Transform {
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn to_raw(&self) -> [f32; 16] {
         Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
             .to_cols_array()
     }
 
+    #[inline]
     pub fn to_mat4(&self) -> Mat4 {
         Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
     }

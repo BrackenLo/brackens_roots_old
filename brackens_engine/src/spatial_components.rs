@@ -14,6 +14,7 @@ pub struct Transform(pub(crate) general::Transform);
 impl Transform {
     //--------------------------------------------------
 
+    #[inline]
     pub fn new(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self(general::Transform {
             translation,
@@ -22,24 +23,29 @@ impl Transform {
         })
     }
 
+    #[inline]
     pub fn from_translation(translation: Vec3) -> Self {
         Self(general::Transform::from_translation(translation))
     }
 
+    #[inline]
     pub fn from_rotation(rotation: Quat) -> Self {
         Self(general::Transform::from_rotation(rotation))
     }
 
+    #[inline]
     pub fn from_scale(scale: Vec3) -> Self {
         Self(general::Transform::from_scale(scale))
     }
 
+    #[inline]
     pub fn from_translation_rotation(translation: Vec3, rotation: Quat) -> Self {
         Self(general::Transform::from_translation_rotatation(
             translation,
             rotation,
         ))
     }
+    #[inline]
     pub fn from_translation_scale(translation: Vec3, scale: Vec3) -> Self {
         Self(general::Transform::from_translation_scale(
             translation,
@@ -47,10 +53,12 @@ impl Transform {
         ))
     }
 
+    #[inline]
     pub fn from_rotation_scale(rotation: Quat, scale: Vec3) -> Self {
         Self(general::Transform::from_rotation_scale(rotation, scale))
     }
 
+    #[inline]
     pub fn from_translation_rotation_scale(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self(general::Transform::from_translation_rotatation_scale(
             translation,
@@ -61,48 +69,59 @@ impl Transform {
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn translation(&self) -> &Vec3 {
         &self.0.translation
     }
+    #[inline]
     pub fn rotation(&self) -> &Quat {
         &self.0.rotation
     }
+    #[inline]
     pub fn scale(&self) -> &Vec3 {
         &self.0.scale
     }
 
+    #[inline]
     pub fn translation_mut(&mut self) -> &mut Vec3 {
         &mut self.0.translation
     }
+    #[inline]
     pub fn rotation_mut(&mut self) -> &mut Quat {
         &mut self.0.rotation
     }
+    #[inline]
     pub fn scale_mut(&mut self) -> &mut Vec3 {
         &mut self.0.scale
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn forward(&self) -> Vec3 {
         self.0.forward()
     }
 
+    #[inline]
     pub fn right(&self) -> Vec3 {
         self.0.right()
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn lerp(&mut self, target: &Transform, s: f32) {
         self.0.lerp(&target.0, s);
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn to_raw(&self) -> [f32; 16] {
         self.0.to_raw()
     }
 
+    #[inline]
     pub fn to_mat4(&self) -> Mat4 {
         self.0.to_mat4()
     }
@@ -112,6 +131,7 @@ impl Transform {
 impl std::ops::Add for Transform {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Transform(self.0 + rhs.0)
     }
@@ -119,6 +139,7 @@ impl std::ops::Add for Transform {
 impl std::ops::Add<&Self> for Transform {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: &Self) -> Self::Output {
         Transform(self.0 + rhs.0)
     }
@@ -136,34 +157,42 @@ pub struct GlobalTransform(pub(crate) Transform);
 impl GlobalTransform {
     //--------------------------------------------------
 
+    #[inline]
     pub fn new(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self(Transform::new(translation, rotation, scale))
     }
 
+    #[inline]
     pub fn from_translation(translation: Vec3) -> Self {
         Self(Transform::from_translation(translation))
     }
 
+    #[inline]
     pub fn from_rotation(rotation: Quat) -> Self {
         Self(Transform::from_rotation(rotation))
     }
 
+    #[inline]
     pub fn from_scale(scale: Vec3) -> Self {
         Self(Transform::from_scale(scale))
     }
 
+    #[inline]
     pub fn from_translation_rotation(translation: Vec3, rotation: Quat) -> Self {
         Self(Transform::from_translation_rotation(translation, rotation))
     }
 
+    #[inline]
     pub fn from_translation_scale(translation: Vec3, scale: Vec3) -> Self {
         Self(Transform::from_translation_scale(translation, scale))
     }
 
+    #[inline]
     pub fn from_rotation_scale(rotation: Quat, scale: Vec3) -> Self {
         Self(Transform::from_rotation_scale(rotation, scale))
     }
 
+    #[inline]
     pub fn from_translation_rotation_scale(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self(Transform::from_translation_rotation_scale(
             translation,
@@ -174,48 +203,59 @@ impl GlobalTransform {
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn translation(&self) -> &Vec3 {
         self.0.translation()
     }
+    #[inline]
     pub fn rotation(&self) -> &Quat {
         self.0.rotation()
     }
+    #[inline]
     pub fn scale(&self) -> &Vec3 {
         self.0.scale()
     }
 
+    #[inline]
     pub fn translation_mut(&mut self) -> &mut Vec3 {
         self.0.translation_mut()
     }
+    #[inline]
     pub fn rotation_mut(&mut self) -> &mut Quat {
         self.0.rotation_mut()
     }
+    #[inline]
     pub fn scale_mut(&mut self) -> &mut Vec3 {
         self.0.scale_mut()
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn forward(&self) -> Vec3 {
         self.0.forward()
     }
 
+    #[inline]
     pub fn right(&self) -> Vec3 {
         self.0.right()
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn lerp(&mut self, target: &GlobalTransform, s: f32) {
         self.0.lerp(&target.0, s);
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub fn to_raw(&self) -> [f32; 16] {
         self.0.to_raw()
     }
 
+    #[inline]
     pub fn to_mat4(&self) -> Mat4 {
         self.0.to_mat4()
     }
@@ -226,6 +266,7 @@ impl GlobalTransform {
 impl std::ops::Add for GlobalTransform {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         GlobalTransform(self.0 + rhs.0)
     }
@@ -233,12 +274,14 @@ impl std::ops::Add for GlobalTransform {
 impl std::ops::Add<&Self> for GlobalTransform {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: &Self) -> Self::Output {
         GlobalTransform(self.0 + rhs.0)
     }
 }
 
 impl std::ops::AddAssign for GlobalTransform {
+    #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0
     }
