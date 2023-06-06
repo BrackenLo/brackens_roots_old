@@ -30,7 +30,8 @@ pub mod prelude {
     pub use crate::{ShipyardGameState, ShipyardRunner};
 
     pub use brackens_tools::{
-        glam::{Vec2, Vec3},
+        glam,
+        glam::{Mat4, Quat, Vec2, Vec3},
         input::KeyCode,
     };
     pub use shipyard::{
