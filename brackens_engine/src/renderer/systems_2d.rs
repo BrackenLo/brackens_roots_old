@@ -1,6 +1,7 @@
 //===============================================================
 
 use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture};
+use rayon::prelude::ParallelIterator;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View};
 
 use crate::{
@@ -85,24 +86,44 @@ pub fn sys_process_textures(
     v_texture: View<Texture>,
     v_visible: View<Visible>,
     v_global_transform: View<GlobalTransform>,
+
+    mut debug_log: UniqueViewMut<crate::core_components::TimingsDebug>,
 ) {
-    for (texture, visible, transform) in (&v_texture, &v_visible, &v_global_transform).iter() {
-        // If a texture is invisible, ignore it
-        if !visible.visible {
-            continue;
-        }
+    let instant = std::time::Instant::now();
 
-        let transform = GlobalTransform::from_scale(texture.size.extend(1.)) + transform;
+    (&v_texture, &v_visible, &v_global_transform)
+        .iter()
+        .for_each(|(texture, visible, transform)| {
+            // If a texture is invisible, ignore it
+            if !visible.visible {
+                ()
+            }
 
-        let instance = RawTextureInstance {
-            transform: transform.to_raw(),
-            color: texture.color,
-        };
+            let transform = GlobalTransform::from_scale(texture.size.extend(1.)) + transform;
 
-        renderer.draw_texture(texture.handle.id(), instance);
-    }
+            let instance = RawTextureInstance {
+                transform: transform.to_raw(),
+                color: texture.color,
+            };
+
+            renderer.draw_texture(texture.handle.id(), instance);
+
+            ()
+        });
+
+    debug_log.add_log(
+        "Process textures initial loop time".into(),
+        instant.elapsed().as_secs_f32(),
+    );
+
+    let instant = std::time::Instant::now();
 
     renderer.process_texture(&device.0, &queue.0);
+
+    debug_log.add_log(
+        "renderer processing textures time".into(),
+        instant.elapsed().as_secs_f32(),
+    );
 }
 
 pub fn sys_render_textures(
