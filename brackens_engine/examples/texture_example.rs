@@ -4,13 +4,14 @@ mod camera_example;
 
 use brackens_engine::{
     core_components::KeyManager,
+    prelude::KeyCode,
     renderer::{
         components::Visible,
         components_2d::Texture,
         tools_2d::{load_texture, LoadTextureDescriptor},
     },
     spatial_components::{GlobalTransform, Transform},
-    KeyCode, ShipyardGameState, ShipyardRunner,
+    ShipyardGameState, ShipyardRunner,
 };
 use brackens_tools::glam::{Vec2, Vec3};
 use shipyard::{Component, IntoIter, UniqueView, View, ViewMut};

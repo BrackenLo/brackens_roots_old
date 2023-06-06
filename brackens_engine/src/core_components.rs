@@ -3,10 +3,11 @@
 use brackens_renderer::{wgpu, Size};
 
 use brackens_tools::{
-    input, upkeep,
+    input::{self, KeyCode},
+    upkeep,
     winit::{
         dpi::{PhysicalPosition, PhysicalSize},
-        event::{MouseButton, VirtualKeyCode},
+        event::MouseButton,
     },
 };
 use shipyard::Unique;
@@ -56,13 +57,13 @@ pub struct Window(pub(crate) brackens_tools::winit::window::Window);
 #[derive(Unique, Default)]
 pub struct KeyManager(pub(crate) input::KeyManager);
 impl KeyManager {
-    pub fn pressed(&self, key: VirtualKeyCode) -> bool {
+    pub fn pressed(&self, key: KeyCode) -> bool {
         self.0.pressed(key)
     }
-    pub fn just_pressed(&self, key: VirtualKeyCode) -> bool {
+    pub fn just_pressed(&self, key: KeyCode) -> bool {
         self.0.just_pressed(key)
     }
-    pub fn just_released(&self, key: VirtualKeyCode) -> bool {
+    pub fn just_released(&self, key: KeyCode) -> bool {
         self.0.just_released(key)
     }
 }

@@ -71,7 +71,9 @@ where
 
 //===============================================================
 
-pub type KeyManager = ButtonManager<VirtualKeyCode>;
+pub type KeyCode = winit::event::VirtualKeyCode;
+
+pub type KeyManager = ButtonManager<KeyCode>;
 pub type MouseKeyManager = ButtonManager<MouseButton>;
 
 //===============================================================

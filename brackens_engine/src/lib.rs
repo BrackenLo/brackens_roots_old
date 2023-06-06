@@ -29,7 +29,10 @@ pub mod prelude {
     };
     pub use crate::{ShipyardGameState, ShipyardRunner};
 
-    pub use brackens_tools::glam::{Vec2, Vec3};
+    pub use brackens_tools::{
+        glam::{Vec2, Vec3},
+        input::KeyCode,
+    };
     pub use shipyard::{
         self, Component, IntoIter, IntoWithId, Unique, UniqueView, UniqueViewMut, View, ViewMut,
     };
@@ -51,8 +54,6 @@ pub mod tool_components;
 mod tool_systems;
 
 //===============================================================
-
-pub type KeyCode = winit::event::VirtualKeyCode;
 
 //===============================================================
 
@@ -317,3 +318,4 @@ where
 
 //===============================================================
 //--------------------------------------------------
+//________________________________________

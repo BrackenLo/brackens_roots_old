@@ -2,7 +2,7 @@
 
 use brackens_engine::{
     core_components::KeyManager,
-    prelude::{Texture, Vec3},
+    prelude::{KeyCode, Texture, Vec3},
     renderer::{
         components::{Camera, CameraActive, PerspectiveCameraDescriptor},
         components_2d::TextureBundleViewMut,
@@ -10,7 +10,7 @@ use brackens_engine::{
     },
     spatial_components::{GlobalTransform, Transform},
     tool_components::AutoUpdate,
-    KeyCode, ShipyardGameState, ShipyardRunner,
+    ShipyardGameState, ShipyardRunner,
 };
 use shipyard::{Component, EntitiesViewMut, IntoIter, UniqueView, View, ViewMut};
 
