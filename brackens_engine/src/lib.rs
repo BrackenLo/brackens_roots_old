@@ -100,7 +100,19 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
             width: window.inner_size().width,
             height: window.inner_size().height,
         };
-        let render_components = RenderComponents::new(RenderPrefs::default(), &window, inner_size);
+        let render_components = RenderComponents::new(
+            RenderPrefs {
+                // backends: todo!(),
+                // dx12_compiler: todo!(),
+                // power_preferences: todo!(),
+                // features: todo!(),
+                // limits: todo!(),
+                present_mode: brackens_renderer::wgpu::PresentMode::Mailbox,
+                ..Default::default()
+            },
+            &window,
+            inner_size,
+        );
 
         //--------------------------------------------------
 
