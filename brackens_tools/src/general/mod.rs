@@ -1,39 +1,41 @@
 //===============================================================
 
+use glam::{Mat4, Quat, Vec3};
+
 //===============================================================
 
 #[derive(Clone, Copy)]
 pub struct Transform {
-    pub translation: glam::Vec3,
-    pub rotation: glam::Quat,
-    pub scale: glam::Vec3,
+    pub translation: Vec3,
+    pub rotation: Quat,
+    pub scale: Vec3,
 }
 
 impl Transform {
     //--------------------------------------------------
 
-    pub fn from_translation(translation: glam::Vec3) -> Self {
+    pub fn from_translation(translation: Vec3) -> Self {
         Self {
             translation,
             ..Default::default()
         }
     }
 
-    pub fn from_rotation(rotation: glam::Quat) -> Self {
+    pub fn from_rotation(rotation: Quat) -> Self {
         Self {
             rotation,
             ..Default::default()
         }
     }
 
-    pub fn from_scale(scale: glam::Vec3) -> Self {
+    pub fn from_scale(scale: Vec3) -> Self {
         Self {
             scale,
             ..Default::default()
         }
     }
 
-    pub fn from_translation_rotatation(translation: glam::Vec3, rotation: glam::Quat) -> Self {
+    pub fn from_translation_rotatation(translation: Vec3, rotation: Quat) -> Self {
         Self {
             translation,
             rotation,
@@ -41,7 +43,7 @@ impl Transform {
         }
     }
 
-    pub fn from_translation_scale(translation: glam::Vec3, scale: glam::Vec3) -> Self {
+    pub fn from_translation_scale(translation: Vec3, scale: Vec3) -> Self {
         Self {
             translation,
             scale,
@@ -49,7 +51,7 @@ impl Transform {
         }
     }
 
-    pub fn from_rotation_scale(rotation: glam::Quat, scale: glam::Vec3) -> Self {
+    pub fn from_rotation_scale(rotation: Quat, scale: Vec3) -> Self {
         Self {
             rotation,
             scale,
@@ -58,15 +60,25 @@ impl Transform {
     }
 
     pub fn from_translation_rotatation_scale(
-        translation: glam::Vec3,
-        rotation: glam::Quat,
-        scale: glam::Vec3,
+        translation: Vec3,
+        rotation: Quat,
+        scale: Vec3,
     ) -> Self {
         Self {
             translation,
             rotation,
             scale,
         }
+    }
+
+    //--------------------------------------------------
+
+    pub fn forward(&self) -> Vec3 {
+        self.rotation * Vec3::Z
+    }
+
+    pub fn right(&self) -> Vec3 {
+        self.rotation * Vec3::X
     }
 
     //--------------------------------------------------
@@ -80,20 +92,22 @@ impl Transform {
     //--------------------------------------------------
 
     pub fn to_raw(&self) -> [f32; 16] {
-        glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
+        Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
             .to_cols_array()
     }
 
-    pub fn to_mat4(&self) -> glam::Mat4 {
-        glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
+    pub fn to_mat4(&self) -> Mat4 {
+        Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
     }
+
+    //--------------------------------------------------
 }
 impl Default for Transform {
     fn default() -> Self {
         Self {
-            translation: glam::Vec3::ZERO,
-            rotation: glam::Quat::default(),
-            scale: glam::Vec3::ONE,
+            translation: Vec3::ZERO,
+            rotation: Quat::default(),
+            scale: Vec3::ONE,
         }
     }
 }

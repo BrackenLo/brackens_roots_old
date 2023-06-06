@@ -13,7 +13,7 @@ use crate::{
 
 use super::components::{
     Camera, CameraActive, CameraProjection, OrthographicCameraDescriptor,
-    PerspectiveCameraDescriptor,
+    PerspectiveCameraDescriptor, PerspectiveTargetCameraDescriptor,
 };
 
 //===============================================================
@@ -72,7 +72,7 @@ impl<'v> CameraBundleView<'v> {
 
                     projection_matrix * transform_matrix
                 }
-                CameraProjection::Perspective {
+                CameraProjection::PerspectiveTarget {
                     target,
                     up,
                     aspect,
@@ -80,9 +80,24 @@ impl<'v> CameraBundleView<'v> {
                     z_near,
                     z_far,
                 } => {
-                    let transform_position = *global_transform.translation();
+                    let position = *global_transform.translation();
 
-                    let view = Mat4::look_at_lh(transform_position, target, up);
+                    let view = Mat4::look_at_lh(position, target, up);
+                    let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
+
+                    proj * view
+                }
+                CameraProjection::Perspective {
+                    up,
+                    aspect,
+                    fovy,
+                    z_near,
+                    z_far,
+                } => {
+                    let position = *global_transform.translation();
+                    let direction = global_transform.forward().normalize();
+
+                    let view = Mat4::look_at_lh(position, position + direction, up);
                     let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
 
                     proj * view
@@ -140,7 +155,7 @@ pub struct CameraBundleViewMut<'v> {
 }
 
 impl<'v> CameraBundleViewMut<'v> {
-    pub fn create_camera_orographic(
+    pub fn create_orographic(
         &mut self,
         entities: &mut EntitiesViewMut,
         transform: Transform,
@@ -157,7 +172,7 @@ impl<'v> CameraBundleViewMut<'v> {
         )
     }
 
-    pub fn create_camera_perspective(
+    pub fn create_perspective(
         &mut self,
         entities: &mut EntitiesViewMut,
         transform: Transform,
@@ -171,6 +186,23 @@ impl<'v> CameraBundleViewMut<'v> {
             is_active,
             auto_updated,
             Camera::new_perspective(perspective_descriptor),
+        )
+    }
+
+    pub fn create_perspective_target(
+        &mut self,
+        entities: &mut EntitiesViewMut,
+        transform: Transform,
+        perspective_descriptor: PerspectiveTargetCameraDescriptor,
+        is_active: bool,
+        auto_updated: bool,
+    ) -> EntityId {
+        self.create_base(
+            entities,
+            transform,
+            is_active,
+            auto_updated,
+            Camera::new_perspective_target(perspective_descriptor),
         )
     }
 
@@ -189,6 +221,7 @@ impl<'v> CameraBundleViewMut<'v> {
         entities.add_component(id, &mut self.vm_camera, camera);
 
         if is_active {
+            self.vm_active.clear();
             entities.add_component(id, &mut self.vm_active, CameraActive);
         }
         if auto_updated {

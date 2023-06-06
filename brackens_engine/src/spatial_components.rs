@@ -83,6 +83,16 @@ impl Transform {
 
     //--------------------------------------------------
 
+    pub fn forward(&self) -> Vec3 {
+        self.0.forward()
+    }
+
+    pub fn right(&self) -> Vec3 {
+        self.0.right()
+    }
+
+    //--------------------------------------------------
+
     pub fn lerp(&mut self, target: &Transform, s: f32) {
         self.0.lerp(&target.0, s);
     }
@@ -182,6 +192,16 @@ impl GlobalTransform {
     }
     pub fn scale_mut(&mut self) -> &mut Vec3 {
         self.0.scale_mut()
+    }
+
+    //--------------------------------------------------
+
+    pub fn forward(&self) -> Vec3 {
+        self.0.forward()
+    }
+
+    pub fn right(&self) -> Vec3 {
+        self.0.right()
     }
 
     //--------------------------------------------------

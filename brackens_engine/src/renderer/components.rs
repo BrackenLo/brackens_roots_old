@@ -51,6 +51,13 @@ pub enum CameraProjection {
         z_far: f32,
     },
     Perspective {
+        up: Vec3,
+        aspect: f32,
+        fovy: f32,
+        z_near: f32,
+        z_far: f32,
+    },
+    PerspectiveTarget {
         target: Vec3,
         up: Vec3,
         aspect: f32,
@@ -82,7 +89,6 @@ impl Default for OrthographicCameraDescriptor {
 }
 
 pub struct PerspectiveCameraDescriptor {
-    pub target: Vec3,
     pub up: Vec3,
     pub aspect: f32,
     pub fovy: f32,
@@ -90,6 +96,26 @@ pub struct PerspectiveCameraDescriptor {
     pub z_far: f32,
 }
 impl Default for PerspectiveCameraDescriptor {
+    fn default() -> Self {
+        Self {
+            up: Vec3::Y,
+            aspect: 1.77777777778,
+            fovy: 45.,
+            z_near: 0.1,
+            z_far: 1000.,
+        }
+    }
+}
+
+pub struct PerspectiveTargetCameraDescriptor {
+    pub target: Vec3,
+    pub up: Vec3,
+    pub aspect: f32,
+    pub fovy: f32,
+    pub z_near: f32,
+    pub z_far: f32,
+}
+impl Default for PerspectiveTargetCameraDescriptor {
     fn default() -> Self {
         Self {
             target: Vec3::ZERO,
@@ -127,7 +153,6 @@ impl Camera {
 
     pub fn new_perspective(
         PerspectiveCameraDescriptor {
-            target,
             up,
             aspect,
             fovy,
@@ -137,6 +162,27 @@ impl Camera {
     ) -> Self {
         Self {
             projection: CameraProjection::Perspective {
+                up,
+                aspect,
+                fovy,
+                z_near,
+                z_far,
+            },
+        }
+    }
+
+    pub fn new_perspective_target(
+        PerspectiveTargetCameraDescriptor {
+            target,
+            up,
+            aspect,
+            fovy,
+            z_near,
+            z_far,
+        }: PerspectiveTargetCameraDescriptor,
+    ) -> Self {
+        Self {
+            projection: CameraProjection::PerspectiveTarget {
                 target,
                 up,
                 aspect,

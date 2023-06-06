@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use winit::{
     dpi::PhysicalPosition,
-    event::{ElementState, MouseButton, VirtualKeyCode},
+    event::{ElementState, MouseButton},
 };
 
 //===============================================================
