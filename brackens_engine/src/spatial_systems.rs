@@ -8,6 +8,8 @@ use crate::spatial_components::{
     Child, GlobalTransform, HierarchyIter, Parent, Transform, UseParentTransform,
 };
 
+use rayon::prelude::*;
+
 //===============================================================
 
 pub fn workload_update_tranforms() -> Workload {
@@ -20,15 +22,23 @@ pub fn sys_update_transforms(
     mut vm_global_transform: ViewMut<GlobalTransform>,
     v_child: View<Child>,
 ) {
-    for (transform, mut global_transform, _) in (
+    (
         v_transform.inserted_or_modified(),
         &mut vm_global_transform,
         !&v_child,
     )
         .iter()
-    {
-        global_transform.0 = transform.clone();
-    }
+        .for_each(|(transform, mut global_transform, _)| global_transform.0 = *transform);
+
+    // (
+    //     v_transform.inserted_or_modified(),
+    //     &mut vm_global_transform,
+    //     !&v_child,
+    // )
+    //     .par_iter()
+    //     .for_each(|(transform, mut global_transform, _)| {
+    //         global_transform.0 = transform.clone();
+    //     });
 }
 
 /// Update all transforms in a hierarchy
