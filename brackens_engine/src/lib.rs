@@ -232,33 +232,8 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         #[cfg(feature = "debug")]
         let total_time = std::time::Instant::now();
 
-        //--------------------------------------------------
-
-        #[cfg(feature = "debug")]
-        let instant = std::time::Instant::now();
-
         self.pre_update();
-
-        #[cfg(feature = "debug")]
-        self.world
-            .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
-                debug_log.add_log("Pre Update total".into(), instant.elapsed().as_secs_f32());
-            });
-
-        //--------------------------------------------------
-
-        #[cfg(feature = "debug")]
-        let instant = std::time::Instant::now();
-
         self.game_state.update(&mut self.world);
-
-        #[cfg(feature = "debug")]
-        self.world
-            .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
-                debug_log.add_log("Update total".into(), instant.elapsed().as_secs_f32());
-            });
-
-        //--------------------------------------------------
 
         #[cfg(feature = "debug")]
         let instant = std::time::Instant::now();
@@ -293,31 +268,9 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         } else {
             //--------------------------------------------------
 
-            #[cfg(feature = "debug")]
-            let instant = std::time::Instant::now();
-
             self.pre_render();
 
-            #[cfg(feature = "debug")]
-            self.world
-                .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
-                    debug_log.add_log("Pre Render total".into(), instant.elapsed().as_secs_f32());
-                });
-
-            //--------------------------------------------------
-
-            #[cfg(feature = "debug")]
-            let instant = std::time::Instant::now();
-
             self.game_state.render(&mut self.world);
-
-            #[cfg(feature = "debug")]
-            self.world
-                .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
-                    debug_log.add_log("Render total".into(), instant.elapsed().as_secs_f32());
-                });
-
-            //--------------------------------------------------
 
             #[cfg(feature = "debug")]
             let instant = std::time::Instant::now();
