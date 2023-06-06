@@ -110,35 +110,35 @@ impl TextureRenderer {
     pub(crate) fn process_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
         self.should_render.clear();
 
-        for unprocessed in self.unprocessed_draw_data.iter() {
-            let data_count = unprocessed.1.len() as u32;
+        for (id, data) in self.unprocessed_draw_data.iter() {
+            let data_count = data.len() as u32;
 
             if data_count == 0 {
                 continue;
             }
-            self.should_render.insert(unprocessed.0.clone());
+            self.should_render.insert(id.clone());
 
-            if let Some(instance) = self.draw_data.get_mut(&unprocessed.0) {
+            if let Some(instance) = self.draw_data.get_mut(id) {
                 // Buffer is too small to hold new data. Need to create bigger buffer
                 if data_count > instance.instance_count {
                     let FinalTextureDrawCall {
                         instances,
                         instance_count,
-                    } = Self::create_instance_buffer(device, unprocessed.1);
+                    } = Self::create_instance_buffer(device, data);
 
                     instance.instances = instances;
                     instance.instance_count = instance_count;
                     continue;
                 } else {
                     // Buffer is big enough. Just write new data to it
-                    queue.write_buffer(&instance.instances, 0, bytemuck::cast_slice(unprocessed.1));
+                    queue.write_buffer(&instance.instances, 0, bytemuck::cast_slice(data));
                     continue;
                 }
             }
 
             // Data doesn't exist yet. Create it and add it
-            let instance = Self::create_instance_buffer(device, unprocessed.1);
-            self.draw_data.insert(unprocessed.0.clone(), instance);
+            let instance = Self::create_instance_buffer(device, data);
+            self.draw_data.insert(id.clone(), instance);
         }
 
         self.unprocessed_draw_data.clear();
