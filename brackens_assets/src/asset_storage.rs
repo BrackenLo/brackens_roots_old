@@ -199,8 +199,12 @@ where
         }
 
         for to_remove in &self.removed_assets {
-            self.loaded_paths
-                .remove(&self.asset_paths.remove(&to_remove).unwrap());
+            match &self.asset_paths.remove(&to_remove) {
+                Some(val) => {
+                    self.loaded_paths.remove(val);
+                }
+                None => {}
+            }
         }
     }
 
