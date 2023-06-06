@@ -6,11 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["2d", "multithreading"]
+default = ["2d", "multithreading", "debug"]
 debug = []
 2d = []
 3d = ["2d"]
-multithreading = ["dep:rayon"]
+multithreading = ["dep:rayon", "dep:parking_lot"]
 
 [dependencies]
 brackens_tools = { path = "../brackens_tools" }

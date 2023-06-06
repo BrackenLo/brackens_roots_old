@@ -55,10 +55,60 @@ pub(crate) fn workload_post_update_systems() -> Workload {
 pub(crate) fn run_post_render_systems(world: &mut World) {
     cfg_if! {
         if #[cfg(feature = "2d")] {
+
+
+            //--------------------------------------------------
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             world.run(systems_2d::sys_process_textures);
+
+            #[cfg(feature = "debug")]
+            world
+                .run(|mut debug_log: shipyard::UniqueViewMut<crate::core_components::TimingsDebug>| {
+                    debug_log.add_log("Process Textures  total".into(), instant.elapsed().as_secs_f32());
+                });
+            //--------------------------------------------------
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             world.run(systems_2d::sys_add_new_textures);
+
+            #[cfg(feature = "debug")]
+            world
+                .run(|mut debug_log: shipyard::UniqueViewMut<crate::core_components::TimingsDebug>| {
+                    debug_log.add_log("Add new textures total".into(), instant.elapsed().as_secs_f32());
+                });
+            //--------------------------------------------------
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             world.run(systems_2d::sys_remove_unloaded_textures);
+
+            #[cfg(feature = "debug")]
+            world
+                .run(|mut debug_log: shipyard::UniqueViewMut<crate::core_components::TimingsDebug>| {
+                    debug_log.add_log("remove unloaded textures total".into(), instant.elapsed().as_secs_f32());
+                });
+            //--------------------------------------------------
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             world.run(systems_2d::sys_render_textures);
+
+            #[cfg(feature = "debug")]
+            world
+                .run(|mut debug_log: shipyard::UniqueViewMut<crate::core_components::TimingsDebug>| {
+                    debug_log.add_log("render textures total".into(), instant.elapsed().as_secs_f32());
+                });
+            //--------------------------------------------------
+
+
+
+            // world.run(systems_2d::sys_process_textures);
+            // world.run(systems_2d::sys_add_new_textures);
+            // world.run(systems_2d::sys_remove_unloaded_textures);
+            // world.run(systems_2d::sys_render_textures);
 
         }
     }

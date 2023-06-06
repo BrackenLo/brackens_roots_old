@@ -139,6 +139,11 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         //--------------------------------------------------
 
+        #[cfg(feature = "debug")]
+        world.add_unique(TimingsDebug::default());
+
+        //--------------------------------------------------
+
         world.run(tool_systems::sys_setup_asset_storage);
         world.add_workload(tool_systems::wl_reset_asset_storage);
 
@@ -224,9 +229,49 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
     }
 
     fn tick(&mut self) {
+        #[cfg(feature = "debug")]
+        let total_time = std::time::Instant::now();
+
+        //--------------------------------------------------
+
+        #[cfg(feature = "debug")]
+        let instant = std::time::Instant::now();
+
         self.pre_update();
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                debug_log.add_log("Pre Update total".into(), instant.elapsed().as_secs_f32());
+            });
+
+        //--------------------------------------------------
+
+        #[cfg(feature = "debug")]
+        let instant = std::time::Instant::now();
+
         self.game_state.update(&mut self.world);
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                debug_log.add_log("Update total".into(), instant.elapsed().as_secs_f32());
+            });
+
+        //--------------------------------------------------
+
+        #[cfg(feature = "debug")]
+        let instant = std::time::Instant::now();
+
         self.post_update();
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                debug_log.add_log("Post Update total".into(), instant.elapsed().as_secs_f32());
+            });
+
+        //--------------------------------------------------
 
         if let Err(e) = renderer::systems::start_render_pass(&mut self.world) {
             match e {
@@ -246,12 +291,61 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
                 _ => {}
             }
         } else {
+            //--------------------------------------------------
+
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             self.pre_render();
+
+            #[cfg(feature = "debug")]
+            self.world
+                .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                    debug_log.add_log("Pre Render total".into(), instant.elapsed().as_secs_f32());
+                });
+
+            //--------------------------------------------------
+
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             self.game_state.render(&mut self.world);
+
+            #[cfg(feature = "debug")]
+            self.world
+                .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                    debug_log.add_log("Render total".into(), instant.elapsed().as_secs_f32());
+                });
+
+            //--------------------------------------------------
+
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             self.post_render();
+
+            #[cfg(feature = "debug")]
+            self.world
+                .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                    debug_log.add_log("Post Render total".into(), instant.elapsed().as_secs_f32());
+                });
+
+            //--------------------------------------------------
         }
 
+        //--------------------------------------------------
+
         self.end();
+
+        //--------------------------------------------------
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run(|mut debug_log: UniqueViewMut<TimingsDebug>| {
+                debug_log.add_log("Total tick time".into(), total_time.elapsed().as_secs_f32());
+            });
+
+        //--------------------------------------------------
     }
 }
 
@@ -313,6 +407,15 @@ where
         self.world
             .run_workload(tool_systems::wl_reset_asset_storage)
             .unwrap();
+
+        #[cfg(feature = "debug")]
+        self.world.run(
+            |mut debug_log: UniqueViewMut<TimingsDebug>, upkeep: UniqueView<UpkeepTracker>| {
+                debug_log.print_log();
+                println!("Fps: {}", upkeep.avg_fps());
+                debug_log.clear();
+            },
+        );
     }
 }
 
