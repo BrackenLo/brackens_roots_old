@@ -92,6 +92,7 @@ impl TextureRenderer {
 
     //--------------------------------------------------
 
+    #[inline]
     pub(crate) fn draw_texture(
         &mut self,
         handle_id: HandleID<RendererTexture>,

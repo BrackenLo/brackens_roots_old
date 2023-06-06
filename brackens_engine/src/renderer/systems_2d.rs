@@ -91,10 +91,8 @@ pub fn sys_process_textures(
 ) {
     let instant = std::time::Instant::now();
 
-    let renderer_mutex = parking_lot::Mutex::new(&mut renderer);
-
     (&v_texture, &v_visible, &v_global_transform)
-        .par_iter()
+        .iter()
         .for_each(|(texture, visible, transform)| {
             // If a texture is invisible, ignore it
             if !visible.visible {
@@ -108,10 +106,7 @@ pub fn sys_process_textures(
                 color: texture.color,
             };
 
-            // renderer.draw_texture(texture.handle.id(), instance);
-            renderer_mutex
-                .lock()
-                .draw_texture(texture.handle.id(), instance);
+            renderer.draw_texture(texture.handle.id(), instance);
 
             ()
         });
