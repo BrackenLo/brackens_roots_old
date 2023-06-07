@@ -23,6 +23,7 @@ shipyard = "0.6.2"
 log = "0.4.17"
 rayon = { version = "1.7.0", optional = true }
 parking_lot = { workspace = true, optional = true }
+ahash = "0.8.3"
 
 cfg-if = { workspace = true }
 

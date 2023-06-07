@@ -1,7 +1,6 @@
 //===============================================================
 
-use std::collections::HashMap;
-
+use ahash::AHashMap;
 use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture, TextureID};
 use rayon::prelude::ParallelIterator;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View};
@@ -103,7 +102,7 @@ pub fn sys_process_textures(
     renderer.unprocessed_draw_data = (&v_texture, &v_visible, &v_global_transform)
         .par_iter()
         .fold(
-            || HashMap::<TextureID, Vec<RawTextureInstance>>::new(),
+            || AHashMap::<TextureID, Vec<RawTextureInstance>>::new(),
             |mut acc, (texture, visible, transform)| {
                 if visible.visible {
                     let instance = RawTextureInstance {

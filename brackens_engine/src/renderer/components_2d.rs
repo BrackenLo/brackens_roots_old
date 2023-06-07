@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use ahash::AHashMap;
 use brackens_assets::{Handle, HandleID};
 use brackens_renderer::{
     bytemuck, render_tools,
@@ -27,7 +28,7 @@ pub struct TextureRenderer {
     renderer: renderer_2d::TextureRenderer,
 
     should_render: HashSet<HandleID<RendererTexture>>,
-    pub(crate) unprocessed_draw_data: HashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
+    pub(crate) unprocessed_draw_data: AHashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
 
     texture_data: HashMap<HandleID<RendererTexture>, Handle<RendererTexture>>,
     draw_data: HashMap<HandleID<RendererTexture>, FinalTextureDrawCall>,
@@ -44,7 +45,7 @@ impl TextureRenderer {
         Self {
             renderer: renderer_2d::TextureRenderer::new(device, config.format, window_size),
             should_render: HashSet::new(),
-            unprocessed_draw_data: HashMap::new(),
+            unprocessed_draw_data: AHashMap::new(),
 
             texture_data: HashMap::new(),
             draw_data: HashMap::new(),
