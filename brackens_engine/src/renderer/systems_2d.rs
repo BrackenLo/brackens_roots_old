@@ -21,7 +21,6 @@ use super::{
 use crate::tool_components::TimingsDebug;
 
 //===============================================================
-
 // Texture Stuff
 
 pub fn sys_setup_texture_renderer(
