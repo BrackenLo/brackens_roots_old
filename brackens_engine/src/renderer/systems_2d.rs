@@ -105,16 +105,17 @@ pub fn sys_process_textures(
             || AHashMap::<TextureID, Vec<RawTextureInstance>>::new(),
             |mut acc, (texture, visible, transform)| {
                 if visible.visible {
-                    let instance = RawTextureInstance {
-                        transform: (GlobalTransform::from_scale(texture.size.extend(1.))
-                            + transform)
-                            .to_raw(),
-                        color: texture.color,
-                    };
-
+                    // Add RawTextureInstance to hashmap of values to be renderer
                     acc.entry(texture.handle.id())
+                        // Insert empty vec if no value present
                         .or_insert(vec![])
-                        .push(instance);
+                        // Add texture instance to new or existing hashmap entry
+                        .push(RawTextureInstance {
+                            transform: (GlobalTransform::from_scale(texture.size.extend(1.))
+                                + transform)
+                                .to_raw(),
+                            color: texture.color,
+                        });
                 }
                 acc
             },
