@@ -94,6 +94,7 @@ pub fn sys_process_textures(
 
     #[cfg(feature = "debug")] mut debug_log: UniqueViewMut<TimingsDebug>,
 ) {
+    #[cfg(feature = "debug")]
     let instant = std::time::Instant::now();
 
     //--------------------------------------------------
@@ -151,20 +152,23 @@ pub fn sys_process_textures(
 
     //--------------------------------------------------
 
+    #[cfg(feature = "debug")]
     debug_log.add_log(
         "Process textures initial loop time".into(),
         instant.elapsed().as_secs_f32(),
-        None,
+        Some(colored::Color::BrightRed),
     );
 
+    #[cfg(feature = "debug")]
     let instant = std::time::Instant::now();
 
     renderer.process_texture(&device.0, &queue.0);
 
+    #[cfg(feature = "debug")]
     debug_log.add_log(
         "renderer processing textures time".into(),
         instant.elapsed().as_secs_f32(),
-        None,
+        Some(colored::Color::BrightRed),
     );
 }
 
