@@ -1,6 +1,8 @@
 //===============================================================
 
-use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture};
+use ahash::AHashMap;
+use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture, TextureID};
+use rayon::prelude::ParallelIterator;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View};
 
 use crate::{
@@ -15,8 +17,10 @@ use super::{
     tools::CameraBundleView,
 };
 
-//===============================================================
+#[cfg(feature = "debug")]
+use crate::tool_components::TimingsDebug;
 
+//===============================================================
 // Texture Stuff
 
 pub fn sys_setup_texture_renderer(
@@ -85,24 +89,84 @@ pub fn sys_process_textures(
     v_texture: View<Texture>,
     v_visible: View<Visible>,
     v_global_transform: View<GlobalTransform>,
+
+    #[cfg(feature = "debug")] mut debug_log: UniqueViewMut<TimingsDebug>,
 ) {
-    for (texture, visible, transform) in (&v_texture, &v_visible, &v_global_transform).iter() {
-        // If a texture is invisible, ignore it
-        if !visible.visible {
-            continue;
-        }
+    #[cfg(feature = "debug")]
+    let instant = std::time::Instant::now();
 
-        let transform = GlobalTransform::from_scale(texture.size.extend(1.)) + transform;
+    //--------------------------------------------------
 
-        let instance = RawTextureInstance {
-            transform: transform.to_raw(),
-            color: texture.color,
-        };
+    // let result: HashMap<TextureID, Vec<RawTextureInstance>>
+    renderer.unprocessed_draw_data = (&v_texture, &v_visible, &v_global_transform)
+        .par_iter()
+        .fold(
+            || AHashMap::<TextureID, Vec<RawTextureInstance>>::new(),
+            |mut acc, (texture, visible, transform)| {
+                if visible.visible {
+                    // Add RawTextureInstance to hashmap of values to be renderer
+                    acc.entry(texture.handle.id())
+                        // Insert empty vec if no value present
+                        .or_insert(vec![])
+                        // Add texture instance to new or existing hashmap entry
+                        .push(RawTextureInstance {
+                            transform: (GlobalTransform::from_scale(texture.size.extend(1.))
+                                + transform)
+                                .to_raw(),
+                            color: texture.color,
+                        });
+                }
+                acc
+            },
+        )
+        .reduce_with(|mut m1, m2| {
+            for (k, v) in m2 {
+                m1.entry(k).or_insert(vec![]).extend(v);
+            }
+            m1
+        })
+        .unwrap();
 
-        renderer.draw_texture(texture.handle.id(), instance);
-    }
+    //--------------------------------------------------
+
+    // (&v_texture, &v_visible, &v_global_transform)
+    //     .iter()
+    //     .for_each(|(texture, visible, transform)| {
+    //         if !visible.visible {
+    //             ()
+    //         }
+
+    //         let instance = RawTextureInstance {
+    //             transform: (GlobalTransform::from_scale(texture.size.extend(1.)) + transform)
+    //                 .to_raw(),
+    //             color: texture.color,
+    //         };
+
+    //         renderer.draw_texture(texture.handle.id(), instance);
+
+    //         ()
+    //     });
+
+    //--------------------------------------------------
+
+    #[cfg(feature = "debug")]
+    debug_log.add_log(
+        "Process textures initial loop time".into(),
+        instant.elapsed().as_secs_f32(),
+        Some(colored::Color::BrightRed),
+    );
+
+    #[cfg(feature = "debug")]
+    let instant = std::time::Instant::now();
 
     renderer.process_texture(&device.0, &queue.0);
+
+    #[cfg(feature = "debug")]
+    debug_log.add_log(
+        "renderer processing textures time".into(),
+        instant.elapsed().as_secs_f32(),
+        Some(colored::Color::BrightRed),
+    );
 }
 
 pub fn sys_render_textures(

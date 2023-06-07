@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 log = { workspace = true }
 crossbeam = "0.8.2"
-parking_lot = "0.12.1"
+parking_lot = { workspace = true }
 
 
 image = { workspace = true }

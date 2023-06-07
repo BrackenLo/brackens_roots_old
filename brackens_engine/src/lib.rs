@@ -17,6 +17,12 @@ use log::{error, info, warn};
 use prelude::ClearColor;
 use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 
+#[cfg(feature = "debug")]
+use {
+    tool_components::TimingsDebug,
+    tool_systems::{sys_add_time, sys_record_time, sys_record_time_and_reset, sys_start_timer},
+};
+
 //===============================================================
 
 pub mod prelude {
@@ -100,7 +106,19 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
             width: window.inner_size().width,
             height: window.inner_size().height,
         };
-        let render_components = RenderComponents::new(RenderPrefs::default(), &window, inner_size);
+        let render_components = RenderComponents::new(
+            RenderPrefs {
+                // backends: todo!(),
+                // dx12_compiler: todo!(),
+                // power_preferences: todo!(),
+                // features: todo!(),
+                // limits: todo!(),
+                present_mode: brackens_renderer::wgpu::PresentMode::Mailbox,
+                ..Default::default()
+            },
+            &window,
+            inner_size,
+        );
 
         //--------------------------------------------------
 
@@ -124,6 +142,11 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         //--------------------------------------------------
 
         world.add_unique(ClearColor([0.5, 0.4, 0.4]));
+
+        //--------------------------------------------------
+
+        #[cfg(feature = "debug")]
+        world.add_unique(TimingsDebug::default());
 
         //--------------------------------------------------
 
@@ -212,9 +235,49 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
     }
 
     fn tick(&mut self) {
+        //--------------------------------------------------
+        // Start recording timings for frame and for pre update
+
+        #[cfg(feature = "debug")]
+        let total_time = std::time::Instant::now();
+
+        #[cfg(feature = "debug")]
+        self.world.run(sys_start_timer);
+
+        //--------------------------------------------------
+        // Pre Update
+
         self.pre_update();
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run_with_data(sys_record_time_and_reset, ("Pre Update total".into(), None));
+
+        //--------------------------------------------------
+        // Update
+
         self.game_state.update(&mut self.world);
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run_with_data(sys_record_time_and_reset, ("Update total".into(), None));
+
+        //--------------------------------------------------
+        // Post Update
+
         self.post_update();
+
+        #[cfg(feature = "debug")]
+        self.world.run_with_data(
+            sys_record_time_and_reset,
+            ("Post Update total".into(), None),
+        );
+
+        //--------------------------------------------------
+
+        // Start recording time taken to start and complete rendering
+        #[cfg(feature = "debug")]
+        let start_render_time = std::time::Instant::now();
 
         if let Err(e) = renderer::systems::start_render_pass(&mut self.world) {
             match e {
@@ -234,12 +297,98 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
                 _ => {}
             }
         } else {
+            //--------------------------------------------------
+
+            // Record time taken to start render pass
+            #[cfg(feature = "debug")]
+            self.world.run_with_data(
+                sys_add_time,
+                (
+                    "Start Render Time".into(),
+                    start_render_time.elapsed().as_secs_f32(),
+                    Some(colored::Color::Magenta),
+                ),
+            );
+
+            // Reset timer
+            #[cfg(feature = "debug")]
+            self.world.run(sys_start_timer);
+
+            //--------------------------------------------------
+            // Pre Render
+
             self.pre_render();
+
+            #[cfg(feature = "debug")]
+            self.world
+                .run_with_data(sys_record_time_and_reset, ("Pre render total".into(), None));
+
+            //--------------------------------------------------
+            // Render
+
             self.game_state.render(&mut self.world);
+
+            #[cfg(feature = "debug")]
+            self.world
+                .run_with_data(sys_record_time_and_reset, ("Render total".into(), None));
+
+            //--------------------------------------------------
+            // Post Render
+
+            #[cfg(feature = "debug")]
+            let instant = std::time::Instant::now();
+
             self.post_render();
+
+            #[cfg(feature = "debug")]
+            self.world.run_with_data(
+                sys_add_time,
+                (
+                    "Post render total".into(),
+                    instant.elapsed().as_secs_f32(),
+                    None,
+                ),
+            );
+
+            //--------------------------------------------------
         }
 
+        // Record Total rendering time
+        #[cfg(feature = "debug")]
+        self.world.run_with_data(
+            sys_add_time,
+            (
+                "Finish all Render Time".into(),
+                start_render_time.elapsed().as_secs_f32(),
+                Some(colored::Color::Magenta),
+            ),
+        );
+
+        //--------------------------------------------------
+
+        // Reset timer
+        #[cfg(feature = "debug")]
+        self.world.run(sys_start_timer);
+
         self.end();
+
+        #[cfg(feature = "debug")]
+        self.world
+            .run_with_data(sys_record_time, ("Ending time".into(), None));
+
+        //--------------------------------------------------
+
+        #[cfg(feature = "debug")]
+        self.world.run_with_data(
+            sys_add_time,
+            (
+                "Total tick time".into(),
+                total_time.elapsed().as_secs_f32(),
+                Some(colored::Color::Cyan),
+            ),
+        );
+
+        //--------------------------------------------------
     }
 }
 
@@ -301,6 +450,15 @@ where
         self.world
             .run_workload(tool_systems::wl_reset_asset_storage)
             .unwrap();
+
+        #[cfg(feature = "debug")]
+        self.world.run(
+            |mut debug_log: UniqueViewMut<TimingsDebug>, upkeep: UniqueView<UpkeepTracker>| {
+                debug_log.print_log();
+                println!("Fps: {}", upkeep.avg_fps());
+                debug_log.clear();
+            },
+        );
     }
 }
 
