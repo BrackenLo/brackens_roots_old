@@ -114,8 +114,8 @@ pub fn sys_process_textures(
                     };
 
                     acc.entry(texture.handle.id())
-                        .and_modify(|val| val.push(instance))
-                        .or_insert(vec![instance]);
+                        .or_insert(vec![])
+                        .push(instance);
                 }
                 acc
             },
