@@ -1,6 +1,8 @@
 //===============================================================
 
-use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture};
+use std::collections::HashMap;
+
+use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture, TextureID};
 use rayon::prelude::ParallelIterator;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View};
 
@@ -91,25 +93,60 @@ pub fn sys_process_textures(
 ) {
     let instant = std::time::Instant::now();
 
-    (&v_texture, &v_visible, &v_global_transform)
-        .iter()
-        .for_each(|(texture, visible, transform)| {
-            // If a texture is invisible, ignore it
-            if !visible.visible {
-                ()
-            }
+    //--------------------------------------------------
 
-            let transform = GlobalTransform::from_scale(texture.size.extend(1.)) + transform;
+    // let result: HashMap<TextureID, Vec<RawTextureInstance>>
+    renderer.unprocessed_draw_data = (&v_texture, &v_visible, &v_global_transform)
+        .par_iter()
+        .fold(
+            || HashMap::<TextureID, Vec<RawTextureInstance>>::new(),
+            |mut acc, (texture, visible, transform)| {
+                if visible.visible {
+                    let instance = RawTextureInstance {
+                        transform: (GlobalTransform::from_scale(texture.size.extend(1.))
+                            + transform)
+                            .to_raw(),
+                        color: texture.color,
+                    };
 
-            let instance = RawTextureInstance {
-                transform: transform.to_raw(),
-                color: texture.color,
-            };
+                    acc.entry(texture.handle.id())
+                        .and_modify(|val| val.push(instance))
+                        .or_insert(vec![instance]);
+                }
+                acc
+            },
+        )
+        .reduce(
+            || HashMap::new(),
+            |m1, m2| {
+                m2.iter().fold(m1, |mut acc, (k, vs)| {
+                    acc.entry(k.clone()).or_insert(vec![]).extend(vs);
+                    acc
+                })
+            },
+        );
 
-            renderer.draw_texture(texture.handle.id(), instance);
+    //--------------------------------------------------
 
-            ()
-        });
+    // (&v_texture, &v_visible, &v_global_transform)
+    //     .iter()
+    //     .for_each(|(texture, visible, transform)| {
+    //         if !visible.visible {
+    //             ()
+    //         }
+
+    //         let instance = RawTextureInstance {
+    //             transform: (GlobalTransform::from_scale(texture.size.extend(1.)) + transform)
+    //                 .to_raw(),
+    //             color: texture.color,
+    //         };
+
+    //         renderer.draw_texture(texture.handle.id(), instance);
+
+    //         ()
+    //     });
+
+    //--------------------------------------------------
 
     debug_log.add_log(
         "Process textures initial loop time".into(),

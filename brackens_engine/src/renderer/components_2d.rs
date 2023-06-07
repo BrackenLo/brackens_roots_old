@@ -27,7 +27,7 @@ pub struct TextureRenderer {
     renderer: renderer_2d::TextureRenderer,
 
     should_render: HashSet<HandleID<RendererTexture>>,
-    unprocessed_draw_data: HashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
+    pub(crate) unprocessed_draw_data: HashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
 
     texture_data: HashMap<HandleID<RendererTexture>, Handle<RendererTexture>>,
     draw_data: HashMap<HandleID<RendererTexture>, FinalTextureDrawCall>,
