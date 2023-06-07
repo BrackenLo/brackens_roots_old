@@ -14,36 +14,6 @@ use shipyard::Unique;
 
 //===============================================================
 
-#[cfg(feature = "debug")]
-#[derive(Unique)]
-pub struct TimingsDebug(Vec<(String, f32)>, std::time::Instant);
-#[cfg(feature = "debug")]
-impl Default for TimingsDebug {
-    fn default() -> Self {
-        Self(vec![], std::time::Instant::now())
-    }
-}
-
-#[cfg(feature = "debug")]
-impl TimingsDebug {
-    pub fn add_log(&mut self, label: String, time: f32) {
-        self.0.push((label, time));
-    }
-    pub fn print_log(&self) {
-        println!("========================================");
-        self.0
-            .iter()
-            .for_each(|(label, time)| println!("{} - {}", label, time));
-        println!("Total Frame Time = {}", self.1.elapsed().as_secs_f32());
-    }
-    pub fn clear(&mut self) {
-        self.1 = std::time::Instant::now();
-        self.0.clear();
-    }
-}
-
-//===============================================================
-
 #[derive(Unique)]
 pub struct Device(pub wgpu::Device);
 

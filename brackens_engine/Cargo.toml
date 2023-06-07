@@ -7,10 +7,12 @@ edition = "2021"
 
 [features]
 default = ["2d", "multithreading", "debug"]
-debug = []
+debug = ["dep:colored"]
 2d = []
 3d = ["2d"]
 multithreading = ["dep:rayon", "dep:parking_lot"]
+
+
 
 [dependencies]
 brackens_tools = { path = "../brackens_tools" }
@@ -24,3 +26,4 @@ parking_lot = { workspace = true, optional = true }
 
 cfg-if = { workspace = true }
 
+colored = { version = "2.0.0", optional = true }

@@ -18,6 +18,9 @@ use super::{
     tools::CameraBundleView,
 };
 
+#[cfg(feature = "debug")]
+use crate::tool_components::TimingsDebug;
+
 //===============================================================
 
 // Texture Stuff
@@ -89,7 +92,7 @@ pub fn sys_process_textures(
     v_visible: View<Visible>,
     v_global_transform: View<GlobalTransform>,
 
-    mut debug_log: UniqueViewMut<crate::core_components::TimingsDebug>,
+    #[cfg(feature = "debug")] mut debug_log: UniqueViewMut<TimingsDebug>,
 ) {
     let instant = std::time::Instant::now();
 
@@ -151,6 +154,7 @@ pub fn sys_process_textures(
     debug_log.add_log(
         "Process textures initial loop time".into(),
         instant.elapsed().as_secs_f32(),
+        None,
     );
 
     let instant = std::time::Instant::now();
@@ -160,6 +164,7 @@ pub fn sys_process_textures(
     debug_log.add_log(
         "renderer processing textures time".into(),
         instant.elapsed().as_secs_f32(),
+        None,
     );
 }
 

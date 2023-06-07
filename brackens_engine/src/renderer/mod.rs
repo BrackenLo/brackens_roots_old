@@ -3,6 +3,9 @@
 use cfg_if::cfg_if;
 use shipyard::{IntoWorkload, Workload, World};
 
+#[cfg(feature = "debug")]
+use crate::tool_systems::sys_record_time_and_reset;
+
 //===============================================================
 
 pub mod components;
@@ -58,33 +61,37 @@ pub(crate) fn run_post_render_systems(world: &mut World) {
 
 
             //--------------------------------------------------
-            #[cfg(feature = "debug")]
-            let instant = std::time::Instant::now();
 
             world.run(systems_2d::sys_process_textures);
 
             #[cfg(feature = "debug")]
             world
-                .run(|mut debug_log: shipyard::UniqueViewMut<crate::core_components::TimingsDebug>| {
-                    debug_log.add_log("Process Textures  total".into(), instant.elapsed().as_secs_f32());
-                });
+                .run_with_data(sys_record_time_and_reset, ("Process Textures".into(), Some(colored::Color::Red)));
 
             //--------------------------------------------------
 
             world.run(systems_2d::sys_add_new_textures);
-            world.run(systems_2d::sys_remove_unloaded_textures);
+
+            #[cfg(feature = "debug")]
+            world
+                .run_with_data(sys_record_time_and_reset, ("Add new Textures".into(), Some(colored::Color::Red)));
 
             //--------------------------------------------------
+
+            world.run(systems_2d::sys_remove_unloaded_textures);
+
             #[cfg(feature = "debug")]
-            let instant = std::time::Instant::now();
+            world
+                .run_with_data(sys_record_time_and_reset, ("Remove old textures".into(), Some(colored::Color::Red)));
+
+            //--------------------------------------------------
 
             world.run(systems_2d::sys_render_textures);
 
             #[cfg(feature = "debug")]
             world
-                .run(|mut debug_log: shipyard::UniqueViewMut<crate::core_components::TimingsDebug>| {
-                    debug_log.add_log("render textures total".into(), instant.elapsed().as_secs_f32());
-                });
+                .run_with_data(sys_record_time_and_reset, ("Render textures".into(), Some(colored::Color::Red)));
+
             //--------------------------------------------------
 
 

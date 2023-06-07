@@ -8,8 +8,6 @@ use crate::spatial_components::{
     Child, GlobalTransform, HierarchyIter, Parent, Transform, UseParentTransform,
 };
 
-use rayon::prelude::*;
-
 //===============================================================
 
 pub fn workload_update_tranforms() -> Workload {

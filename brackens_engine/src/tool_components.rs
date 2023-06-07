@@ -7,6 +7,55 @@ use shipyard::Component;
 
 //===============================================================
 
+#[cfg(feature = "debug")]
+use {crate::prelude::shipyard::Unique, colored::Colorize};
+
+#[cfg(feature = "debug")]
+#[derive(Unique)]
+pub struct TimingsDebug {
+    pub(crate) timings: Vec<(String, f32, colored::Color)>,
+    pub(crate) frame_time: std::time::Instant,
+    pub(crate) timer: std::time::Instant,
+}
+
+#[cfg(feature = "debug")]
+impl Default for TimingsDebug {
+    fn default() -> Self {
+        Self {
+            timings: vec![],
+            frame_time: std::time::Instant::now(),
+            timer: std::time::Instant::now(),
+        }
+    }
+}
+
+#[cfg(feature = "debug")]
+impl TimingsDebug {
+    pub fn add_log(&mut self, label: String, time: f32, color: Option<colored::Color>) {
+        let color = match color {
+            Some(val) => val,
+            None => colored::Color::Black,
+        };
+        self.timings.push((label, time, color));
+    }
+    pub fn print_log(&self) {
+        println!("========================================");
+        self.timings
+            .iter()
+            .for_each(|(label, time, color)| println!("{} - {}", label.color(*color), time));
+        println!(
+            "Total Frame Time = {}",
+            self.frame_time.elapsed().as_secs_f32()
+        );
+    }
+    pub fn clear(&mut self) {
+        self.frame_time = std::time::Instant::now();
+        self.timings.clear();
+    }
+}
+
+//===============================================================
+
 #[derive(Component)]
 pub struct AutoUpdate;
 
