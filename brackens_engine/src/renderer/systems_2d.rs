@@ -120,15 +120,13 @@ pub fn sys_process_textures(
                 acc
             },
         )
-        .reduce(
-            || HashMap::new(),
-            |m1, m2| {
-                m2.iter().fold(m1, |mut acc, (k, vs)| {
-                    acc.entry(k.clone()).or_insert(vec![]).extend(vs);
-                    acc
-                })
-            },
-        );
+        .reduce_with(|mut m1, m2| {
+            for (k, v) in m2 {
+                m1.entry(k).or_insert(vec![]).extend(v);
+            }
+            m1
+        })
+        .unwrap();
 
     //--------------------------------------------------
 
