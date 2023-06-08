@@ -74,7 +74,7 @@ pub fn sys_update_camera(
     mut renderer: UniqueViewMut<TextureRenderer>,
     v_camera_bundle: CameraBundleView,
 ) {
-    if v_camera_bundle.has_changed() {
+    if v_camera_bundle.camera_changed() {
         renderer.resize_projection(&queue.0, &v_camera_bundle.get_projection());
     }
 }

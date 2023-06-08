@@ -18,39 +18,93 @@ use super::components::{
 
 //===============================================================
 
-pub struct CameraBundleView<'v> {
-    v_global_transform: View<'v, GlobalTransform>,
-    v_camera: View<'v, Camera>,
-    v_active: View<'v, CameraActive>,
+pub trait CameraBundleViewTools {
+    fn has_camera(&self) -> bool;
+    fn get_camera(&self) -> Option<EntityId>;
+    fn camera_changed(&self) -> bool;
+    fn get_projection(&self) -> Mat4;
 }
-impl<'v> CameraBundleView<'v> {
-    pub fn has_camera(&self) -> bool {
+
+pub type CameraBundleViewComponents<'v> = (
+    View<'v, GlobalTransform>,
+    View<'v, Camera>,
+    View<'v, CameraActive>,
+);
+
+pub type CameraBundleViewComponentsRef<'v> = (
+    &'v View<'v, GlobalTransform>,
+    &'v View<'v, Camera>,
+    &'v View<'v, CameraActive>,
+);
+
+//===============================================================
+
+impl<'v> CameraBundleViewTools for CameraBundleViewComponents<'v> {
+    #[inline]
+    fn has_camera(&self) -> bool {
+        (&self.0, &self.1, &self.2).has_camera()
+    }
+
+    #[inline]
+    fn get_camera(&self) -> Option<EntityId> {
+        (&self.0, &self.1, &self.2).get_camera()
+    }
+
+    #[inline]
+    fn camera_changed(&self) -> bool {
+        (&self.0, &self.1, &self.2).camera_changed()
+    }
+
+    #[inline]
+    fn get_projection(&self) -> Mat4 {
+        (&self.0, &self.1, &self.2).get_projection()
+    }
+}
+
+impl<'v> CameraBundleViewTools for CameraBundleViewComponentsRef<'v> {
+    fn has_camera(&self) -> bool {
+        let (v_camera, v_active, v_global_transform) = *self;
+
         // Get iterator for camera, active and global transform and check if an entity exists with both
-        (&self.v_camera, &self.v_active, &self.v_global_transform)
+        (v_camera, v_active, v_global_transform)
             .iter()
             .next()
             .is_some()
     }
 
-    pub fn has_changed(&self) -> bool {
-        if let Some((id, _)) = (&self.v_camera, &self.v_active, &self.v_global_transform)
+    fn get_camera(&self) -> Option<EntityId> {
+        let (v_camera, v_active, v_global_transform) = *self;
+        match (v_camera, v_active, v_global_transform)
             .iter()
             .with_id()
             .next()
         {
-            return self.v_camera.is_modified(id)
-                || self.v_active.is_modified(id)
-                || self.v_global_transform.is_modified(id);
+            Some((id, _)) => Some(id),
+            None => None,
+        }
+    }
+
+    fn camera_changed(&self) -> bool {
+        let (v_camera, v_active, v_global_transform) = *self;
+
+        if let Some((id, _)) = (v_camera, v_active, v_global_transform)
+            .iter()
+            .with_id()
+            .next()
+        {
+            return v_camera.is_modified(id)
+                || v_active.is_modified(id)
+                || v_global_transform.is_modified(id);
         }
 
         false
     }
 
-    pub fn get_projection(&self) -> Mat4 {
+    fn get_projection(&self) -> Mat4 {
+        let (v_global_transform, v_camera, v_active) = *self;
+
         if let Some((camera, _, global_transform)) =
-            (&self.v_camera, &self.v_active, &self.v_global_transform)
-                .iter()
-                .next()
+            (v_camera, v_active, v_global_transform).iter().next()
         {
             return match camera.projection {
                 CameraProjection::Orthographic {
@@ -109,16 +163,51 @@ impl<'v> CameraBundleView<'v> {
     }
 }
 
+//===============================================================
+
+pub struct CameraBundleView<'v> {
+    v_global_transform: View<'v, GlobalTransform>,
+    v_camera: View<'v, Camera>,
+    v_active: View<'v, CameraActive>,
+}
+impl<'v> CameraBundleView<'v> {
+    #[inline]
+    pub fn inner(
+        &self,
+    ) -> (
+        &View<'v, GlobalTransform>,
+        &View<'v, Camera>,
+        &View<'v, CameraActive>,
+    ) {
+        (&self.v_global_transform, &self.v_camera, &self.v_active)
+    }
+
+    #[inline]
+    pub fn has_camera(&self) -> bool {
+        (&self.v_global_transform, &self.v_camera, &self.v_active).has_camera()
+    }
+
+    #[inline]
+    pub fn get_camera(&self) -> Option<EntityId> {
+        self.inner().get_camera()
+    }
+
+    #[inline]
+    pub fn camera_changed(&self) -> bool {
+        self.inner().camera_changed()
+    }
+
+    pub fn get_projection(&self) -> Mat4 {
+        self.inner().get_projection()
+    }
+}
+
+//===============================================================
+
 pub struct CameraBundleViewBorrower;
 impl<'v> IntoBorrow for CameraBundleView<'_> {
     type Borrow = CameraBundleViewBorrower;
 }
-
-type CameraBundleViewComponents<'v> = (
-    View<'v, GlobalTransform>,
-    View<'v, Camera>,
-    View<'v, CameraActive>,
-);
 
 impl<'v> Borrow<'v> for CameraBundleViewBorrower {
     type View = CameraBundleView<'v>;
@@ -239,6 +328,8 @@ impl<'v> CameraBundleViewMut<'v> {
         entities.add_component(camera_id, &mut self.vm_active, CameraActive);
     }
 }
+
+//===============================================================
 
 pub struct CameraBundleViewMutBorrower;
 impl<'v> IntoBorrow for CameraBundleViewMut<'_> {
