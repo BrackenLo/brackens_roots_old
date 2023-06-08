@@ -5,6 +5,7 @@ use brackens_engine::{
     prelude::*,
     renderer::tools_2d::{load_blank_texture, BlankTextureDescriptor, LoadTextureDescriptor},
 };
+use shipyard::EntitiesViewMut;
 
 //===============================================================
 
@@ -96,11 +97,13 @@ impl ShipyardGameState for Game {
         ));
 
         {
-            let mut hierarchy = world.borrow::<HierarchyBundle>().unwrap();
-            hierarchy.attach(parent, child);
-            hierarchy.attach(parent, child2);
-            hierarchy.attach(parent, child3);
-            hierarchy.attach(child3, child4);
+            let (mut entities, mut hierarchy) = world
+                .borrow::<(EntitiesViewMut, HierarchyBundle)>()
+                .unwrap();
+            hierarchy.attach(&mut entities, parent, child);
+            hierarchy.attach(&mut entities, parent, child2);
+            hierarchy.attach(&mut entities, parent, child3);
+            hierarchy.attach(&mut entities, child3, child4);
         }
 
         Self

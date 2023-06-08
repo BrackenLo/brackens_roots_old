@@ -436,7 +436,6 @@ where
 //===============================================================
 
 pub type HierarchyBundle<'a> = (
-    EntitiesViewMut<'a>,
     ViewMut<'a, Parent>,
     ViewMut<'a, Child>,
     ViewMut<'a, ParentRoot>,
@@ -451,26 +450,27 @@ pub struct ParentRoot;
 
 pub trait HierarchyBundleTools {
     /// Attaches an entity as a child to a given parent entity.
-    fn attach(&mut self, parent_id: EntityId, child_id: EntityId);
+    fn attach(&mut self, entities: &mut EntitiesViewMut, parent_id: EntityId, child_id: EntityId);
 
     /// Creates a new entity and attaches it to the given parent.
-    fn attach_new(&mut self, parent_id: EntityId) -> EntityId;
+    fn attach_new(&mut self, entities: &mut EntitiesViewMut, parent_id: EntityId) -> EntityId;
 
     /// Removes the child status of an entity
-    fn detach(&mut self, child_id: EntityId);
+    fn detach(&mut self, entities: &mut EntitiesViewMut, child_id: EntityId);
 
     /// Remove an entity from the hierarchy completely
-    fn remove(&mut self, entity_id: EntityId);
+    fn remove_all(&mut self, entities: &mut EntitiesViewMut, entity_id: EntityId);
 
-    fn remove_all(&mut self, entity_id: EntityId);
+    // Remove an entity and all its children from the hierarchy completely
+    fn remove_all_children(&mut self, entities: &mut EntitiesViewMut, entity_id: EntityId);
 }
 
 impl<'a> HierarchyBundleTools for HierarchyBundle<'a> {
-    fn attach(&mut self, parent_id: EntityId, child_id: EntityId) {
+    fn attach(&mut self, entities: &mut EntitiesViewMut, parent_id: EntityId, child_id: EntityId) {
         // Make sure new child doesn't already have a parent
-        self.detach(child_id);
+        self.detach(entities, child_id);
 
-        let (entities, parents, children, roots) = self;
+        let (parents, children, roots) = self;
 
         // If the child was a root before, it will no longer be now
         roots.remove(child_id);
@@ -532,16 +532,16 @@ impl<'a> HierarchyBundleTools for HierarchyBundle<'a> {
         }
     }
 
-    fn attach_new(&mut self, parent_id: EntityId) -> EntityId {
-        let child_id = self.0.add_entity((), ());
-        self.attach(child_id, parent_id);
+    fn attach_new(&mut self, entities: &mut EntitiesViewMut, parent_id: EntityId) -> EntityId {
+        let child_id = entities.add_entity((), ());
+        self.attach(entities, child_id, parent_id);
         child_id
     }
 
     // Remove an entity from a parent. Remove its child component
     // and update the parent entity.
-    fn detach(&mut self, child_id: EntityId) {
-        let (entities, parents, children, roots) = self;
+    fn detach(&mut self, entities: &mut EntitiesViewMut, child_id: EntityId) {
+        let (parents, children, roots) = self;
         // Remove the child component if exists.
         if let Some(child) = children.remove(child_id) {
             // Retrieve and update parent component from ancestor
@@ -573,28 +573,28 @@ impl<'a> HierarchyBundleTools for HierarchyBundle<'a> {
         }
     }
 
-    fn remove(&mut self, entity_id: EntityId) {
+    fn remove_all(&mut self, entities: &mut EntitiesViewMut, entity_id: EntityId) {
         // Remove it's child component
-        self.detach(entity_id);
+        self.detach(entities, entity_id);
 
         // Get a vector of the entities children
-        let children = (&self.1, &self.2).children(entity_id).collect::<Vec<_>>();
+        let children = (&self.0, &self.1).children(entity_id).collect::<Vec<_>>();
         for child_id in children {
-            self.detach(child_id);
+            self.detach(entities, child_id);
         }
         // Remove it's parent component
         self.1.remove(entity_id);
     }
 
-    fn remove_all(&mut self, entity_id: EntityId) {
-        let (_, parents, children, _) = self;
+    fn remove_all_children(&mut self, entities: &mut EntitiesViewMut, entity_id: EntityId) {
+        let (parents, children, _) = self;
         for child_id in (&*parents, &*children)
             .children(entity_id)
             .collect::<Vec<_>>()
         {
-            self.remove_all(child_id);
+            self.remove_all_children(entities, child_id);
         }
-        self.remove(entity_id);
+        self.remove_all(entities, entity_id);
     }
 }
 
