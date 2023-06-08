@@ -26,15 +26,17 @@ use {
 //===============================================================
 
 pub mod prelude {
-    pub use crate::core_components::{UpkeepTracker, WindowSize};
-    pub use crate::renderer::components::{
-        Camera, ClearColor, OrthographicCameraDescriptor, PerspectiveTargetCameraDescriptor,
-        Visible,
+    pub use crate::{
+        core_components::{UpkeepTracker, WindowSize},
+        renderer::components::{
+            Camera, ClearColor, OrthographicCameraDescriptor, PerspectiveTargetCameraDescriptor,
+            Visible,
+        },
+        spatial_components::{
+            GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
+        },
+        ShipyardGameState, ShipyardRunner,
     };
-    pub use crate::spatial_components::{
-        GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
-    };
-    pub use crate::{ShipyardGameState, ShipyardRunner};
 
     pub use brackens_tools::{
         glam,
