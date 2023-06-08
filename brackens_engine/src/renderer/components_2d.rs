@@ -1,21 +1,17 @@
 //===============================================================
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use ahash::AHashMap;
-use brackens_assets::{Handle, HandleID};
+use brackens_assets::Handle;
 use brackens_renderer::{
-    bytemuck, render_tools,
-    renderer_2d::{
-        self, RawTextureInstance, RendererTexture, TextureDrawCall as FinalTextureDrawCall,
-    },
-    wgpu::{self, util::DeviceExt},
-    Size,
+    render_tools,
+    renderer_2d::{self, tools::TextureProcessor, RawTextureInstance, RendererTexture, TextureID},
+    wgpu, Size,
 };
 use brackens_tools::glam::{self, Vec2};
 use shipyard::{Borrow, Component, EntitiesViewMut, EntityId, IntoBorrow, Unique, ViewMut};
 
-use crate::{prelude::Transform, spatial_tools::TransformBundleViewMut};
+use crate::{assets::AssetStorage, prelude::Transform, spatial_tools::TransformBundleViewMut};
 
 use super::components::Visible;
 
@@ -26,12 +22,7 @@ use super::components::Visible;
 #[derive(Unique)]
 pub struct TextureRenderer {
     renderer: renderer_2d::TextureRenderer,
-
-    should_render: HashSet<HandleID<RendererTexture>>,
-    pub(crate) unprocessed_draw_data: AHashMap<HandleID<RendererTexture>, Vec<RawTextureInstance>>,
-
-    texture_data: HashMap<HandleID<RendererTexture>, Handle<RendererTexture>>,
-    draw_data: HashMap<HandleID<RendererTexture>, FinalTextureDrawCall>,
+    processor: TextureProcessor,
 }
 
 impl TextureRenderer {
@@ -44,24 +35,23 @@ impl TextureRenderer {
     ) -> Self {
         Self {
             renderer: renderer_2d::TextureRenderer::new(device, config.format, window_size),
-            should_render: HashSet::new(),
-            unprocessed_draw_data: AHashMap::new(),
-
-            texture_data: HashMap::new(),
-            draw_data: HashMap::new(),
+            processor: TextureProcessor::default(),
         }
     }
 
+    #[inline]
     pub fn get_layout(&self) -> &wgpu::BindGroupLayout {
         self.renderer.get_texture_layout()
     }
 
     //--------------------------------------------------
 
+    #[inline]
     pub(crate) fn resize_depth(&mut self, device: &wgpu::Device, new_size: Size<u32>) {
         self.renderer.resize_depth(device, new_size);
     }
 
+    #[inline]
     pub(crate) fn resize_projection(&mut self, queue: &wgpu::Queue, matrix: &glam::Mat4) {
         self.renderer.set_projection(queue, matrix);
     }
@@ -78,105 +68,50 @@ impl TextureRenderer {
 
     //--------------------------------------------------
 
-    pub(crate) fn add_texture(&mut self, handle: Handle<RendererTexture>) {
-        let handle = handle.clone_weak();
-        self.texture_data.insert(handle.id(), handle);
+    #[inline]
+    pub(crate) fn get_unprocessed_mut(
+        &mut self,
+    ) -> &mut HashMap<TextureID, Vec<RawTextureInstance>> {
+        self.processor.get_unprocessed_mut()
     }
-
-    pub(crate) fn remove_texture(&mut self, id: HandleID<RendererTexture>) {
-        self.should_render.remove(&id);
-        self.unprocessed_draw_data.remove(&id);
-
-        self.texture_data.remove(&id);
-        self.draw_data.remove(&id);
-    }
-
-    //--------------------------------------------------
 
     #[inline]
-    pub(crate) fn draw_texture(
-        &mut self,
-        handle_id: HandleID<RendererTexture>,
-        instance: RawTextureInstance,
-    ) {
-        match self.unprocessed_draw_data.get_mut(&handle_id) {
-            Some(val) => val.push(instance),
-            None => {
-                self.unprocessed_draw_data.insert(handle_id, vec![instance]);
-            }
-        };
-    }
-
-    //--------------------------------------------------
-
     pub(crate) fn process_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        self.should_render.clear();
-
-        for (id, data) in self.unprocessed_draw_data.iter() {
-            let data_count = data.len() as u32;
-
-            if data_count == 0 {
-                continue;
-            }
-            self.should_render.insert(id.clone());
-
-            if let Some(instance) = self.draw_data.get_mut(id) {
-                // Buffer is too small to hold new data. Need to create bigger buffer
-                if data_count > instance.instance_count {
-                    let FinalTextureDrawCall {
-                        instances,
-                        instance_count,
-                    } = Self::create_instance_buffer(device, data);
-
-                    instance.instances = instances;
-                    instance.instance_count = instance_count;
-                    continue;
-                } else {
-                    // Buffer is big enough. Just write new data to it
-                    queue.write_buffer(&instance.instances, 0, bytemuck::cast_slice(data));
-                    continue;
-                }
-            }
-
-            // Data doesn't exist yet. Create it and add it
-            let instance = Self::create_instance_buffer(device, data);
-            self.draw_data.insert(id.clone(), instance);
-        }
-
-        self.unprocessed_draw_data.clear();
-    }
-
-    fn create_instance_buffer(
-        device: &wgpu::Device,
-        data: &[RawTextureInstance],
-    ) -> FinalTextureDrawCall {
-        let instances = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("Texture Instance Buffer")),
-            contents: bytemuck::cast_slice(data),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
-
-        FinalTextureDrawCall {
-            instances,
-            instance_count: data.len() as u32,
-        }
+        self.processor.process_texture(device, queue);
     }
 
     //--------------------------------------------------
 
-    pub(crate) fn render(&mut self, render_tools: &mut render_tools::RenderPassTools) {
+    pub(crate) fn render(
+        &mut self,
+        texture_storage: &AssetStorage<RendererTexture>,
+        render_tools: &mut render_tools::RenderPassTools,
+    ) {
         let draw = self
-            .should_render
+            .processor
+            .get_draw_data()
             .iter()
-            .map(|val| {
-                let bind_group = &self.texture_data.get(val).unwrap().get().bind_group;
-                let draw_data = self.draw_data.get(val).unwrap();
+            .map(|(id, buffer)| {
+                let bind_group = &texture_storage.get_data(id).unwrap().bind_group;
 
-                (bind_group, draw_data)
+                (bind_group, buffer)
             })
             .collect::<Vec<_>>();
 
         self.renderer.render(render_tools, &draw);
+
+        // let draw = self
+        //     .should_render
+        //     .iter()
+        //     .map(|val| {
+        //         let bind_group = &self.texture_data.get(val).unwrap().get().bind_group;
+        //         let draw_data = self.draw_data.get(val).unwrap();
+
+        //         (bind_group, draw_data)
+        //     })
+        //     .collect::<Vec<_>>();
+
+        // self.renderer.render(render_tools, &draw);
     }
 
     //--------------------------------------------------

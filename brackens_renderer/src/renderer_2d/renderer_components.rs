@@ -110,8 +110,8 @@ pub const TEXTURE_INDICES: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
 //===============================================================
 
-pub struct TextureDrawCall {
-    pub instances: wgpu::Buffer,
+pub struct TextureDrawBuffer {
+    pub instance_buffer: wgpu::Buffer,
     pub instance_count: u32,
 }
 

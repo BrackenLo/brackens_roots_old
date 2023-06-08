@@ -6,7 +6,7 @@ use brackens_tools::glam::Vec3;
 use shipyard::{Component, Unique};
 
 pub use brackens_renderer::{
-    renderer_2d::RendererTexture, renderer_2d::TextureDrawCall as FinalTextureDrawCall,
+    renderer_2d::RendererTexture, renderer_2d::TextureDrawBuffer as FinalTextureDrawCall,
 };
 
 //===============================================================

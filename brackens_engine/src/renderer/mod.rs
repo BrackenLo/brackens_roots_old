@@ -59,8 +59,6 @@ pub(crate) fn run_post_render_systems(world: &mut World) {
     cfg_if! {
         if #[cfg(feature = "2d")] {
             world.run(systems_2d::sys_process_textures);
-            world.run(systems_2d::sys_add_new_textures);
-            world.run(systems_2d::sys_remove_unloaded_textures);
             world.run(systems_2d::sys_render_textures);
         }
     }

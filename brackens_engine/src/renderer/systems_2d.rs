@@ -1,6 +1,7 @@
 //===============================================================
 
-use ahash::AHashMap;
+use std::collections::HashMap;
+
 use brackens_renderer::renderer_2d::{RawTextureInstance, RendererTexture, TextureID};
 use rayon::prelude::ParallelIterator;
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, View};
@@ -30,26 +31,6 @@ pub fn sys_setup_texture_renderer(
     window_size: UniqueView<WindowSize>,
 ) {
     all_storages.add_unique(TextureRenderer::new(&device.0, &config.0, window_size.0));
-}
-
-//--------------------------------------------------
-
-pub fn sys_add_new_textures(
-    mut renderer: UniqueViewMut<TextureRenderer>,
-    texture_storage: UniqueView<AssetStorage<RendererTexture>>,
-) {
-    for new in texture_storage.get_just_added() {
-        renderer.add_texture(new);
-    }
-}
-
-pub fn sys_remove_unloaded_textures(
-    texture_storage: UniqueView<AssetStorage<RendererTexture>>,
-    mut renderer: UniqueViewMut<TextureRenderer>,
-) {
-    for handle in texture_storage.get_removed_assets() {
-        renderer.remove_texture(*handle);
-    }
 }
 
 //--------------------------------------------------
@@ -98,10 +79,10 @@ pub fn sys_process_textures(
     //--------------------------------------------------
 
     // let result: HashMap<TextureID, Vec<RawTextureInstance>>
-    renderer.unprocessed_draw_data = (&v_texture, &v_visible, &v_global_transform)
+    *renderer.get_unprocessed_mut() = (&v_texture, &v_visible, &v_global_transform)
         .par_iter()
         .fold(
-            || AHashMap::<TextureID, Vec<RawTextureInstance>>::new(),
+            || HashMap::<TextureID, Vec<RawTextureInstance>>::new(),
             |mut acc, (texture, visible, transform)| {
                 if visible.visible {
                     // Add RawTextureInstance to hashmap of values to be renderer
@@ -152,8 +133,9 @@ pub fn sys_process_textures(
 pub fn sys_render_textures(
     mut renderer: UniqueViewMut<TextureRenderer>,
     mut render_tools: UniqueViewMut<RenderPassTools>,
+    texture_storage: UniqueView<AssetStorage<RendererTexture>>,
 ) {
-    renderer.render(&mut render_tools.0);
+    renderer.render(&texture_storage, &mut render_tools.0);
 }
 
 //===============================================================
