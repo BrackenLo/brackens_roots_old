@@ -16,7 +16,7 @@ pub trait AssetLoadable: Asset {
 
 pub struct AssetLoadError;
 
-#[derive(Unique)]
+#[derive(Unique, Default)]
 pub struct AssetStorage<T: Asset> {
     inner: asset_storage::AssetStorage<T>,
 }
@@ -35,32 +35,38 @@ where
 
     //----------------------------------------------
 
+    #[inline]
     pub fn add_asset(&mut self, asset: T) -> Handle<T> {
         self.inner.add_asset(asset)
     }
 
+    #[inline]
     pub fn get_handle(&self, id: &HandleID<T>) -> Option<Handle<T>> {
         self.inner.get_handle(id)
     }
 
+    #[inline]
+    pub fn get_data(&self, id: &HandleID<T>) -> Option<&T> {
+        self.inner.get_data(id)
+    }
+
     //----------------------------------------------
 
+    #[inline]
     pub fn get_just_added(&self) -> Vec<Handle<T>> {
         self.inner.get_just_added()
     }
 
+    #[inline]
     pub fn get_removed_assets(&self) -> &Vec<HandleID<T>> {
         self.inner.get_removed_assets()
     }
 
     //----------------------------------------------
 
+    #[inline]
     pub fn tick(&mut self) {
         self.inner.tick();
-        // self.inner.check_asset_changes();
-
-        // self.inner.remove_pending_assets();
-        // self.inner.clear_just_added();
     }
 
     //----------------------------------------------

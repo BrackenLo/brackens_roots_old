@@ -70,7 +70,7 @@ where
     T: Asset,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.id)
+        write!(f, "{}: {:?}", T::asset_name(), self.id)
     }
 }
 

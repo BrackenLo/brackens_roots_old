@@ -47,13 +47,11 @@ pub struct AssetStorage<T: Asset> {
     asset_paths: HashMap<HandleID<T>, String>,
 }
 
-impl<T> AssetStorage<T>
+impl<T> Default for AssetStorage<T>
 where
     T: Asset,
 {
-    //----------------------------------------------
-
-    pub fn new() -> Self {
+    fn default() -> Self {
         info!("Creating new {} asset storage", T::asset_name());
 
         let (sender, receiver) = crossbeam::channel::unbounded();
@@ -69,6 +67,17 @@ where
             loaded_paths: HashMap::new(),
             asset_paths: HashMap::new(),
         }
+    }
+}
+
+impl<T> AssetStorage<T>
+where
+    T: Asset,
+{
+    //----------------------------------------------
+
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn get_sender(&self) -> &SenderType<ReferenceCountSignal<T>> {
@@ -144,6 +153,13 @@ where
         }
 
         None
+    }
+
+    pub fn get_data(&self, id: &HandleID<T>) -> Option<&T> {
+        match self.loaded.get(id) {
+            Some(val) => Some(val.as_ref()),
+            None => None,
+        }
     }
 
     //----------------------------------------------
