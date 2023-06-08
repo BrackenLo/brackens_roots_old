@@ -9,14 +9,42 @@ use brackens_renderer::{
     wgpu, Size,
 };
 use brackens_tools::glam::{self, Vec2};
-use shipyard::{Borrow, Component, EntitiesViewMut, EntityId, IntoBorrow, Unique, ViewMut};
+use shipyard::{Component, Unique};
 
-use crate::{assets::AssetStorage, prelude::Transform, spatial_tools::TransformBundleViewMut};
-
-use super::components::Visible;
+use crate::assets::AssetStorage;
 
 //===============================================================
+// Texture Components
 
+#[derive(Component, Clone)]
+pub struct Texture {
+    pub size: Vec2,
+    pub handle: Handle<RendererTexture>,
+    pub color: [f32; 4],
+}
+impl Texture {
+    pub fn new(handle: Handle<RendererTexture>, width: f32, height: f32) -> Self {
+        Texture {
+            size: Vec2::new(width, height),
+            handle,
+            color: [1., 1., 1., 1.],
+        }
+    }
+    pub fn new_color(
+        handle: Handle<RendererTexture>,
+        width: f32,
+        height: f32,
+        color: [f32; 4],
+    ) -> Self {
+        Texture {
+            size: Vec2::new(width, height),
+            handle,
+            color,
+        }
+    }
+}
+
+//--------------------------------------------------
 // Texture Rendering
 
 #[derive(Unique)]
@@ -26,8 +54,6 @@ pub struct TextureRenderer {
 }
 
 impl TextureRenderer {
-    //--------------------------------------------------
-
     pub fn new(
         device: &wgpu::Device,
         config: &wgpu::SurfaceConfiguration,
@@ -99,130 +125,9 @@ impl TextureRenderer {
             .collect::<Vec<_>>();
 
         self.renderer.render(render_tools, &draw);
-
-        // let draw = self
-        //     .should_render
-        //     .iter()
-        //     .map(|val| {
-        //         let bind_group = &self.texture_data.get(val).unwrap().get().bind_group;
-        //         let draw_data = self.draw_data.get(val).unwrap();
-
-        //         (bind_group, draw_data)
-        //     })
-        //     .collect::<Vec<_>>();
-
-        // self.renderer.render(render_tools, &draw);
     }
 
     //--------------------------------------------------
-}
-
-//--------------------------------------------------
-// Texture Components
-
-#[derive(Component, Clone)]
-pub struct Texture {
-    pub size: Vec2,
-    pub handle: Handle<RendererTexture>,
-    pub color: [f32; 4],
-}
-impl Texture {
-    pub fn new(handle: Handle<RendererTexture>, width: f32, height: f32) -> Self {
-        Texture {
-            size: Vec2::new(width, height),
-            handle,
-            color: [1., 1., 1., 1.],
-        }
-    }
-    pub fn new_color(
-        handle: Handle<RendererTexture>,
-        width: f32,
-        height: f32,
-        color: [f32; 4],
-    ) -> Self {
-        Texture {
-            size: Vec2::new(width, height),
-            handle,
-            color,
-        }
-    }
-}
-
-//===============================================================
-
-pub struct TextureBundleViewMut<'v> {
-    vm_transform_bundle: TransformBundleViewMut<'v>,
-    vm_visible: ViewMut<'v, Visible>,
-    vm_texture: ViewMut<'v, Texture>,
-}
-impl<'v> TextureBundleViewMut<'v> {
-    pub fn new_texture(
-        &mut self,
-        entities: &mut EntitiesViewMut,
-        transform: Transform,
-        texture: Texture,
-    ) -> EntityId {
-        let id = self
-            .vm_transform_bundle
-            .create_transform(entities, transform);
-
-        entities.add_component(
-            id,
-            (&mut self.vm_visible, &mut self.vm_texture),
-            (Visible::default(), texture),
-        );
-
-        id
-    }
-
-    pub fn add_texture(
-        &mut self,
-        entities: &mut EntitiesViewMut,
-        entity: EntityId,
-        transform: Transform,
-        texture: Texture,
-    ) {
-        self.vm_transform_bundle
-            .add_transform(entities, entity, transform);
-
-        entities.add_component(
-            entity,
-            (&mut self.vm_visible, &mut self.vm_texture),
-            (Visible::default(), texture),
-        );
-    }
-}
-
-pub struct TextureBundleViewMutBorrower;
-impl<'v> IntoBorrow for TextureBundleViewMut<'_> {
-    type Borrow = TextureBundleViewMutBorrower;
-}
-
-type TextureBundleViewMutComponents<'v> = (
-    TransformBundleViewMut<'v>,
-    ViewMut<'v, Visible>,
-    ViewMut<'v, Texture>,
-);
-
-impl<'v> Borrow<'v> for TextureBundleViewMutBorrower {
-    type View = TextureBundleViewMut<'v>;
-
-    fn borrow(
-        world: &'v shipyard::World,
-        last_run: Option<u32>,
-        current: u32,
-    ) -> Result<Self::View, shipyard::error::GetStorage> {
-        let (vm_transform_bundle, vm_visible, vm_texture) =
-            <TextureBundleViewMutComponents as IntoBorrow>::Borrow::borrow(
-                world, last_run, current,
-            )?;
-
-        Ok(TextureBundleViewMut {
-            vm_transform_bundle,
-            vm_visible,
-            vm_texture,
-        })
-    }
 }
 
 //===============================================================

@@ -5,8 +5,7 @@ use brackens_engine::{
     prelude::{KeyCode, Texture, Vec3},
     renderer::{
         components::{Camera, CameraActive, PerspectiveTargetCameraDescriptor},
-        components_2d::TextureBundleViewMut,
-        tools_2d::{load_blank_texture, BlankTextureDescriptor},
+        tools_2d::{load_blank_texture, BlankTextureDescriptor, TextureBundleViewMut},
     },
     spatial_components::{GlobalTransform, Transform},
     tool_components::AutoUpdate,
