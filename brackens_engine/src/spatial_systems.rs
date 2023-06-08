@@ -27,16 +27,6 @@ pub fn sys_update_transforms(
     )
         .iter()
         .for_each(|(transform, mut global_transform, _)| global_transform.0 = *transform);
-
-    // (
-    //     v_transform.inserted_or_modified(),
-    //     &mut vm_global_transform,
-    //     !&v_child,
-    // )
-    //     .par_iter()
-    //     .for_each(|(transform, mut global_transform, _)| {
-    //         global_transform.0 = transform.clone();
-    //     });
 }
 
 /// Update all transforms in a hierarchy

@@ -129,26 +129,6 @@ pub fn sys_process_textures(
 
     //--------------------------------------------------
 
-    // (&v_texture, &v_visible, &v_global_transform)
-    //     .iter()
-    //     .for_each(|(texture, visible, transform)| {
-    //         if !visible.visible {
-    //             ()
-    //         }
-
-    //         let instance = RawTextureInstance {
-    //             transform: (GlobalTransform::from_scale(texture.size.extend(1.)) + transform)
-    //                 .to_raw(),
-    //             color: texture.color,
-    //         };
-
-    //         renderer.draw_texture(texture.handle.id(), instance);
-
-    //         ()
-    //     });
-
-    //--------------------------------------------------
-
     #[cfg(feature = "debug")]
     debug_log.add_log(
         "Process textures initial loop time".into(),

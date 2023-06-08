@@ -110,11 +110,6 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         };
         let render_components = RenderComponents::new(
             RenderPrefs {
-                // backends: todo!(),
-                // dx12_compiler: todo!(),
-                // power_preferences: todo!(),
-                // features: todo!(),
-                // limits: todo!(),
                 present_mode: brackens_renderer::wgpu::PresentMode::Mailbox,
                 ..Default::default()
             },
@@ -283,8 +278,6 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         if let Err(e) = renderer::systems::start_render_pass(&mut self.world) {
             match e {
-                // brackens_tools::wgpu::SurfaceError::Timeout => todo!(),
-                // brackens_tools::wgpu::SurfaceError::Outdated => todo!(),
                 brackens_renderer::wgpu::SurfaceError::Lost => {
                     warn!("Warning: Surface has been lost. Attempting to resize:{}", e);
                     self.force_resize();

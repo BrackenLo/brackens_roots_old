@@ -58,49 +58,10 @@ pub(crate) fn workload_post_update_systems() -> Workload {
 pub(crate) fn run_post_render_systems(world: &mut World) {
     cfg_if! {
         if #[cfg(feature = "2d")] {
-
-
-            //--------------------------------------------------
-
             world.run(systems_2d::sys_process_textures);
-
-            #[cfg(feature = "debug")]
-            world
-                .run_with_data(sys_record_time_and_reset, ("Process Textures".into(), Some(colored::Color::Red)));
-
-            //--------------------------------------------------
-
             world.run(systems_2d::sys_add_new_textures);
-
-            #[cfg(feature = "debug")]
-            world
-                .run_with_data(sys_record_time_and_reset, ("Add new Textures".into(), Some(colored::Color::Red)));
-
-            //--------------------------------------------------
-
             world.run(systems_2d::sys_remove_unloaded_textures);
-
-            #[cfg(feature = "debug")]
-            world
-                .run_with_data(sys_record_time_and_reset, ("Remove old textures".into(), Some(colored::Color::Red)));
-
-            //--------------------------------------------------
-
             world.run(systems_2d::sys_render_textures);
-
-            #[cfg(feature = "debug")]
-            world
-                .run_with_data(sys_record_time_and_reset, ("Render textures".into(), Some(colored::Color::Red)));
-
-            //--------------------------------------------------
-
-
-
-            // world.run(systems_2d::sys_process_textures);
-            // world.run(systems_2d::sys_add_new_textures);
-            // world.run(systems_2d::sys_remove_unloaded_textures);
-            // world.run(systems_2d::sys_render_textures);
-
         }
     }
     cfg_if! {
