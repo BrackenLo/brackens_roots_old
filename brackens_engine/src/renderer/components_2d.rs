@@ -185,7 +185,7 @@ impl TextureRenderer {
 //--------------------------------------------------
 // Texture Components
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Texture {
     pub size: Vec2,
     pub handle: Handle<RendererTexture>,
