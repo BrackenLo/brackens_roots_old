@@ -31,13 +31,24 @@ impl Default for TimingsDebug {
 
 #[cfg(feature = "debug")]
 impl TimingsDebug {
-    pub fn add_log(&mut self, label: String, time: f32, color: Option<colored::Color>) {
+    pub fn add_time(&mut self, label: String, time: f32, color: Option<colored::Color>) {
         let color = match color {
             Some(val) => val,
             None => colored::Color::Black,
         };
         self.timings.push((label, time, color));
     }
+
+    pub fn record_time(&mut self, label: String, color: Option<colored::Color>) {
+        let elapsed = self.timer.elapsed().as_secs_f32();
+        self.add_time(label, elapsed, color);
+    }
+
+    pub fn record_time_and_reset(&mut self, label: String, color: Option<colored::Color>) {
+        self.record_time(label, color);
+        self.timer = std::time::Instant::now();
+    }
+
     pub fn print_log(&self) {
         println!("========================================");
         self.timings
@@ -48,6 +59,11 @@ impl TimingsDebug {
             self.frame_time.elapsed().as_secs_f32()
         );
     }
+
+    pub fn reset_timer(&mut self) {
+        self.timer = std::time::Instant::now();
+    }
+
     pub fn clear(&mut self) {
         self.frame_time = std::time::Instant::now();
         self.timings.clear();

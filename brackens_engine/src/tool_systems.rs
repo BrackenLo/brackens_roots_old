@@ -14,7 +14,7 @@ use super::{core_components::UpkeepTracker, tool_components::*};
 //===============================================================
 
 #[cfg(feature = "debug")]
-pub fn sys_start_timer(mut timings: UniqueViewMut<TimingsDebug>) {
+pub fn sys_reset_timer(mut timings: UniqueViewMut<TimingsDebug>) {
     timings.timer = std::time::Instant::now();
 }
 #[cfg(feature = "debug")]
@@ -22,9 +22,7 @@ pub fn sys_record_time(
     data: (String, Option<colored::Color>),
     mut timings: UniqueViewMut<TimingsDebug>,
 ) {
-    let (label, color) = data;
-    let elapsed = timings.timer.elapsed().as_secs_f32();
-    timings.add_log(label, elapsed, color);
+    timings.record_time(data.0, data.1);
 }
 
 #[cfg(feature = "debug")]
@@ -32,11 +30,7 @@ pub fn sys_record_time_and_reset(
     data: (String, Option<colored::Color>),
     mut timings: UniqueViewMut<TimingsDebug>,
 ) {
-    let (label, color) = data;
-    let elapsed = timings.timer.elapsed().as_secs_f32();
-    timings.add_log(label, elapsed, color);
-
-    timings.timer = std::time::Instant::now();
+    timings.record_time_and_reset(data.0, data.1);
 }
 
 #[cfg(feature = "debug")]
@@ -45,7 +39,7 @@ pub fn sys_add_time(
     mut timings: UniqueViewMut<TimingsDebug>,
 ) {
     let (label, time, color) = data;
-    timings.add_log(label, time, color);
+    timings.add_time(label, time, color);
 }
 
 //===============================================================

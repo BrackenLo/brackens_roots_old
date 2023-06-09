@@ -20,7 +20,7 @@ use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut};
 #[cfg(feature = "debug")]
 use {
     tool_components::TimingsDebug,
-    tool_systems::{sys_add_time, sys_record_time, sys_record_time_and_reset, sys_start_timer},
+    tool_systems::{sys_add_time, sys_record_time, sys_record_time_and_reset, sys_reset_timer},
 };
 
 //===============================================================
@@ -239,7 +239,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         let total_time = std::time::Instant::now();
 
         #[cfg(feature = "debug")]
-        self.world.run(sys_start_timer);
+        self.world.run(sys_reset_timer);
 
         //--------------------------------------------------
         // Pre Update
@@ -262,12 +262,19 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
         //--------------------------------------------------
         // Post Update
 
+        #[cfg(feature = "debug")]
+        let post_update_instant = std::time::Instant::now();
+
         self.post_update();
 
         #[cfg(feature = "debug")]
         self.world.run_with_data(
-            sys_record_time_and_reset,
-            ("Post Update total".into(), None),
+            sys_add_time,
+            (
+                "Post Update total".into(),
+                post_update_instant.elapsed().as_secs_f32(),
+                None,
+            ),
         );
 
         //--------------------------------------------------
@@ -307,7 +314,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
             // Reset timer
             #[cfg(feature = "debug")]
-            self.world.run(sys_start_timer);
+            self.world.run(sys_reset_timer);
 
             //--------------------------------------------------
             // Pre Render
@@ -363,7 +370,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
         // Reset timer
         #[cfg(feature = "debug")]
-        self.world.run(sys_start_timer);
+        self.world.run(sys_reset_timer);
 
         self.end();
 

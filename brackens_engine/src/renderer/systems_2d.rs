@@ -111,7 +111,7 @@ pub fn sys_process_textures(
     //--------------------------------------------------
 
     #[cfg(feature = "debug")]
-    debug_log.add_log(
+    debug_log.add_time(
         "Process textures initial loop time".into(),
         instant.elapsed().as_secs_f32(),
         Some(colored::Color::BrightRed),
@@ -123,7 +123,7 @@ pub fn sys_process_textures(
     renderer.process_texture(&device.0, &queue.0);
 
     #[cfg(feature = "debug")]
-    debug_log.add_log(
+    debug_log.add_time(
         "renderer processing textures time".into(),
         instant.elapsed().as_secs_f32(),
         Some(colored::Color::BrightRed),
