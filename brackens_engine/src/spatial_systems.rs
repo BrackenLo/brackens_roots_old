@@ -1,5 +1,8 @@
 //===============================================================
 
+use std::collections::{HashMap, HashSet};
+
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use shipyard::{
     Contains, EntityId, Get, IntoIter, IntoWithId, IntoWorkload, View, ViewMut, Workload,
 };
@@ -36,11 +39,18 @@ pub fn sys_update_hierarchy_transforms(
     v_child: View<Child>,
     v_parent: View<Parent>,
     v_use_transform: View<UseParentTransform>,
-) {
-    let mut to_update = std::collections::HashSet::new();
 
-    // Iterate through modified parent entities that aren't children. These all need to be updated
-    for (id, _) in (
+    #[cfg(feature = "debug")] mut debug_log: shipyard::UniqueViewMut<
+        crate::tool_components::TimingsDebug,
+    >,
+) {
+    //--------------------------------------------------
+
+    #[cfg(feature = "debug")]
+    debug_log.reset_timer();
+
+    // Iterate through modified parent entities that aren't children but are parents. These all need to be updated
+    let mut to_update = (
         v_transform.inserted_or_modified(),
         &vm_global_transform,
         &v_parent,
@@ -48,9 +58,68 @@ pub fn sys_update_hierarchy_transforms(
     )
         .iter()
         .with_id()
-    {
-        to_update.insert(id);
-    }
+        .map(|(id, _)| id)
+        .collect::<HashSet<_>>();
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Get Parent Updates".into(), Some(colored::Color::Yellow));
+
+    //--------------------------------------------------
+
+    // let child_ids = (v_transform.modified(), &vm_global_transform, &v_child)
+    //     .iter()
+    //     .with_id()
+    //     .map(|(id, _)| id)
+    //     .collect::<Vec<_>>();
+
+    // #[cfg(feature = "debug")]
+    // debug_log.record_time_and_reset("Get child ids".into(), Some(colored::Color::Yellow));
+
+    // //--------------------------------------------------
+
+    // // Iterate through modified children. We check their parents for changes also and only update
+    // // the highest up the tree as their change will cascade onto all their children.
+    // let children_to_update = child_ids
+    //     .into_par_iter()
+    //     .map(|id| {
+    //         let mut to_add = id;
+
+    //         // Only check entities ancestors if it uses their transforms.
+    //         if v_use_transform.contains(id) {
+    //             (&v_parent, &v_child).ancestors(id).for_each(|ancestor| {
+    //                 // If the ancestor doesn't have the components for the transform or global transform
+    //                 // then we stop there
+    //                 if !(&v_transform, &vm_global_transform).contains(ancestor) {
+    //                     ()
+    //                 }
+
+    //                 // If the ancestor is modified, it should be used instead as it is higher in the tree
+    //                 if v_transform.is_modified(ancestor) {
+    //                     to_add = ancestor;
+    //                 }
+
+    //                 // If the ancestor doesn't use its parents transform, we don't need to go any further
+    //                 if !v_use_transform.contains(ancestor) {
+    //                     ()
+    //                 }
+    //             })
+    //         }
+
+    //         id
+    //     })
+    //     .collect::<HashSet<_>>();
+
+    // #[cfg(feature = "debug")]
+    // debug_log.record_time_and_reset("Get Child Updates".into(), Some(colored::Color::Yellow));
+
+    // //--------------------------------------------------
+
+    // to_update.extend(children_to_update);
+
+    // #[cfg(feature = "debug")]
+    // debug_log.record_time_and_reset("Merge updates Updates".into(), Some(colored::Color::Yellow));
+
+    //--------------------------------------------------
 
     // Iterate through modified children. We check their parents for changes also and only update
     // the highest up the tree as their change will cascade onto all their children.
@@ -82,6 +151,11 @@ pub fn sys_update_hierarchy_transforms(
         to_update.insert(to_add);
     }
 
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Get Child Updates".into(), Some(colored::Color::Yellow));
+
+    //--------------------------------------------------
+
     for update in to_update {
         // Check to see if we should use the parents transform data
         let parent_transform = if let Ok((child, _)) = (&v_child, &v_use_transform).get(update) {
@@ -109,6 +183,11 @@ pub fn sys_update_hierarchy_transforms(
             );
         }
     }
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Update all transforms".into(), Some(colored::Color::Yellow));
+
+    //--------------------------------------------------
 }
 
 fn update_child_transform(
