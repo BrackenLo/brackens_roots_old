@@ -151,7 +151,7 @@ impl std::ops::AddAssign for Transform {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, Copy)]
 #[track(All)]
 pub struct GlobalTransform(pub(crate) Transform);
 impl GlobalTransform {
@@ -288,9 +288,19 @@ impl std::ops::AddAssign for GlobalTransform {
 }
 
 //===============================================================
+
+#[derive(Component)]
+#[track(All)]
+pub struct UseParentTransform;
+
+#[derive(Component)]
+pub struct UpdateGlobalTransform;
+
+//===============================================================
 // Heirarchy stuff starts here
 
 #[derive(Component)]
+#[track(All)]
 pub struct Parent {
     child_count: usize,
     first_child: EntityId,
@@ -304,12 +314,19 @@ pub struct Child {
     next: EntityId,
 }
 impl Child {
+    #[inline]
     pub fn parent(&self) -> EntityId {
         self.parent
     }
 }
 
-//--------------------------------------------------
+#[derive(Component)]
+pub struct ParentRoot;
+
+#[derive(Component)]
+pub(crate) struct TransformModified(pub(crate) EntityId, pub(crate) Option<GlobalTransform>);
+
+//===============================================================
 
 pub struct ChildrenIter<C> {
     get_child: C,
@@ -441,13 +458,6 @@ pub type HierarchyBundle<'a> = (
     ViewMut<'a, ParentRoot>,
 );
 
-#[derive(Component)]
-#[track(All)]
-pub struct UseParentTransform;
-
-#[derive(Component)]
-pub struct ParentRoot;
-
 pub trait HierarchyBundleTools {
     /// Attaches an entity as a child to a given parent entity.
     fn attach(&mut self, entities: &mut EntitiesViewMut, parent_id: EntityId, child_id: EntityId);
@@ -480,11 +490,11 @@ impl<'a> HierarchyBundleTools for HierarchyBundle<'a> {
             entities.add_component(parent_id, roots, ParentRoot);
         }
 
-        // Check to see if the node we're attaching to is already a parent
+        // Check to see if the parent we're attaching to is already a parent
         match parents.get(parent_id) {
-            // The node is already a parent and therefore has at least one
+            // The parent is already a parent and therefore has at least one
             // child already
-            Ok(parent) => {
+            Ok(mut parent) => {
                 parent.child_count += 1;
 
                 // Get the ids of the previous and next siblings of the new child
@@ -507,7 +517,7 @@ impl<'a> HierarchyBundleTools for HierarchyBundle<'a> {
                 );
             }
 
-            // The node is not a parent already. We can add the respective
+            // The parent is not a parent already. We can add the respective
             // components to each entity without changing anything else.
             // The child will link to itself for now
             Err(_) => {

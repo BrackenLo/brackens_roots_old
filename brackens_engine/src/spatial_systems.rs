@@ -1,24 +1,27 @@
 //===============================================================
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::ParallelIterator;
 use shipyard::{
-    Contains, EntityId, Get, IntoIter, IntoWithId, IntoWorkload, View, ViewMut, Workload,
+    Contains, EntitiesViewMut, EntityId, Get, IntoIter, IntoWithId, View, ViewMut, Workload,
 };
 
-use crate::spatial_components::{
-    Child, GlobalTransform, HierarchyIter, Parent, Transform, UseParentTransform,
-};
+use crate::spatial_components::*;
 
 //===============================================================
 
-pub fn workload_update_tranforms() -> Workload {
-    (sys_update_transforms, sys_update_hierarchy_transforms).into_workload()
+pub(crate) fn workload_update_tranforms() -> Workload {
+    Workload::new("UpdateTransformWorkload")
+        .with_system(sys_update_transforms)
+        .with_system(sys_check_modified)
+    // .with_system(sys_update_hierarchy_transforms)
 }
 
+//--------------------------------------------------
+
 /// Update all transforms that don't have parents
-pub fn sys_update_transforms(
+pub(crate) fn sys_update_transforms(
     v_transform: View<Transform>,
     mut vm_global_transform: ViewMut<GlobalTransform>,
     v_child: View<Child>,
@@ -32,8 +35,182 @@ pub fn sys_update_transforms(
         .for_each(|(transform, mut global_transform, _)| global_transform.0 = *transform);
 }
 
+//--------------------------------------------------
+
+pub(crate) fn sys_check_modified(
+    entities: EntitiesViewMut,
+    v_transform: View<Transform>,
+    mut vm_global_transform: ViewMut<GlobalTransform>,
+    v_child: View<Child>,
+    v_parent: View<Parent>,
+    v_use_transform: View<UseParentTransform>,
+    mut vm_transform_modified: ViewMut<TransformModified>,
+
+    #[cfg(feature = "debug")] mut debug_log: shipyard::UniqueViewMut<
+        crate::tool_components::TimingsDebug,
+    >,
+) {
+    #[cfg(feature = "debug")]
+    debug_log.reset_timer();
+
+    let parent_ids = (
+        v_transform.inserted_or_modified(),
+        &vm_global_transform,
+        &v_parent,
+        !&v_child,
+    )
+        .iter()
+        .with_id()
+        .map(|(id, _)| id);
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Get Parent Updates".into(), Some(colored::Color::Yellow));
+
+    // On first iteration this returns an iterator 65000 spaces long
+    let child_ids = (
+        v_transform.inserted_or_modified(),
+        &vm_global_transform,
+        &v_child,
+    )
+        .iter()
+        .with_id()
+        .map(|(id, _)| {
+            let mut to_add = id;
+
+            if v_use_transform.contains(id) {
+                for ancestor_id in (&v_parent, &v_child).ancestors(id) {
+                    if !(&v_transform, &vm_global_transform).contains(ancestor_id) {
+                        break;
+                    }
+                    if v_transform.is_modified(ancestor_id) {
+                        to_add = ancestor_id;
+                    }
+
+                    if !v_use_transform.contains(ancestor_id) {
+                        break;
+                    }
+                }
+            }
+
+            to_add
+        });
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Get Child Updates".into(), Some(colored::Color::Yellow));
+
+    let to_update = parent_ids.chain(child_ids).collect::<HashSet<_>>();
+    println!("Update len = {}", to_update.len());
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Merge Updates".into(), Some(colored::Color::Yellow));
+
+    if to_update.len() == 0 {
+        vm_transform_modified.clear();
+        return;
+    }
+
+    to_update.iter().for_each(|id| {
+        let parent_transform = match v_child.get(*id) {
+            Ok(child) => match vm_global_transform.get(child.parent()) {
+                Ok(global_transform) => Some(*global_transform),
+                Err(_) => None,
+            },
+            Err(_) => None,
+        };
+        entities.add_component(
+            *id,
+            &mut vm_transform_modified,
+            TransformModified(*id, parent_transform),
+        );
+    });
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset(
+        "Add modified component to entities".into(),
+        Some(colored::Color::Yellow),
+    );
+
+    let mut iterations = 0;
+
+    loop {
+        let to_update = update_stuff(
+            &v_transform,
+            &mut vm_global_transform,
+            &vm_transform_modified,
+            &v_parent,
+            &v_child,
+        );
+
+        #[cfg(feature = "debug")]
+        debug_log
+            .record_time_and_reset("Iteration Update Done".into(), Some(colored::Color::Yellow));
+
+        vm_transform_modified.clear();
+        if to_update.len() == 0 {
+            break;
+        }
+
+        to_update.into_iter().for_each(|(id, modified)| {
+            entities.add_component(id, &mut vm_transform_modified, modified);
+        });
+
+        #[cfg(feature = "debug")]
+        debug_log.record_time_and_reset(
+            "Iteration Add Components Done".into(),
+            Some(colored::Color::Yellow),
+        );
+
+        iterations += 1;
+        if iterations >= 100 {
+            panic!("Spatial Systems check modified stuck in update loop after 100 iterations");
+        }
+    }
+
+    #[cfg(feature = "debug")]
+    debug_log.record_time_and_reset("Finished Iterating".into(), Some(colored::Color::Yellow));
+}
+
+fn update_stuff(
+    v_transform: &View<Transform>,
+    vm_global_transform: &mut ViewMut<GlobalTransform>,
+    vm_transform_modified: &ViewMut<TransformModified>,
+
+    v_parent: &View<Parent>,
+    v_child: &View<Child>,
+) -> Vec<(EntityId, TransformModified)> {
+    (v_transform, vm_global_transform, vm_transform_modified)
+        .par_iter()
+        .map(|(transform, mut global_transform, modified_id)| {
+            // Update global transform with new transform
+            *global_transform = GlobalTransform(match modified_id.1 {
+                // Entity has parent to inherit transform from
+                Some(parent_transform) => *transform + parent_transform.0,
+                // Entity doesn't have parent. Just use own transform.
+                None => *transform,
+            });
+
+            let mut vals = Vec::new();
+
+            // Check if entity is parent and should propogate to children
+            if v_parent.contains(modified_id.0) {
+                for child_id in (v_parent, v_child).children(modified_id.0) {
+                    vals.push((
+                        child_id,
+                        TransformModified(child_id, Some(*global_transform)),
+                    ));
+                }
+            }
+
+            vals
+        })
+        .flatten()
+        .collect::<Vec<_>>()
+}
+
+//--------------------------------------------------
+
 /// Update all transforms in a hierarchy
-pub fn sys_update_hierarchy_transforms(
+pub(crate) fn sys_update_hierarchy_transforms(
     v_transform: View<Transform>,
     mut vm_global_transform: ViewMut<GlobalTransform>,
     v_child: View<Child>,
@@ -63,61 +240,6 @@ pub fn sys_update_hierarchy_transforms(
 
     #[cfg(feature = "debug")]
     debug_log.record_time_and_reset("Get Parent Updates".into(), Some(colored::Color::Yellow));
-
-    //--------------------------------------------------
-
-    // let child_ids = (v_transform.modified(), &vm_global_transform, &v_child)
-    //     .iter()
-    //     .with_id()
-    //     .map(|(id, _)| id)
-    //     .collect::<Vec<_>>();
-
-    // #[cfg(feature = "debug")]
-    // debug_log.record_time_and_reset("Get child ids".into(), Some(colored::Color::Yellow));
-
-    // //--------------------------------------------------
-
-    // // Iterate through modified children. We check their parents for changes also and only update
-    // // the highest up the tree as their change will cascade onto all their children.
-    // let children_to_update = child_ids
-    //     .into_par_iter()
-    //     .map(|id| {
-    //         let mut to_add = id;
-
-    //         // Only check entities ancestors if it uses their transforms.
-    //         if v_use_transform.contains(id) {
-    //             (&v_parent, &v_child).ancestors(id).for_each(|ancestor| {
-    //                 // If the ancestor doesn't have the components for the transform or global transform
-    //                 // then we stop there
-    //                 if !(&v_transform, &vm_global_transform).contains(ancestor) {
-    //                     ()
-    //                 }
-
-    //                 // If the ancestor is modified, it should be used instead as it is higher in the tree
-    //                 if v_transform.is_modified(ancestor) {
-    //                     to_add = ancestor;
-    //                 }
-
-    //                 // If the ancestor doesn't use its parents transform, we don't need to go any further
-    //                 if !v_use_transform.contains(ancestor) {
-    //                     ()
-    //                 }
-    //             })
-    //         }
-
-    //         id
-    //     })
-    //     .collect::<HashSet<_>>();
-
-    // #[cfg(feature = "debug")]
-    // debug_log.record_time_and_reset("Get Child Updates".into(), Some(colored::Color::Yellow));
-
-    // //--------------------------------------------------
-
-    // to_update.extend(children_to_update);
-
-    // #[cfg(feature = "debug")]
-    // debug_log.record_time_and_reset("Merge updates Updates".into(), Some(colored::Color::Yellow));
 
     //--------------------------------------------------
 

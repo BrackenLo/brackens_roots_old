@@ -3,9 +3,6 @@
 use cfg_if::cfg_if;
 use shipyard::{IntoWorkload, Workload, World};
 
-#[cfg(feature = "debug")]
-use crate::tool_systems::sys_record_time_and_reset;
-
 //===============================================================
 
 pub mod components;
