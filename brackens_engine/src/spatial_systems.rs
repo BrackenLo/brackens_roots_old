@@ -14,7 +14,9 @@ use crate::spatial_components::*;
 pub(crate) fn workload_update_tranforms() -> Workload {
     Workload::new("UpdateTransformWorkload")
         .with_system(sys_update_transforms)
-        .with_system(sys_check_modified)
+        .with_system(sys_check_dirty_transforms)
+        .with_system(sys_update_dirty_transforms)
+    // .with_system(sys_check_modified)
     // .with_system(sys_update_hierarchy_transforms)
 }
 
@@ -33,6 +35,105 @@ pub(crate) fn sys_update_transforms(
     )
         .iter()
         .for_each(|(transform, mut global_transform, _)| global_transform.0 = *transform);
+}
+
+//--------------------------------------------------
+
+pub(crate) fn sys_check_dirty_transforms(
+    entities: EntitiesViewMut,
+    v_transform: View<Transform>,
+    v_global_transform: View<GlobalTransform>,
+    v_child: View<Child>,
+    v_parent: View<Parent>,
+    v_use_transform: View<UseParentTransform>,
+    mut vm_transform_dirty: ViewMut<TransformDirty>,
+) {
+    let parent_ids = (
+        v_transform.inserted_or_modified(),
+        &v_global_transform,
+        &v_parent,
+        !&v_child,
+    )
+        .iter()
+        .with_id()
+        .map(|(id, _)| id);
+
+    let child_ids = (
+        v_transform.inserted_or_modified(),
+        &v_global_transform,
+        &v_child,
+    )
+        .iter()
+        .with_id()
+        .filter_map(|(id, _)| {
+            let mut found_new = false;
+
+            if v_use_transform.contains(id) {
+                for ancestor_id in (&v_parent, &v_child).ancestors(id) {
+                    if !(&v_transform, &v_global_transform).contains(ancestor_id) {
+                        break;
+                    }
+                    if v_transform.is_inserted_or_modified(ancestor_id) {
+                        found_new = true;
+                        break;
+                    }
+
+                    if !v_use_transform.contains(ancestor_id) {
+                        break;
+                    }
+                }
+            }
+
+            match found_new {
+                true => None,
+                false => Some(id),
+            }
+        });
+
+    let to_update = parent_ids.chain(child_ids).collect::<HashSet<_>>();
+
+    // to_update.into_iter().enumerate().for_each(|(index, id)| {
+    //     entities.add_component(id, &mut vm_transform_dirty, TransformDirty(index as u16, 0));
+    // });
+    to_update.into_iter().for_each(|id| {
+        if let Ok(child) = v_child.get(id) {
+            entities.add_component(
+                id,
+                &mut vm_transform_dirty,
+                TransformDirty(0, Some(child.parent())),
+            );
+        } else {
+            entities.add_component(id, &mut vm_transform_dirty, TransformDirty(0, None));
+        }
+
+        (&v_parent, &v_child)
+            .descendants(id)
+            .for_each(|(id, parent, depth)| {
+                entities.add_component(
+                    id,
+                    &mut vm_transform_dirty,
+                    TransformDirty(depth as u8, Some(parent)),
+                );
+            });
+    });
+
+    vm_transform_dirty.sort_unstable();
+}
+
+pub(crate) fn sys_update_dirty_transforms(
+    v_transform_dirty: View<TransformDirty>,
+    v_transform: View<Transform>,
+    mut vm_global_transform: ViewMut<GlobalTransform>,
+) {
+    (&v_transform_dirty, &v_transform, &mut vm_global_transform)
+        .iter()
+        .for_each(|(dirty, transform, mut global_transform)| {
+            let parent_transform = vm_global_transform.get(dirty.1.unwrap());
+
+            todo!();
+        });
+
+    todo!();
 }
 
 //--------------------------------------------------

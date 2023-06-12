@@ -296,6 +296,21 @@ pub struct UseParentTransform;
 #[derive(Component)]
 pub struct UpdateGlobalTransform;
 
+#[derive(Component)]
+pub(crate) struct TransformModified(pub(crate) EntityId, pub(crate) Option<GlobalTransform>);
+
+// #[derive(Component)]
+// pub struct TransformDirty(pub(crate) u16, pub(crate) u8);
+
+#[derive(Component, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TransformDirty(pub(crate) u8, pub(crate) Option<EntityId>);
+
+// impl PartialOrd for TransformDirty {
+//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+//         todo!()
+//     }
+// }
+
 //===============================================================
 // Heirarchy stuff starts here
 
@@ -322,9 +337,6 @@ impl Child {
 
 #[derive(Component)]
 pub struct ParentRoot;
-
-#[derive(Component)]
-pub(crate) struct TransformModified(pub(crate) EntityId, pub(crate) Option<GlobalTransform>);
 
 //===============================================================
 
@@ -371,14 +383,17 @@ where
 pub struct DescendantsIter<P, C> {
     get_parent: P,
     get_child: C,
-    cursors: Vec<(EntityId, usize)>,
+    cursors: Vec<(EntityId, usize, EntityId)>,
 }
 impl<'a, P, C> Iterator for DescendantsIter<P, C>
 where
     P: Get<Out = &'a Parent> + Copy,
     C: Get<Out = &'a Child> + Copy,
 {
-    type Item = EntityId;
+    // First EntityId is the child id
+    // Second EntityId is the childs parent id
+    // usize is how far down the tree we are
+    type Item = (EntityId, EntityId, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cursor) = self.cursors.last_mut() {
@@ -386,10 +401,12 @@ where
                 cursor.1 -= 1;
                 let ret = cursor.0;
                 cursor.0 = self.get_child.get(cursor.0).unwrap().next;
+                let parent_id = cursor.2;
                 if let Ok(parent) = self.get_parent.get(ret) {
-                    self.cursors.push((parent.first_child, parent.child_count));
+                    self.cursors
+                        .push((parent.first_child, parent.child_count, ret));
                 }
-                Some(ret)
+                Some((ret, parent_id, self.cursors.len()))
             } else {
                 self.cursors.pop();
                 self.next()
@@ -444,7 +461,7 @@ where
             get_child: *children,
             cursors: parents.get(id).map_or_else(
                 |_| Vec::new(),
-                |parent| vec![(parent.first_child, parent.child_count)],
+                |parent| vec![(parent.first_child, parent.child_count, id)],
             ),
         }
     }
