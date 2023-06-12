@@ -346,33 +346,36 @@ pub(crate) fn sys_update_hierarchy_transforms(
 
     // Iterate through modified children. We check their parents for changes also and only update
     // the highest up the tree as their change will cascade onto all their children.
-    for (id, _) in (v_transform.modified(), &vm_global_transform, &v_child)
+    (
+        v_transform.inserted_or_modified(),
+        &vm_global_transform,
+        &v_child,
+    )
         .iter()
         .with_id()
-    {
-        let mut to_add = id;
+        .for_each(|(id, _)| {
+            let mut found_new = false;
 
-        // Only check entities ancestors if it uses their transforms.
-        if v_use_transform.contains(id) {
-            for ancestor in (&v_parent, &v_child).ancestors(id) {
-                // If the ancestor doesn't have the components for transform or global transform then
-                // we stop there
-                if !(&v_transform, &vm_global_transform).contains(ancestor) {
-                    break;
-                }
-                // If the ancestor is modified, is should be used instead as it is higher in the tree
-                if v_transform.is_modified(ancestor) {
-                    to_add = ancestor;
-                }
+            if v_use_transform.contains(id) {
+                for ancestor_id in (&v_parent, &v_child).ancestors(id) {
+                    if !(&v_transform, &vm_global_transform).contains(ancestor_id) {
+                        break;
+                    }
+                    if v_transform.is_inserted_or_modified(ancestor_id) {
+                        found_new = true;
+                        break;
+                    }
 
-                // If the ancestor doesn't use its parents transform, we don't need to go any further
-                if !v_use_transform.contains(ancestor) {
-                    break;
+                    if !v_use_transform.contains(ancestor_id) {
+                        break;
+                    }
                 }
             }
-        }
-        to_update.insert(to_add);
-    }
+
+            if !found_new {
+                to_update.insert(id);
+            }
+        });
 
     #[cfg(feature = "debug")]
     debug_log.record_time_and_reset("Get Child Updates".into(), Some(colored::Color::Yellow));

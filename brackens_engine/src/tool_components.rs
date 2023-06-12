@@ -53,7 +53,7 @@ impl TimingsDebug {
         println!("========================================");
         self.timings
             .iter()
-            .for_each(|(label, time, color)| println!("{} - {}", label.color(*color), time));
+            .for_each(|(label, time, color)| println!("{} - {:.7}", label.color(*color), time));
         println!(
             "Total Frame Time = {}",
             self.frame_time.elapsed().as_secs_f32()
