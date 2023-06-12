@@ -299,17 +299,20 @@ pub struct UpdateGlobalTransform;
 #[derive(Component)]
 pub(crate) struct TransformModified(pub(crate) EntityId, pub(crate) Option<GlobalTransform>);
 
-// #[derive(Component)]
-// pub struct TransformDirty(pub(crate) u16, pub(crate) u8);
-
-#[derive(Component, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Component, PartialEq, Eq)]
 pub struct TransformDirty(pub(crate) u8, pub(crate) Option<EntityId>);
 
-// impl PartialOrd for TransformDirty {
-//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-//         todo!()
-//     }
-// }
+impl PartialOrd for TransformDirty {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl Ord for TransformDirty {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
 
 //===============================================================
 // Heirarchy stuff starts here

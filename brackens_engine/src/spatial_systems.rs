@@ -92,9 +92,6 @@ pub(crate) fn sys_check_dirty_transforms(
 
     let to_update = parent_ids.chain(child_ids).collect::<HashSet<_>>();
 
-    // to_update.into_iter().enumerate().for_each(|(index, id)| {
-    //     entities.add_component(id, &mut vm_transform_dirty, TransformDirty(index as u16, 0));
-    // });
     to_update.into_iter().for_each(|id| {
         if let Ok(child) = v_child.get(id) {
             entities.add_component(
@@ -116,7 +113,6 @@ pub(crate) fn sys_check_dirty_transforms(
                 );
             });
     });
-
     vm_transform_dirty.sort_unstable();
 }
 
@@ -125,15 +121,21 @@ pub(crate) fn sys_update_dirty_transforms(
     v_transform: View<Transform>,
     mut vm_global_transform: ViewMut<GlobalTransform>,
 ) {
-    (&v_transform_dirty, &v_transform, &mut vm_global_transform)
+    (&v_transform_dirty)
         .iter()
-        .for_each(|(dirty, transform, mut global_transform)| {
-            let parent_transform = vm_global_transform.get(dirty.1.unwrap());
-
-            todo!();
+        .with_id()
+        .for_each(|(id, dirty)| {
+            // Check if entity has parent or not
+            match dirty.1 {
+                Some(parent_id) => {
+                    vm_global_transform[id] =
+                        GlobalTransform(v_transform[id]) + vm_global_transform[parent_id]
+                }
+                None => {
+                    GlobalTransform(v_transform[id]);
+                }
+            }
         });
-
-    todo!();
 }
 
 //--------------------------------------------------
