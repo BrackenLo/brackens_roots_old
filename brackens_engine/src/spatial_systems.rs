@@ -175,16 +175,17 @@ pub(crate) fn sys_check_modified(
     )
         .iter()
         .with_id()
-        .map(|(id, _)| {
-            let mut to_add = id;
+        .filter_map(|(id, _)| {
+            let mut found_new = false;
 
             if v_use_transform.contains(id) {
                 for ancestor_id in (&v_parent, &v_child).ancestors(id) {
                     if !(&v_transform, &vm_global_transform).contains(ancestor_id) {
                         break;
                     }
-                    if v_transform.is_modified(ancestor_id) {
-                        to_add = ancestor_id;
+                    if v_transform.is_inserted_or_modified(ancestor_id) {
+                        found_new = true;
+                        break;
                     }
 
                     if !v_use_transform.contains(ancestor_id) {
@@ -193,35 +194,43 @@ pub(crate) fn sys_check_modified(
                 }
             }
 
-            to_add
+            match found_new {
+                true => None,
+                false => Some(id),
+            }
         });
 
     #[cfg(feature = "debug")]
     debug_log.record_time_and_reset("Get Child Updates".into(), Some(colored::Color::Yellow));
 
     let to_update = parent_ids.chain(child_ids).collect::<HashSet<_>>();
-    println!("Update len = {}", to_update.len());
+    // println!("Update len = {}", to_update.len());
 
     #[cfg(feature = "debug")]
     debug_log.record_time_and_reset("Merge Updates".into(), Some(colored::Color::Yellow));
 
+    // No transforms to update - we can just stop here
     if to_update.len() == 0 {
-        vm_transform_modified.clear();
         return;
     }
 
-    to_update.iter().for_each(|id| {
-        let parent_transform = match v_child.get(*id) {
+    // Iterate through all that needs updating
+    to_update.into_iter().for_each(|id| {
+        // Check if entity is child that will inherit parents transform
+        let parent_transform = match v_child.get(id) {
+            // If entity is a child, check to see if parent has a global_transform
             Ok(child) => match vm_global_transform.get(child.parent()) {
                 Ok(global_transform) => Some(*global_transform),
                 Err(_) => None,
             },
             Err(_) => None,
         };
+
+        // Add the transform modified component to the changed entity with its parents transform
         entities.add_component(
-            *id,
+            id,
             &mut vm_transform_modified,
-            TransformModified(*id, parent_transform),
+            TransformModified(id, parent_transform),
         );
     });
 
@@ -231,9 +240,10 @@ pub(crate) fn sys_check_modified(
         Some(colored::Color::Yellow),
     );
 
+    // Check to make sure we don't infinite loop
     let mut iterations = 0;
-
     loop {
+        // Update all entities with the TransformModified component and get a list of all children that need updating
         let to_update = update_stuff(
             &v_transform,
             &mut vm_global_transform,
@@ -246,11 +256,15 @@ pub(crate) fn sys_check_modified(
         debug_log
             .record_time_and_reset("Iteration Update Done".into(), Some(colored::Color::Yellow));
 
+        // Clear the old list of TransformModifed as these have been dealt with
         vm_transform_modified.clear();
+
+        // If no entities to update, we can now quit
         if to_update.len() == 0 {
             break;
         }
 
+        // For each entity that needs updating still, attach the TransformModified component
         to_update.into_iter().for_each(|(id, modified)| {
             entities.add_component(id, &mut vm_transform_modified, modified);
         });
@@ -279,6 +293,7 @@ fn update_stuff(
     v_parent: &View<Parent>,
     v_child: &View<Child>,
 ) -> Vec<(EntityId, TransformModified)> {
+    // Iterate over all entities with both transforms and have been modified
     (v_transform, vm_global_transform, vm_transform_modified)
         .par_iter()
         .map(|(transform, mut global_transform, modified_id)| {
@@ -290,19 +305,20 @@ fn update_stuff(
                 None => *transform,
             });
 
-            let mut vals = Vec::new();
-
-            // Check if entity is parent and should propogate to children
-            if v_parent.contains(modified_id.0) {
-                for child_id in (v_parent, v_child).children(modified_id.0) {
-                    vals.push((
-                        child_id,
-                        TransformModified(child_id, Some(*global_transform)),
-                    ));
-                }
+            match v_parent.contains(modified_id.0) {
+                // If entity is a parent, iterate through children and add TransformModified component
+                true => (v_parent, v_child)
+                    .children(modified_id.0)
+                    .map(|child_id| {
+                        (
+                            child_id,
+                            TransformModified(child_id, Some(*global_transform)),
+                        )
+                    })
+                    .collect(),
+                // Otherwise, return nothing
+                false => vec![],
             }
-
-            vals
         })
         .flatten()
         .collect::<Vec<_>>()
