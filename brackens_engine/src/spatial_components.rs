@@ -297,31 +297,6 @@ pub struct UseParentTransform;
 pub struct UpdateGlobalTransform;
 
 //===============================================================
-
-const TRANSFORM_DIRTY_SET: u32 = 255;
-
-#[derive(Component, PartialEq, Eq)]
-pub struct TransformDirty(pub(crate) u8, pub(crate) u8, pub(crate) Option<EntityId>);
-impl TransformDirty {
-    #[inline]
-    fn get_value(&self) -> u32 {
-        (TRANSFORM_DIRTY_SET * self.1 as u32) + self.0 as u32
-    }
-}
-
-impl PartialOrd for TransformDirty {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.get_value().partial_cmp(&other.get_value())
-    }
-}
-
-impl Ord for TransformDirty {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.get_value().cmp(&other.get_value())
-    }
-}
-
-//===============================================================
 // Heirarchy stuff starts here
 
 #[derive(Component)]
