@@ -299,18 +299,28 @@ pub struct UpdateGlobalTransform;
 #[derive(Component)]
 pub(crate) struct TransformModified(pub(crate) EntityId, pub(crate) Option<GlobalTransform>);
 
+//===============================================================
+
+const TRANSFORM_DIRTY_SET: u32 = 255;
+
 #[derive(Component, PartialEq, Eq)]
-pub struct TransformDirty(pub(crate) u8, pub(crate) Option<EntityId>);
+pub struct TransformDirty(pub(crate) u8, pub(crate) u8, pub(crate) Option<EntityId>);
+impl TransformDirty {
+    #[inline]
+    fn get_value(&self) -> u32 {
+        (TRANSFORM_DIRTY_SET * self.1 as u32) + self.0 as u32
+    }
+}
 
 impl PartialOrd for TransformDirty {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
+        self.get_value().partial_cmp(&other.get_value())
     }
 }
 
 impl Ord for TransformDirty {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.cmp(&other.0)
+        self.get_value().cmp(&other.get_value())
     }
 }
 
