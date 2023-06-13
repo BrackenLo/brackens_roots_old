@@ -296,9 +296,6 @@ pub struct UseParentTransform;
 #[derive(Component)]
 pub struct UpdateGlobalTransform;
 
-#[derive(Component)]
-pub(crate) struct TransformModified(pub(crate) EntityId, pub(crate) Option<GlobalTransform>);
-
 //===============================================================
 
 const TRANSFORM_DIRTY_SET: u32 = 255;
