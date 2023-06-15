@@ -50,7 +50,7 @@ impl Texture {
 #[derive(Unique)]
 pub struct TextureRenderer {
     renderer: renderer_2d::TextureRenderer,
-    processor: TextureProcessor,
+    processor: TextureProcessor<TextureID>,
 }
 
 impl TextureRenderer {

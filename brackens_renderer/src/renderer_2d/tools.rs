@@ -4,30 +4,47 @@ use std::collections::{HashMap, HashSet};
 
 use wgpu::util::DeviceExt;
 
-use super::{RawTextureInstance, TextureDrawBuffer, TextureID};
+use super::{RawTextureInstance, TextureDrawBuffer};
 
 //===============================================================
 
-#[derive(Default)]
-pub struct TextureProcessor {
-    should_render: HashSet<TextureID>,
-    unprocessed_draw_data: HashMap<TextureID, Vec<RawTextureInstance>>,
+pub struct TextureProcessor<T>
+where
+    T: Copy + Eq + std::hash::Hash,
+{
+    should_render: HashSet<T>,
+    unprocessed_draw_data: HashMap<T, Vec<RawTextureInstance>>,
 
-    draw_data: HashMap<TextureID, TextureDrawBuffer>,
+    draw_data: HashMap<T, TextureDrawBuffer>,
+}
+impl<T> Default for TextureProcessor<T>
+where
+    T: Copy + Eq + std::hash::Hash,
+{
+    fn default() -> Self {
+        Self {
+            should_render: HashSet::new(),
+            unprocessed_draw_data: HashMap::new(),
+            draw_data: HashMap::new(),
+        }
+    }
 }
 
-impl TextureProcessor {
+impl<T> TextureProcessor<T>
+where
+    T: Copy + Eq + std::hash::Hash,
+{
     pub fn new() -> Self {
         Self::default()
     }
 
     //----------------------------------------------
 
-    pub fn get_unprocessed_mut(&mut self) -> &mut HashMap<TextureID, Vec<RawTextureInstance>> {
+    pub fn get_unprocessed_mut(&mut self) -> &mut HashMap<T, Vec<RawTextureInstance>> {
         &mut self.unprocessed_draw_data
     }
 
-    pub fn get_draw_data(&self) -> &HashMap<TextureID, TextureDrawBuffer> {
+    pub fn get_draw_data(&self) -> &HashMap<T, TextureDrawBuffer> {
         &self.draw_data
     }
 
@@ -51,14 +68,20 @@ impl TextureProcessor {
                 .and_modify(|buffer| {
                     // Buffer is too small to hold new data. Create a new, bigger one
                     if data_count > buffer.instance_count {
-                        *buffer = Self::create_instance_buffer(device, data, &id.to_string());
+                        *buffer = Self::create_instance_buffer(
+                            device,
+                            data,
+                            "Texture Processor Texture Buffer",
+                        );
                         ()
                     }
                     // Buffer is big enough. Write the new data to it
                     queue.write_buffer(&buffer.instance_buffer, 0, bytemuck::cast_slice(data));
                 })
                 // Buffer doesn't exist. Create a new one.
-                .or_insert_with(|| Self::create_instance_buffer(device, data, &id.to_string()));
+                .or_insert_with(|| {
+                    Self::create_instance_buffer(device, data, "Texture Processor Texture Buffer")
+                });
         }
 
         // Removed unused data
