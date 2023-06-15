@@ -5,7 +5,7 @@ use brackens_assets::HandleID;
 pub use {
     assets::{RendererTexture, Texture},
     renderer::{Renderer2D, TextureRenderer},
-    renderer_components::{RawTextureInstance, TextureDrawBuffer},
+    renderer_components::{RawTextureInstance, RendererDescriptor2D, TextureDrawBuffer},
 };
 
 pub mod assets;

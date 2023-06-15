@@ -17,6 +17,10 @@ pub struct TextureProcessor {
 }
 
 impl TextureProcessor {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     //----------------------------------------------
 
     pub fn get_unprocessed_mut(&mut self) -> &mut HashMap<TextureID, Vec<RawTextureInstance>> {

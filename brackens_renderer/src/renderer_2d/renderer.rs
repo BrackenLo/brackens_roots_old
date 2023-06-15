@@ -19,7 +19,8 @@ use crate::{
 
 use super::{
     renderer_components::{
-        RawTextureInstance, RawTextureVertex, TextureDrawBuffer, TEXTURE_INDICES, TEXTURE_VERTICES,
+        RawTextureInstance, RawTextureVertex, RendererDescriptor2D, TextureDrawBuffer,
+        TEXTURE_INDICES, TEXTURE_VERTICES,
     },
     Texture,
 };
@@ -48,17 +49,17 @@ where
 {
     //===============================================================
 
-    pub fn new(
-        device: &wgpu::Device,
-        format: wgpu::TextureFormat,
+    pub fn new(descriptor: RendererDescriptor2D<T>) -> Self {
+        let RendererDescriptor2D {
+            device,
+            format,
+            global_bind_group_template,
+            data,
+            shader,
+            use_depth_texture,
+            label,
+        } = descriptor;
 
-        global_bind_group_template: BindGroupTemplate<T>,
-        data: Vec<BindGroupEntry<T>>,
-
-        shader: wgpu::ShaderSource,
-        use_depth_texture: bool,
-        label: &str,
-    ) -> Self {
         //----------------------------------------------
 
         let depth_stencil = if use_depth_texture {
@@ -96,7 +97,7 @@ where
 
         //----------------------------------------------
 
-        Self::new_custom(device, global_bind_group_template, data, builder, label)
+        Self::new_custom(device, global_bind_group_template, &data, builder, label)
 
         //----------------------------------------------
     }
@@ -106,7 +107,7 @@ where
     pub fn new_custom(
         device: &wgpu::Device,
         global_bind_group_template: BindGroupTemplate<T>,
-        data: Vec<BindGroupEntry<T>>,
+        data: &[BindGroupEntry<T>],
         builder: PipelineBuilderDescriptor,
         label: &str,
     ) -> Self {
@@ -266,15 +267,15 @@ impl TextureRenderer {
 
         //----------------------------------------------
 
-        let inner = Renderer2D::new(
+        let inner = Renderer2D::new(RendererDescriptor2D {
             device,
             format,
-            bind_group_template,
-            vec![data],
-            wgpu::ShaderSource::Wgsl(include_str!("../shaders/texture_shader.wgsl").into()),
-            true,
-            "Texture Renderer",
-        );
+            global_bind_group_template: bind_group_template,
+            data: vec![data],
+            shader: wgpu::ShaderSource::Wgsl(include_str!("../shaders/texture_shader.wgsl").into()),
+            use_depth_texture: true,
+            label: "Texture Renderer",
+        });
 
         //----------------------------------------------
 

@@ -4,8 +4,13 @@ pub mod bind_group_templates;
 pub mod instance_pipeline;
 pub mod raw_pipeline;
 
-pub use instance_pipeline::InstancePipeline;
-pub use raw_pipeline::RawPipeline;
+pub use {
+    bind_group_templates::{
+        BindGroupEntry, BindGroupEntryLayout, BindGroupEntryType, BindGroupTemplate,
+    },
+    instance_pipeline::InstancePipeline,
+    raw_pipeline::RawPipeline,
+};
 
 //===============================================================
 

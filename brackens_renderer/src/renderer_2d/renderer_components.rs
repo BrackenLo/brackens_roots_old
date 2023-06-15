@@ -1,6 +1,28 @@
 //===============================================================
 
-use crate::pipelines::Vertex;
+use crate::pipelines::{
+    bind_group_templates::{BindGroupEntry, BindGroupTemplate},
+    Vertex,
+};
+
+//===============================================================
+
+pub struct RendererDescriptor2D<'a, T>
+where
+    T: bytemuck::Pod + bytemuck::Zeroable,
+{
+    pub device: &'a wgpu::Device,
+    pub format: wgpu::TextureFormat,
+
+    // How data used for all render passes should be laid out
+    pub global_bind_group_template: BindGroupTemplate<T>,
+    // The data used for all render passes. Should follow the template above.
+    pub data: Vec<BindGroupEntry<'a, T>>,
+
+    pub shader: wgpu::ShaderSource<'a>,
+    pub use_depth_texture: bool,
+    pub label: &'a str,
+}
 
 //===============================================================
 

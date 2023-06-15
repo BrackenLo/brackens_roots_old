@@ -24,12 +24,27 @@ where
     TextureView(&'a wgpu::TextureView),
 }
 
+//----------------------------------------------
+
 pub struct BindGroupEntryLayout<T>
 where
     T: bytemuck::Pod + bytemuck::Zeroable,
 {
     pub entry_type: BindGroupEntryType<T>,
     pub visibility: wgpu::ShaderStages,
+}
+
+impl<T> BindGroupEntryLayout<T>
+where
+    T: bytemuck::Pod + bytemuck::Zeroable,
+{
+    pub fn buffer(label: &str, visibility: wgpu::ShaderStages) -> Self {
+        let template = BufferTemplate::new(label);
+        Self {
+            entry_type: BindGroupEntryType::Buffer(template),
+            visibility,
+        }
+    }
 }
 
 //===============================================================
@@ -110,7 +125,7 @@ where
     pub fn create_bind_group(
         &self,
         device: &wgpu::Device,
-        data: Vec<BindGroupEntry<T>>,
+        data: &[BindGroupEntry<T>],
     ) -> (wgpu::BindGroup, Option<wgpu::Buffer>) {
         let mut binding = 0;
         let mut entries = Vec::new();
@@ -118,7 +133,7 @@ where
         let mut buffer = None;
 
         // Create buffers ahead of time due to immutible borrow errors
-        for value in &data {
+        for value in data {
             let entry = match self.layout_entries.get(binding) {
                 Some(val) => val,
                 None => {
@@ -144,7 +159,7 @@ where
         }
 
         // Go through all values, make sure they're of the right type and create the wgpu equivelent
-        for value in &data {
+        for value in data {
             let entry = match self.layout_entries.get(binding) {
                 Some(val) => val,
                 None => {
