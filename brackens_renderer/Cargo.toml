@@ -5,6 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+winit = ["dep:winit"]
+
 [dependencies]
 brackens_assets = { path = "../brackens_assets" }
 
@@ -20,3 +23,5 @@ glam = { workspace = true }
 anyhow = { workspace = true }
 image = { workspace = true, features = ["png", "jpeg"] }
 tobj = "4.0.0"
+
+winit = { workspace = true, optional = true }

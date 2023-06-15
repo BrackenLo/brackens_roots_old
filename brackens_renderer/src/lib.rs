@@ -23,6 +23,16 @@ impl<T> Size<T> {
     }
 }
 
+#[cfg(feature = "winit")]
+impl<T> Into<Size<T>> for winit::dpi::PhysicalSize<T> {
+    fn into(self) -> Size<T> {
+        Size {
+            width: self.width,
+            height: self.height,
+        }
+    }
+}
+
 //===============================================================
 
 pub struct RenderPrefs {
@@ -57,6 +67,12 @@ pub struct RenderComponents {
 }
 
 impl RenderComponents {
+    #[cfg(feature = "winit")]
+    pub fn new_winit(prefs: RenderPrefs, window: &winit::window::Window) -> Self {
+        let size = window.inner_size().into();
+        Self::new(prefs, window, size)
+    }
+
     pub fn new<
         W: raw_window_handle::HasRawWindowHandle + raw_window_handle::HasRawDisplayHandle,
     >(
