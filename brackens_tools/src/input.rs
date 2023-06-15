@@ -115,3 +115,69 @@ impl MousePositionManager {
 }
 
 //===============================================================
+
+#[derive(Default)]
+pub struct InputManager {
+    keys: KeyManager,
+    mouse_keys: MouseKeyManager,
+    mouse_pos: MousePositionManager,
+    mouse_on_screen: bool,
+}
+impl InputManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn manage_device_input(&mut self, event: &winit::event::DeviceEvent) -> bool {
+        match event {
+            winit::event::DeviceEvent::MouseMotion { delta } => self.mouse_pos.add_movement(*delta),
+            // winit::event::DeviceEvent::MouseWheel { delta } => todo!(),
+            _ => {}
+        }
+        todo!()
+    }
+
+    pub fn manage_window_input(&mut self, event: &winit::event::WindowEvent) -> bool {
+        match event {
+            winit::event::WindowEvent::KeyboardInput { input, .. } => {
+                self.keys.manage_input(input.state, input.virtual_keycode)
+            }
+            winit::event::WindowEvent::CursorMoved { position, .. } => {
+                self.mouse_pos.set_position(*position)
+            }
+            winit::event::WindowEvent::CursorEntered { .. } => self.mouse_on_screen = true,
+            winit::event::WindowEvent::CursorLeft { .. } => self.mouse_on_screen = false,
+            // winit::event::WindowEvent::MouseWheel { delta, phase, .. } => todo!(),
+            winit::event::WindowEvent::MouseInput { state, button, .. } => {
+                self.mouse_keys.manage_input(*state, Some(*button))
+            }
+            // winit::event::WindowEvent::ModifiersChanged(_) => todo!(),
+            // winit::event::WindowEvent::TouchpadMagnify {
+            //     device_id,
+            //     delta,
+            //     phase,
+            // } => todo!(),
+            // winit::event::WindowEvent::SmartMagnify { device_id } => todo!(),
+            // winit::event::WindowEvent::TouchpadRotate {
+            //     device_id,
+            //     delta,
+            //     phase,
+            // } => todo!(),
+            // winit::event::WindowEvent::TouchpadPressure {
+            //     device_id,
+            //     pressure,
+            //     stage,
+            // } => todo!(),
+            // winit::event::WindowEvent::AxisMotion {
+            //     device_id,
+            //     axis,
+            //     value,
+            // } => todo!(),
+            // winit::event::WindowEvent::Touch(_) => todo!(),
+            _ => return false,
+        }
+        return true;
+    }
+}
+
+//===============================================================
