@@ -24,11 +24,11 @@ impl<T> Size<T> {
 }
 
 #[cfg(feature = "winit")]
-impl<T> Into<Size<T>> for winit::dpi::PhysicalSize<T> {
-    fn into(self) -> Size<T> {
-        Size {
-            width: self.width,
-            height: self.height,
+impl<T> From<winit::dpi::PhysicalSize<T>> for Size<T> {
+    fn from(value: winit::dpi::PhysicalSize<T>) -> Self {
+        Self {
+            width: value.width,
+            height: value.height,
         }
     }
 }
