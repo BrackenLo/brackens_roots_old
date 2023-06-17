@@ -81,7 +81,7 @@ where
         world: &mut World,
         path: String,
     ) -> Result<Handle<T>, AssetLoadError> {
-        info!("Loading new {} asset from path {}", T::asset_name(), path);
+        // info!("Loading new {} asset from path {}", T::asset_name(), path);
 
         // Check if file is already loaded. If so, we can create a new handle to the existing data
         if let Some(handle) = self.inner.get_loaded_file(&path) {

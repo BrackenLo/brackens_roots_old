@@ -52,7 +52,7 @@ where
     T: Asset,
 {
     fn default() -> Self {
-        info!("Creating new {} asset storage", T::asset_name());
+        // info!("Creating new {} asset storage", T::asset_name());
 
         let (sender, receiver) = crossbeam::channel::unbounded();
         Self {
@@ -104,7 +104,11 @@ where
         self.asset_count.insert(next_id, 0);
         self.just_added.push(next_id);
 
-        info!("Loaded new {} asset with id {}", T::asset_name(), next_id);
+        // info!(
+        //     "Loaded new {} asset with id {}",
+        //     asset.asset_name(),
+        //     next_id
+        // );
 
         Handle::strong(next_id, self.sender.clone(), data_access)
     }
@@ -143,11 +147,11 @@ where
 
     pub fn get_loaded_file(&self, path: &str) -> Option<Handle<T>> {
         if let Some(id) = self.loaded_paths.get(path) {
-            info!(
-                "Retrieving previously loaded {} asset with id {}",
-                T::asset_name(),
-                id
-            );
+            // info!(
+            //     "Retrieving previously loaded {} asset with id {}",
+            //     T::asset_name(),
+            //     id
+            // );
             let data_access = self.loaded.get(id).unwrap().clone();
             return Some(Handle::strong(*id, self.sender.clone(), data_access));
         }
@@ -180,10 +184,11 @@ where
                 Ok(data) => data,
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    panic!(
-                        "Error, {} Asset Storage channels have been disconnected",
-                        T::asset_name()
-                    );
+                    // panic!(
+                    //     "Error, {} Asset Storage channels have been disconnected",
+                    //     T::asset_name()
+                    // );
+                    todo!();
                 }
             };
 
@@ -204,11 +209,11 @@ where
 
     pub fn remove_pending_assets(&mut self) {
         for to_remove in &self.removed_assets {
-            info!(
-                "Unloading {} asset with handle id {}",
-                T::asset_name(),
-                to_remove
-            );
+            // info!(
+            //     "Unloading {} asset with handle id {}",
+            //     T::asset_name(),
+            //     to_remove
+            // );
 
             self.loaded.remove(&to_remove); //Remove Asset
             self.asset_count.remove(&to_remove); //Remove Counter

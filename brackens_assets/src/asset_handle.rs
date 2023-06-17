@@ -70,7 +70,8 @@ where
     T: Asset,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {:?}", T::asset_name(), self.id)
+        // write!(f, "{}: {:?}", self.asset_name(), self.id)
+        write!(f, "{:?}", self.id)
     }
 }
 
@@ -99,10 +100,11 @@ where
         self.handle_id
         // todo!()
     }
-    #[inline]
-    pub fn type_name(&self) -> &'static str {
-        T::asset_name()
-    }
+    // #[inline]
+    // pub fn type_name(&self) -> &'static str {
+    //     // T::asset_name()
+    //     self.asset_name()
+    // }
     #[inline]
     pub fn get(&self) -> &T {
         &self.asset

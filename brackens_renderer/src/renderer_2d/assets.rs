@@ -15,9 +15,12 @@ pub struct Texture {
 }
 
 impl Asset for Texture {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Wgpu Texture"
     }
+    // fn asset_name() -> &'static str {
+    //     "Wgpu Texture"
+    // }
 }
 
 impl Texture {
@@ -161,9 +164,12 @@ pub struct RendererTexture {
 }
 
 impl Asset for RendererTexture {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Renderer Texture"
     }
+    // fn asset_name() -> &'static str {
+    //     "Renderer Texture"
+    // }
 }
 
 impl RendererTexture {

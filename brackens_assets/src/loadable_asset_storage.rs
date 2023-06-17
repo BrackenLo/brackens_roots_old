@@ -45,11 +45,11 @@ where
 
     pub fn get_file_loaded(&self, path: &str) -> Option<Handle<T>> {
         if let Some(id) = self.loaded_paths.get(path) {
-            info!(
-                "Retrieving previously loaded {} asset with id {}",
-                T::asset_name(),
-                id
-            );
+            // info!(
+            //     "Retrieving previously loaded {} asset with id {}",
+            //     T::asset_name(),
+            //     id
+            // );
             let data_access = self.inner.get_loaded().get(id).unwrap().clone();
             return Some(Handle::strong(
                 *id,
@@ -62,7 +62,7 @@ where
     }
 
     pub fn load_from_file(&mut self, path: String, data: D) -> Handle<T> {
-        info!("Loading new {} asset from path {}", T::asset_name(), path);
+        // info!("Loading new {} asset from path {}", T::asset_name(), path);
 
         // Check if file is already loaded. If so, we can create a new handle to the existing data.
         if let Some(handle) = self.get_file_loaded(&path) {

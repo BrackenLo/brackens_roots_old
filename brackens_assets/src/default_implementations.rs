@@ -10,9 +10,12 @@ use log::error;
 //===============================================================
 
 impl Asset for DynamicImage {
-    fn asset_name() -> &'static str {
-        "DynamicImage"
+    fn asset_name(&self) -> &str {
+        "Dynamic Image"
     }
+    // fn asset_name() -> &'static str {
+    //     "DynamicImage"
+    // }
 }
 
 impl AssetLoadable<()> for DynamicImage {
@@ -34,9 +37,12 @@ impl AssetLoadable<()> for DynamicImage {
 //===============================================================
 
 impl Asset for FontArc {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Font"
     }
+    // fn asset_name() -> &'static str {
+    //     "Font"
+    // }
 }
 impl AssetLoadable<()> for FontArc {
     fn load_from_file(path: String, data: ()) -> Self {
