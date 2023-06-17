@@ -6,15 +6,14 @@ use std::{collections::HashMap, sync::Arc};
 
 use log::info;
 
+use crate::{ReceiverType, SenderType};
+
 use super::{
     asset_handle::{Handle, HandleID},
     Asset,
 };
 
 //===============================================================
-
-pub type SenderType<T> = crossbeam::channel::Sender<T>;
-pub type ReceiverType<T> = crossbeam::channel::Receiver<T>;
 
 pub enum ReferenceCountSignal<T: Asset> {
     Increase(HandleID<T>),
@@ -92,7 +91,7 @@ where
 
     fn get_next_id(&mut self) -> HandleID<T> {
         let to_return = self.current_id;
-        self.current_id.id += 1;
+        // self.current_id.id += 1;
         to_return
     }
 

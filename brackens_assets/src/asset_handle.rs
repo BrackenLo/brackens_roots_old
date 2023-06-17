@@ -2,10 +2,9 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
-use super::{
-    asset_storage::{ReferenceCountSignal, SenderType},
-    Asset,
-};
+use crate::SenderType;
+
+use super::{asset_storage::ReferenceCountSignal, Asset};
 
 //===============================================================
 
