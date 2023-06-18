@@ -2,6 +2,8 @@
 
 use std::{collections::HashMap, fs::File, io::Read, sync::Arc};
 
+use crossbeam::channel::TryRecvError;
+
 use crate::{
     handle_x::{Handle, HandleID, HandleInner},
     Asset, AssetFileLoadable, AssetFileLoadableData,
@@ -60,7 +62,6 @@ pub struct AssetStorageX {
     // Keep track of how many handles in existance so we can unload when finished with.
     handle_count: HashMap<HandleInner, u32>,
 
-    just_added: Vec<HandleInner>,
     removed_assets: Vec<HandleInner>,
 }
 
@@ -92,7 +93,6 @@ impl AssetStorageX {
         // Add references to data to storage
         self.loaded.insert(id, handle_inner.clone());
         self.handle_count.insert(id, 0);
-        self.just_added.push(id);
 
         // Construct Handle and return
         let handle_id = HandleID::new(id);
@@ -177,7 +177,12 @@ impl AssetStorageX {
     //----------------------------------------------
 
     /// Get and cast an id into a handle
-    fn get_handle<T: Asset>(&self, id: HandleInner) -> Result<Handle<T>, AssetStorageError> {
+    pub fn get_handle<T: Asset, HI: Into<HandleInner>>(
+        &self,
+        id: HI,
+    ) -> Result<Handle<T>, AssetStorageError> {
+        let id = id.into();
+
         let val = self
             .loaded
             .get(&id)
@@ -194,6 +199,61 @@ impl AssetStorageX {
 
         let handle = Handle::new(id, self.sender.clone(), inner);
         Ok(handle)
+    }
+
+    //----------------------------------------------
+
+    pub fn tick(&mut self) {
+        self.check_asset_changes();
+        self.removed_pending_assets();
+    }
+
+    pub(crate) fn check_asset_changes(&mut self) {
+        self.removed_assets.clear();
+
+        // Loop through each recieved signal and act accordingly
+        loop {
+            let data = match self.receiver.try_recv() {
+                Ok(data) => data,
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => {
+                    todo!()
+                }
+            };
+
+            match data {
+                ReferenceCountSignalX::Increase(id) => match self.handle_count.get_mut(&id) {
+                    Some(count) => *count += 1,
+                    None => panic!(
+                        "Error: Handle amount increased but asset with id {:?} doesn't exist.",
+                        id
+                    ),
+                },
+                ReferenceCountSignalX::Decrease(id) => match self.handle_count.get_mut(&id) {
+                    Some(count) => {
+                        *count -= 1;
+                        if *count == 0 {
+                            self.removed_assets.push(id);
+                        }
+                    }
+                    None => panic!(
+                        "Error: Handle amount decreased but asset with id {:?} doesn't exist.",
+                        id
+                    ),
+                },
+            }
+        }
+    }
+
+    pub(crate) fn removed_pending_assets(&mut self) {
+        for to_remove in &self.removed_assets {
+            self.loaded.remove(&to_remove);
+            self.handle_count.remove(&to_remove);
+
+            if let Some(val) = &self.asset_paths.remove(&to_remove) {
+                self.loaded_paths.remove(val);
+            }
+        }
     }
 
     //----------------------------------------------

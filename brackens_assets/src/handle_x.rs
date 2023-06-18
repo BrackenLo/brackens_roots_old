@@ -9,11 +9,14 @@ use crate::{asset_storage_generic::ReferenceCountSignalX, Asset, SenderType};
 #[derive(Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub struct HandleInner(u32);
 impl HandleInner {
-    pub(crate) fn from_id(id: u32) -> Self {
-        Self(id)
-    }
     pub(crate) fn next(&mut self) {
         self.0 += 1;
+    }
+}
+
+impl<T: Asset> From<HandleID<T>> for HandleInner {
+    fn from(value: HandleID<T>) -> Self {
+        value.id
     }
 }
 
@@ -30,7 +33,7 @@ impl<T: Asset> HandleID<T> {
             data: PhantomData,
         }
     }
-    pub(crate) fn id(&self) -> HandleInner {
+    pub fn id(&self) -> HandleInner {
         self.id
     }
 }
