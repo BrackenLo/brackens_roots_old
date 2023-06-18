@@ -65,7 +65,32 @@ pub struct AssetStorageX {
     removed_assets: Vec<HandleInner>,
 }
 
+impl Default for AssetStorageX {
+    fn default() -> Self {
+        let (sender, receiver) = crossbeam::channel::unbounded();
+        Self {
+            sender,
+            receiver,
+            current_id: HandleInner::from_id(0),
+            loaded: HashMap::new(),
+
+            loaded_paths: HashMap::new(),
+            asset_paths: HashMap::new(),
+            load_path: "".into(),
+
+            handle_count: HashMap::new(),
+            removed_assets: Vec::new(),
+        }
+    }
+}
+
 impl AssetStorageX {
+    //----------------------------------------------
+
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     //----------------------------------------------
 
     fn get_next_id(&mut self) -> HandleInner {

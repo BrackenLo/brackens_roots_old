@@ -4,7 +4,7 @@ use crossbeam::channel::TryRecvError;
 
 use std::{collections::HashMap, sync::Arc};
 
-use log::info;
+// use log::info;
 
 use crate::{ReceiverType, SenderType};
 

@@ -9,6 +9,9 @@ use crate::{asset_storage_generic::ReferenceCountSignalX, Asset, SenderType};
 #[derive(Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub struct HandleInner(u32);
 impl HandleInner {
+    pub(crate) fn from_id(id: u32) -> Self {
+        Self(id)
+    }
     pub(crate) fn next(&mut self) {
         self.0 += 1;
     }
