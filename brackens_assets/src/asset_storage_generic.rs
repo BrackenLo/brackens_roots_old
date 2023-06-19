@@ -6,7 +6,7 @@ use crossbeam::channel::TryRecvError;
 
 use crate::{
     handle_x::{Handle, HandleID, HandleInner},
-    Asset, AssetFileLoadable, AssetFileLoadableData,
+    Asset, AssetFileLoadable,
 };
 
 //===============================================================
@@ -14,20 +14,17 @@ use crate::{
 #[derive(Debug)]
 pub enum AssetStorageError {
     AssetNotExist,
-    InvalidType,
-    AssetExistsDifferentType,
+    // InvalidType,
+    AssetIsDifferentType,
 }
 impl std::fmt::Display for AssetStorageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
             AssetStorageError::AssetNotExist => todo!(),
-            AssetStorageError::InvalidType => {
-                write!(
-                    f,
-                    "AssetStorageError: The given type doesn't match the stored type."
-                )
-            }
-            AssetStorageError::AssetExistsDifferentType => todo!(),
+            AssetStorageError::AssetIsDifferentType => write!(
+                f,
+                "AssetStorageError: The given type doesn't match the stored type"
+            ),
         }
     }
 }
@@ -139,7 +136,8 @@ impl AssetStorageX {
             Ok(handle) => return Ok(Some(handle)),
             Err(e) => match e {
                 // Only error if the type cast is invalid
-                AssetStorageError::InvalidType => Err(AssetStorageError::AssetExistsDifferentType)?,
+                // AssetStorageError::InvalidType => Err(AssetStorageError::AssetExistsDifferentType)?,
+                AssetStorageError::AssetIsDifferentType => Err(e)?,
                 _ => {}
             },
         };
@@ -163,7 +161,7 @@ impl AssetStorageX {
     }
 
     /// Load an asset from a given file path and function
-    pub fn load_from_data<T: AssetFileLoadableData, F: Fn(&[u8]) -> T>(
+    pub fn load_from_data<T: Asset, F: Fn(&[u8]) -> T>(
         &mut self,
         path: &str,
         load_data: F,
@@ -218,12 +216,29 @@ impl AssetStorageX {
         let inner: Arc<T> = val
             .into_any_arc()
             .downcast()
-            .map_err(|_| AssetStorageError::InvalidType)?;
+            .map_err(|_| AssetStorageError::AssetIsDifferentType)?;
 
         let id = HandleID::new(id);
 
         let handle = Handle::new(id, self.sender.clone(), inner);
         Ok(handle)
+    }
+
+    pub fn get_data<T: Asset>(&self, id: HandleID<T>) -> Result<&T, AssetStorageError> {
+        self.get_data_raw(id)
+    }
+
+    pub fn get_data_raw<T: Asset, HI: Into<HandleInner>>(
+        &self,
+        id: HI,
+    ) -> Result<&T, AssetStorageError> {
+        match self.loaded.get(&id.into()) {
+            Some(val) => match val.as_ref().as_any().downcast_ref() {
+                Some(of_type) => Ok(of_type),
+                None => Err(AssetStorageError::AssetIsDifferentType)?,
+            },
+            None => Err(AssetStorageError::AssetNotExist)?,
+        }
     }
 
     //----------------------------------------------

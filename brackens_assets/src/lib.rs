@@ -30,6 +30,4 @@ pub trait AssetFileLoadable: Asset {
     fn load_default() -> Self;
 }
 
-pub trait AssetFileLoadableData: Asset {}
-
 //===============================================================
