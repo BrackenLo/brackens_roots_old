@@ -132,9 +132,10 @@ impl InputManager {
         match event {
             winit::event::DeviceEvent::MouseMotion { delta } => self.mouse_pos.add_movement(*delta),
             // winit::event::DeviceEvent::MouseWheel { delta } => todo!(),
-            _ => {}
+            _ => return false,
         }
-        todo!()
+
+        true
     }
 
     pub fn manage_window_input(&mut self, event: &winit::event::WindowEvent) -> bool {
