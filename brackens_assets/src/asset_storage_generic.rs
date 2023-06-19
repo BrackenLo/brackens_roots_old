@@ -20,7 +20,9 @@ pub enum AssetStorageError {
 impl std::fmt::Display for AssetStorageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
-            AssetStorageError::AssetNotExist => todo!(),
+            AssetStorageError::AssetNotExist => {
+                write!(f, "AssetStorageError: The requested asset does not exist")
+            }
             AssetStorageError::AssetIsDifferentType => write!(
                 f,
                 "AssetStorageError: The given type doesn't match the stored type"
@@ -257,7 +259,7 @@ impl AssetStorageX {
                 Ok(data) => data,
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    todo!()
+                    panic!("Error: Handle has been disconnected from Asset Storage")
                 }
             };
 

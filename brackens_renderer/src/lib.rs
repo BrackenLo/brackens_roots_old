@@ -5,6 +5,7 @@ use log::info;
 pub mod pipelines;
 pub mod renderer_2d;
 pub mod renderer_3d;
+pub mod tools;
 
 pub use bytemuck;
 pub use image;
