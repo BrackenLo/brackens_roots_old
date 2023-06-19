@@ -1,7 +1,5 @@
 //===============================================================
 
-mod camera_example;
-
 use brackens_engine::{
     core_components::KeyManager,
     prelude::KeyCode,
