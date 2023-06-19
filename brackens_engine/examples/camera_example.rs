@@ -4,13 +4,14 @@ use brackens_engine::{
     core_components::KeyManager,
     prelude::{KeyCode, Texture, Vec3},
     renderer::{
-        components::{Camera, CameraActive, PerspectiveTargetCameraDescriptor},
+        components::{Camera, CameraActive},
         tools_2d::{load_blank_texture, BlankTextureDescriptor, TextureBundleViewMut},
     },
     spatial_components::{GlobalTransform, Transform},
     tool_components::AutoUpdate,
     ShipyardGameState, ShipyardRunner,
 };
+use brackens_renderer::tools::CameraPerspective;
 use shipyard::{Component, EntitiesViewMut, IntoIter, UniqueView, View, ViewMut};
 
 //===============================================================
@@ -39,7 +40,7 @@ impl ShipyardGameState for Game {
         world.add_entity((
             Transform::from_translation(Vec3::new(0., 0., 80.)),
             GlobalTransform::default(),
-            Camera::new_perspective_target(PerspectiveTargetCameraDescriptor::default()),
+            Camera::perspective_target(CameraPerspective::default(), Vec3::ZERO),
             AutoUpdate,
             CameraActive,
             Movable(5.),

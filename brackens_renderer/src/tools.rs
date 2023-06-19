@@ -63,9 +63,9 @@ impl CameraOrthographic {
             self.z_far,
         )
     }
-    pub fn get_projection_transform(&self, pos: glam::Vec2, rotation: glam::Quat) -> glam::Mat4 {
+    pub fn get_projection_transform(&self, pos: glam::Vec3, rotation: glam::Quat) -> glam::Mat4 {
         let projection_matrix = self.get_projection();
-        let transform_matrix = glam::Mat4::from_rotation_translation(rotation, pos.extend(0.));
+        let transform_matrix = glam::Mat4::from_rotation_translation(rotation, pos);
 
         projection_matrix * transform_matrix
     }

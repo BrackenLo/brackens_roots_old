@@ -1,6 +1,7 @@
 //===============================================================
 
-use brackens_tools::glam::Mat4;
+use brackens_renderer::tools::{CameraOrthographic, CameraPerspective};
+use brackens_tools::glam::{Mat4, Vec3};
 use shipyard::{
     Borrow, BorrowInfo, EntitiesViewMut, EntityId, IntoBorrow, IntoIter, IntoWithId, View, ViewMut,
 };
@@ -11,10 +12,7 @@ use crate::{
     tool_components::AutoUpdate,
 };
 
-use super::components::{
-    Camera, CameraActive, CameraProjection, OrthographicCameraDescriptor,
-    PerspectiveCameraDescriptor, PerspectiveTargetCameraDescriptor,
-};
+use super::components::{Camera, CameraActive, CameraProjection};
 
 //===============================================================
 
@@ -106,55 +104,75 @@ impl<'v> CameraBundleViewTools for CameraBundleViewComponentsRef<'v> {
         if let Some((camera, _, global_transform)) =
             (v_camera, v_active, v_global_transform).iter().next()
         {
-            return match camera.projection {
-                CameraProjection::Orthographic {
-                    left,
-                    right,
-                    top,
-                    bottom,
-                    z_near,
-                    z_far,
-                } => {
-                    let projection_matrix =
-                        Mat4::orthographic_lh(left, right, bottom, top, z_near, z_far);
+            return match &camera.projection {
+                // CameraProjection::Orthographic(CameraOrthographic {
+                //     left,
+                //     right,
+                //     top,
+                //     bottom,
+                //     z_near,
+                //     z_far,
+                // }) => {
+                //     let projection_matrix =
+                //         Mat4::orthographic_lh(left, right, bottom, top, z_near, z_far);
 
+                //     let transform_position = *global_transform.translation();
+                //     let transform_rotation = *global_transform.rotation();
+
+                //     let transform_matrix =
+                //         Mat4::from_rotation_translation(transform_rotation, -transform_position);
+
+                //     projection_matrix * transform_matrix
+                // }
+                CameraProjection::Orthographic(orthographic) => {
                     let transform_position = *global_transform.translation();
                     let transform_rotation = *global_transform.rotation();
 
-                    let transform_matrix =
-                        Mat4::from_rotation_translation(transform_rotation, -transform_position);
-
-                    projection_matrix * transform_matrix
+                    orthographic.get_projection_transform(transform_position, transform_rotation)
                 }
-                CameraProjection::PerspectiveTarget {
-                    target,
-                    up,
-                    aspect,
-                    fovy,
-                    z_near,
-                    z_far,
-                } => {
+
+                // CameraProjection::PerspectiveTarget(
+                //     CameraPerspective {
+                //         up,
+                //         aspect,
+                //         fovy,
+                //         z_near,
+                //         z_far,
+                //     },
+                //     target,
+                // ) => {
+                //     let position = *global_transform.translation();
+
+                //     let view = Mat4::look_at_lh(position, target, up);
+                //     let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
+
+                //     proj * view
+                // }
+                CameraProjection::PerspectiveTarget(perspective, target) => {
                     let position = *global_transform.translation();
-
-                    let view = Mat4::look_at_lh(position, target, up);
-                    let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
-
-                    proj * view
+                    perspective.get_projection_target(position, *target)
                 }
-                CameraProjection::Perspective {
-                    up,
-                    aspect,
-                    fovy,
-                    z_near,
-                    z_far,
-                } => {
+
+                // CameraProjection::Perspective(CameraPerspective {
+                //     up,
+                //     aspect,
+                //     fovy,
+                //     z_near,
+                //     z_far,
+                // }) => {
+                //     let position = *global_transform.translation();
+                //     let direction = global_transform.forward().normalize();
+
+                //     let view = Mat4::look_at_lh(position, position + direction, up);
+                //     let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
+
+                //     proj * view
+                // }
+                CameraProjection::Perspective(perspective) => {
                     let position = *global_transform.translation();
-                    let direction = global_transform.forward().normalize();
+                    let rotation = *global_transform.rotation();
 
-                    let view = Mat4::look_at_lh(position, position + direction, up);
-                    let proj = Mat4::perspective_lh(fovy, aspect, z_near, z_far);
-
-                    proj * view
+                    perspective.get_projection_transform(position, rotation)
                 }
             };
         } else {
@@ -248,7 +266,7 @@ impl<'v> CameraBundleViewMut<'v> {
         &mut self,
         entities: &mut EntitiesViewMut,
         transform: Transform,
-        orthographic_descriptor: OrthographicCameraDescriptor,
+        orthographic: CameraOrthographic,
         is_active: bool,
         auto_updated: bool,
     ) -> EntityId {
@@ -257,7 +275,9 @@ impl<'v> CameraBundleViewMut<'v> {
             transform,
             is_active,
             auto_updated,
-            Camera::new_orthographic(orthographic_descriptor),
+            Camera {
+                projection: CameraProjection::Orthographic(orthographic),
+            },
         )
     }
 
@@ -265,7 +285,7 @@ impl<'v> CameraBundleViewMut<'v> {
         &mut self,
         entities: &mut EntitiesViewMut,
         transform: Transform,
-        perspective_descriptor: PerspectiveCameraDescriptor,
+        perspective: CameraPerspective,
         is_active: bool,
         auto_updated: bool,
     ) -> EntityId {
@@ -274,7 +294,9 @@ impl<'v> CameraBundleViewMut<'v> {
             transform,
             is_active,
             auto_updated,
-            Camera::new_perspective(perspective_descriptor),
+            Camera {
+                projection: CameraProjection::Perspective(perspective),
+            },
         )
     }
 
@@ -282,7 +304,8 @@ impl<'v> CameraBundleViewMut<'v> {
         &mut self,
         entities: &mut EntitiesViewMut,
         transform: Transform,
-        perspective_descriptor: PerspectiveTargetCameraDescriptor,
+        perspective: CameraPerspective,
+        target: Vec3,
         is_active: bool,
         auto_updated: bool,
     ) -> EntityId {
@@ -291,7 +314,9 @@ impl<'v> CameraBundleViewMut<'v> {
             transform,
             is_active,
             auto_updated,
-            Camera::new_perspective_target(perspective_descriptor),
+            Camera {
+                projection: CameraProjection::PerspectiveTarget(perspective, target),
+            },
         )
     }
 

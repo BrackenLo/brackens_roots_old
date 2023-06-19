@@ -56,21 +56,21 @@ pub fn sys_resize_camera(
 ) {
     for (mut camera, _) in (&mut vm_camera, &v_auto_update).iter() {
         match &mut camera.projection {
-            CameraProjection::PerspectiveTarget { aspect, .. }
-            | CameraProjection::Perspective { aspect, .. } => {
-                *aspect = window_size.width() as f32 / window_size.height() as f32;
-            }
-            CameraProjection::Orthographic {
+            CameraProjection::Orthographic(CameraOrthographic {
                 left,
                 right,
                 bottom,
                 top,
                 ..
-            } => {
+            }) => {
                 *left = window_size.width() as f32 / -2.;
                 *right = window_size.width() as f32 / 2.;
                 *bottom = window_size.height() as f32 / -2.;
                 *top = window_size.height() as f32 / 2.;
+            }
+            CameraProjection::PerspectiveTarget(CameraPerspective { aspect, .. }, _)
+            | CameraProjection::Perspective(CameraPerspective { aspect, .. }) => {
+                *aspect = window_size.width() as f32 / window_size.height() as f32;
             }
         }
     }
