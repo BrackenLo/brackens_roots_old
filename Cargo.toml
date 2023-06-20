@@ -10,7 +10,8 @@ members = [
   "brackens_tools", 
   "brackens_engine",  
   "brackens_renderer", 
-  "brackens_assets"
+  "brackens_assets",
+  "brackens_shipyard",
 ]
 
 [workspace.dependencies]
