@@ -8,14 +8,16 @@ struct Projection {
 
 struct VertexInput {
     // Vertex Data
+    @builtin(vertex_index) index: u32,
     @location(0) position: vec3<f32>,
-    @location(1) tex_coord: vec2<f32>,
     // Instance Data
-    @location(2) transform_0: vec4<f32>,
-    @location(3) transform_1: vec4<f32>,
-    @location(4) transform_2: vec4<f32>,
-    @location(5) transform_3: vec4<f32>,
-    @location(6) color: vec4<f32>,
+    @location(1) tex_coord_tl: vec2<f32>,
+    @location(2) tex_coord_br: vec2<f32>,
+    @location(3) transform_0: vec4<f32>,
+    @location(4) transform_1: vec4<f32>,
+    @location(5) transform_2: vec4<f32>,
+    @location(6) transform_3: vec4<f32>,
+    @location(7) color: vec4<f32>,
 }
 
 struct VertexOutput {
@@ -42,7 +44,31 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         transform *
         vec4<f32>(in.position, 1.);
 
-    out.tex_coord = in.tex_coord;
+    switch (in.index) {
+        // Bottom Left
+        case 0u: {
+            out.tex_coord = vec2<f32>(in.tex_coord_tl.x, in.tex_coord_br.y);
+            break;
+        }
+        // Bottom Right
+        case 1u: {
+            out.tex_coord = in.tex_coord_br;
+            break;
+        }
+        // Top Right
+        case 2u: {
+            out.tex_coord = vec2<f32>(in.tex_coord_br.x, in.tex_coord_tl.y );
+            break;
+        }
+        // Top Left
+        case 3u: {
+            out.tex_coord = in.tex_coord_tl;
+            break;
+        }
+        default: {}
+    }
+
+    // out.tex_coord = in.tex_coord;
     out.color = in.color;
 
     return out;
