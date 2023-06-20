@@ -2,17 +2,17 @@
 
 use downcast_rs::DowncastSync;
 
-pub mod asset_handle;
 pub mod asset_storage;
-pub mod asset_storage_generic;
+pub mod asset_storage_single;
 pub mod default_implementations;
 pub mod file_loading;
-pub mod handle_x;
+pub mod handle;
 
 //===============================================================
 
-pub use asset_handle::{Handle, HandleID};
-pub use asset_storage::AssetStorage;
+pub use asset_storage::AssetStorageX;
+pub use asset_storage_single::AssetStorageSingle;
+pub use handle::{Handle, HandleID};
 
 //===============================================================
 

@@ -13,9 +13,6 @@ impl Asset for DynamicImage {
     fn asset_name(&self) -> &str {
         "Dynamic Image"
     }
-    // fn asset_name() -> &'static str {
-    //     "DynamicImage"
-    // }
 }
 
 impl AssetFileLoadable for DynamicImage {
@@ -40,9 +37,6 @@ impl Asset for FontArc {
     fn asset_name(&self) -> &str {
         "Font"
     }
-    // fn asset_name() -> &'static str {
-    //     "Font"
-    // }
 }
 impl AssetFileLoadable for FontArc {
     fn load_from_file(path: &str) -> Self {

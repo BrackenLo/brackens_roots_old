@@ -1,7 +1,7 @@
 //===============================================================
 
 use anyhow::Result;
-use brackens_assets::{file_loading::load_string, Asset, AssetStorage, Handle};
+use brackens_assets::{file_loading::load_string, Asset, AssetStorageSingle, Handle};
 use std::{
     collections::HashMap,
     fs::File,
@@ -119,9 +119,9 @@ impl RendererModel {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
 
-        texture_storage: &mut AssetStorage<RendererTexture>,
-        _material_storage: AssetStorage<RendererMaterial>,
-        _model_storage: AssetStorage<RendererModel>,
+        texture_storage: &mut AssetStorageSingle<RendererTexture>,
+        _material_storage: AssetStorageSingle<RendererMaterial>,
+        _model_storage: AssetStorageSingle<RendererModel>,
 
         sampler: &wgpu::SamplerDescriptor,
         bind_group_layout: &wgpu::BindGroupLayout,
@@ -253,7 +253,7 @@ impl RendererModel {
 fn load_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    texture_storage: &mut AssetStorage<RendererTexture>,
+    texture_storage: &mut AssetStorageSingle<RendererTexture>,
     sampler: &wgpu::SamplerDescriptor,
     bind_group_layout: &wgpu::BindGroupLayout,
 

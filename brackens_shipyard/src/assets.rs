@@ -1,13 +1,13 @@
 //===============================================================
 
 use brackens_assets::{
-    asset_storage_generic::{AssetStorageError, AssetStorageX},
-    handle_x::HandleInner,
+    asset_storage::{AssetStorageError, AssetStorageX},
+    handle::HandleInner,
     Asset, AssetFileLoadable,
 };
 use shipyard::Unique;
 
-pub use brackens_assets::handle_x::{Handle, HandleID};
+pub use brackens_assets::handle::{Handle, HandleID};
 
 //===============================================================
 

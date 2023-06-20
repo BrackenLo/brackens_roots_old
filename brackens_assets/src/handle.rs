@@ -2,7 +2,7 @@
 
 use std::{hash::Hash, marker::PhantomData, sync::Arc};
 
-use crate::{asset_storage_generic::ReferenceCountSignalX, Asset, SenderType};
+use crate::{asset_storage::ReferenceCountSignalX, Asset, SenderType};
 
 //===============================================================
 
@@ -19,6 +19,11 @@ impl HandleInner {
 
 impl<T: Asset> From<HandleID<T>> for HandleInner {
     fn from(value: HandleID<T>) -> Self {
+        value.id
+    }
+}
+impl<T: Asset> From<&HandleID<T>> for HandleInner {
+    fn from(value: &HandleID<T>) -> Self {
         value.id
     }
 }
