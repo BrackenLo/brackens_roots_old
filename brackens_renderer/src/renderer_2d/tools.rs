@@ -48,6 +48,13 @@ where
         &self.draw_data
     }
 
+    pub fn draw_texture(&mut self, texture_id: T, instance: RawTextureInstance) {
+        self.unprocessed_draw_data
+            .entry(texture_id)
+            .or_insert(Vec::new())
+            .push(instance);
+    }
+
     //----------------------------------------------
 
     pub fn process_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {

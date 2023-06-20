@@ -95,6 +95,7 @@ pub fn sys_process_textures(
                                 + transform)
                                 .to_raw(),
                             color: texture.color,
+                            ..Default::default()
                         });
                 }
                 acc

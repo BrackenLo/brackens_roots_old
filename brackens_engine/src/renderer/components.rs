@@ -6,7 +6,9 @@ use brackens_tools::glam::Vec3;
 use shipyard::{Component, Unique};
 
 pub use brackens_renderer::{
-    renderer_2d::RendererTexture, renderer_2d::TextureDrawBuffer as FinalTextureDrawCall,
+    renderer_2d::RendererTexture,
+    renderer_2d::TextureDrawBuffer as FinalTextureDrawCall,
+    tools::{CameraOrthographic, CameraPerspective},
 };
 
 //===============================================================
@@ -35,165 +37,37 @@ impl Default for Visible {
 #[track(Modification)]
 pub struct CameraActive;
 
+//===============================================================
+
 #[derive(Component)]
-#[track(Modification)]
+#[track(All)]
 pub struct Camera {
     pub projection: CameraProjection,
 }
+impl Camera {
+    pub fn orthographic(camera_orthographic: CameraOrthographic) -> Self {
+        Self {
+            projection: CameraProjection::Orthographic(camera_orthographic),
+        }
+    }
+
+    pub fn perspective(camera_perspective: CameraPerspective) -> Self {
+        Self {
+            projection: CameraProjection::Perspective(camera_perspective),
+        }
+    }
+
+    pub fn perspective_target(camera_perspective: CameraPerspective, target: Vec3) -> Self {
+        Self {
+            projection: CameraProjection::PerspectiveTarget(camera_perspective, target),
+        }
+    }
+}
 
 pub enum CameraProjection {
-    Orthographic {
-        left: f32,
-        right: f32,
-        bottom: f32,
-        top: f32,
-        z_near: f32,
-        z_far: f32,
-    },
-    Perspective {
-        up: Vec3,
-        aspect: f32,
-        fovy: f32,
-        z_near: f32,
-        z_far: f32,
-    },
-    PerspectiveTarget {
-        target: Vec3,
-        up: Vec3,
-        aspect: f32,
-        fovy: f32,
-        z_near: f32,
-        z_far: f32,
-    },
+    Orthographic(CameraOrthographic),
+    Perspective(CameraPerspective),
+    PerspectiveTarget(CameraPerspective, Vec3),
 }
-
-pub struct OrthographicCameraDescriptor {
-    pub left: f32,
-    pub right: f32,
-    pub bottom: f32,
-    pub top: f32,
-    pub z_near: f32,
-    pub z_far: f32,
-}
-impl Default for OrthographicCameraDescriptor {
-    fn default() -> Self {
-        Self {
-            left: 0.,
-            right: 1920.,
-            bottom: 0.,
-            top: 1080.,
-            z_near: 0.,
-            z_far: 1000.,
-        }
-    }
-}
-
-pub struct PerspectiveCameraDescriptor {
-    pub up: Vec3,
-    pub aspect: f32,
-    pub fovy: f32,
-    pub z_near: f32,
-    pub z_far: f32,
-}
-impl Default for PerspectiveCameraDescriptor {
-    fn default() -> Self {
-        Self {
-            up: Vec3::Y,
-            aspect: 1.77777777778,
-            fovy: 45.,
-            z_near: 0.1,
-            z_far: 1000.,
-        }
-    }
-}
-
-pub struct PerspectiveTargetCameraDescriptor {
-    pub target: Vec3,
-    pub up: Vec3,
-    pub aspect: f32,
-    pub fovy: f32,
-    pub z_near: f32,
-    pub z_far: f32,
-}
-impl Default for PerspectiveTargetCameraDescriptor {
-    fn default() -> Self {
-        Self {
-            target: Vec3::ZERO,
-            up: Vec3::Y,
-            aspect: 1.77777777778,
-            fovy: 45.,
-            z_near: 0.1,
-            z_far: 1000.,
-        }
-    }
-}
-
-impl Camera {
-    pub fn new_orthographic(
-        OrthographicCameraDescriptor {
-            left,
-            right,
-            bottom,
-            top,
-            z_near,
-            z_far,
-        }: OrthographicCameraDescriptor,
-    ) -> Self {
-        Self {
-            projection: CameraProjection::Orthographic {
-                left,
-                right,
-                bottom,
-                top,
-                z_near,
-                z_far,
-            },
-        }
-    }
-
-    pub fn new_perspective(
-        PerspectiveCameraDescriptor {
-            up,
-            aspect,
-            fovy,
-            z_near,
-            z_far,
-        }: PerspectiveCameraDescriptor,
-    ) -> Self {
-        Self {
-            projection: CameraProjection::Perspective {
-                up,
-                aspect,
-                fovy,
-                z_near,
-                z_far,
-            },
-        }
-    }
-
-    pub fn new_perspective_target(
-        PerspectiveTargetCameraDescriptor {
-            target,
-            up,
-            aspect,
-            fovy,
-            z_near,
-            z_far,
-        }: PerspectiveTargetCameraDescriptor,
-    ) -> Self {
-        Self {
-            projection: CameraProjection::PerspectiveTarget {
-                target,
-                up,
-                aspect,
-                fovy,
-                z_near,
-                z_far,
-            },
-        }
-    }
-}
-
-//===============================================================
 
 //===============================================================

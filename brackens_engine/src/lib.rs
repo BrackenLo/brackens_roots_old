@@ -28,10 +28,7 @@ use {
 pub mod prelude {
     pub use crate::{
         core_components::{UpkeepTracker, WindowSize},
-        renderer::components::{
-            Camera, ClearColor, OrthographicCameraDescriptor, PerspectiveTargetCameraDescriptor,
-            Visible,
-        },
+        renderer::components::{Camera, ClearColor, Visible},
         spatial_components::{
             GlobalTransform, HierarchyBundle, HierarchyBundleTools, Transform, UseParentTransform,
         },

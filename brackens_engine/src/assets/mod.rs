@@ -1,7 +1,7 @@
 //===============================================================
 
-use brackens_assets::asset_storage;
-use log::info;
+use brackens_assets::{handle::HandleInner, AssetStorageSingle};
+// use log::info;
 use shipyard::{Unique, World};
 
 pub use brackens_assets::{Asset, Handle, HandleID};
@@ -18,7 +18,7 @@ pub struct AssetLoadError;
 
 #[derive(Unique, Default)]
 pub struct AssetStorage<T: Asset> {
-    inner: asset_storage::AssetStorage<T>,
+    inner: AssetStorageSingle<T>,
 }
 
 impl<T> AssetStorage<T>
@@ -28,7 +28,7 @@ where
     //----------------------------------------------
 
     pub fn new() -> Self {
-        let inner = asset_storage::AssetStorage::new();
+        let inner = AssetStorageSingle::new();
 
         Self { inner }
     }
@@ -58,7 +58,7 @@ where
     }
 
     #[inline]
-    pub fn get_removed_assets(&self) -> &Vec<HandleID<T>> {
+    pub fn get_removed_assets(&self) -> &Vec<HandleInner> {
         self.inner.get_removed_assets()
     }
 
@@ -81,7 +81,7 @@ where
         world: &mut World,
         path: String,
     ) -> Result<Handle<T>, AssetLoadError> {
-        info!("Loading new {} asset from path {}", T::asset_name(), path);
+        // info!("Loading new {} asset from path {}", T::asset_name(), path);
 
         // Check if file is already loaded. If so, we can create a new handle to the existing data
         if let Some(handle) = self.inner.get_loaded_file(&path) {

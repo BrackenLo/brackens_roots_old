@@ -2,15 +2,16 @@
 
 use brackens_engine::{
     core_components::KeyManager,
-    prelude::{KeyCode, Texture, Vec3},
+    prelude::{KeyCode, Texture, UpkeepTracker, Vec3},
     renderer::{
-        components::{Camera, CameraActive, PerspectiveTargetCameraDescriptor},
+        components::{Camera, CameraActive},
         tools_2d::{load_blank_texture, BlankTextureDescriptor, TextureBundleViewMut},
     },
     spatial_components::{GlobalTransform, Transform},
     tool_components::AutoUpdate,
     ShipyardGameState, ShipyardRunner,
 };
+use brackens_renderer::tools::CameraPerspective;
 use shipyard::{Component, EntitiesViewMut, IntoIter, UniqueView, View, ViewMut};
 
 //===============================================================
@@ -37,12 +38,12 @@ impl ShipyardGameState for Game {
         );
 
         world.add_entity((
-            Transform::from_translation(Vec3::new(0., 0., 80.)),
+            Transform::from_translation(Vec3::new(75., 40., -80.)),
             GlobalTransform::default(),
-            Camera::new_perspective_target(PerspectiveTargetCameraDescriptor::default()),
+            Camera::perspective_target(CameraPerspective::default(), Vec3::ZERO),
             AutoUpdate,
             CameraActive,
-            Movable(5.),
+            Movable(200.),
         ));
 
         Self
@@ -51,6 +52,7 @@ impl ShipyardGameState for Game {
     fn update(&mut self, world: &mut shipyard::World) {
         world.run(
             |keys: UniqueView<KeyManager>,
+             upkeep: UniqueView<UpkeepTracker>,
              mut vm_transforms: ViewMut<Transform>,
              v_movable: View<Movable>| {
                 let mut dir = Vec3::ZERO;
@@ -71,8 +73,11 @@ impl ShipyardGameState for Game {
                     return;
                 }
 
+                let delta = upkeep.delta();
+
                 for (mut transform, movable) in (&mut vm_transforms, &v_movable).iter() {
-                    *transform.translation_mut() += dir * movable.0;
+                    *transform.translation_mut() += dir * movable.0 * delta;
+                    println!("transform: {}", transform.translation());
                 }
             },
         );

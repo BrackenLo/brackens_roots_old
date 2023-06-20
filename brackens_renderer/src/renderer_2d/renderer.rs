@@ -192,7 +192,7 @@ where
     }
 
     pub fn set_global_buffer(&mut self, device: &wgpu::Device, data: &[T]) {
-        let name = String::from(self.name());
+        let name = self.name().to_string();
 
         if let Some(buffer) = &mut self.global_uniform_buffers {
             *buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

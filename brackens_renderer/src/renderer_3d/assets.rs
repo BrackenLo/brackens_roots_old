@@ -1,7 +1,7 @@
 //===============================================================
 
 use anyhow::Result;
-use brackens_assets::{file_loading::load_string, Asset, AssetStorage, Handle};
+use brackens_assets::{file_loading::load_string, Asset, AssetStorageSingle, Handle};
 use std::{
     collections::HashMap,
     fs::File,
@@ -24,9 +24,12 @@ pub struct RawMesh {
 }
 
 impl Asset for RawMesh {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Raw Mesh"
     }
+    // fn asset_name() -> &'static str {
+    //     "Raw Mesh"
+    // }
 }
 
 //----------------------------------------------
@@ -53,9 +56,12 @@ pub struct RawMaterial {
 }
 
 impl Asset for RawMaterial {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Raw Material"
     }
+    // fn asset_name() -> &'static str {
+    //     "Raw Material"
+    // }
 }
 
 //===============================================================
@@ -67,9 +73,12 @@ pub struct RendererMesh {
 }
 
 impl Asset for RendererMesh {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Renderer Model"
     }
+    // fn asset_name() -> &'static str {
+    //     "Renderer Model"
+    // }
 }
 
 //----------------------------------------------
@@ -82,9 +91,12 @@ pub struct RendererMaterial {
 }
 
 impl Asset for RendererMaterial {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Renderer Material"
     }
+    // fn asset_name() -> &'static str {
+    //     "Renderer Material"
+    // }
 }
 
 //----------------------------------------------
@@ -94,9 +106,12 @@ pub struct RendererModel {
 }
 
 impl Asset for RendererModel {
-    fn asset_name() -> &'static str {
+    fn asset_name(&self) -> &str {
         "Renderer Model"
     }
+    // fn asset_name() -> &'static str {
+    //     "Renderer Model"
+    // }
 }
 
 impl RendererModel {
@@ -104,9 +119,9 @@ impl RendererModel {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
 
-        texture_storage: &mut AssetStorage<RendererTexture>,
-        _material_storage: AssetStorage<RendererMaterial>,
-        _model_storage: AssetStorage<RendererModel>,
+        texture_storage: &mut AssetStorageSingle<RendererTexture>,
+        _material_storage: AssetStorageSingle<RendererMaterial>,
+        _model_storage: AssetStorageSingle<RendererModel>,
 
         sampler: &wgpu::SamplerDescriptor,
         bind_group_layout: &wgpu::BindGroupLayout,
@@ -238,7 +253,7 @@ impl RendererModel {
 fn load_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    texture_storage: &mut AssetStorage<RendererTexture>,
+    texture_storage: &mut AssetStorageSingle<RendererTexture>,
     sampler: &wgpu::SamplerDescriptor,
     bind_group_layout: &wgpu::BindGroupLayout,
 
