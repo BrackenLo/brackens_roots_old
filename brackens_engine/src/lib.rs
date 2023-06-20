@@ -198,7 +198,7 @@ impl<GS: ShipyardGameState> RunnerCore for ShipyardCore<GS> {
 
             WindowEvent::CursorMoved { position, .. } => self
                 .world
-                .run_with_data(core_systems::sys_manager_mouse_position, position),
+                .run_with_data(core_systems::sys_manager_mouse_position, (position).into()),
 
             WindowEvent::MouseWheel { delta, .. } => match delta {
                 brackens_tools::winit::event::MouseScrollDelta::LineDelta(_, _) => todo!(),

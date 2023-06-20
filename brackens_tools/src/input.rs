@@ -2,10 +2,9 @@
 
 use std::collections::HashSet;
 use std::hash::Hash;
-use winit::{
-    dpi::PhysicalPosition,
-    event::{ElementState, MouseButton},
-};
+use winit::event::ElementState;
+
+pub use winit::event::MouseButton;
 
 //===============================================================
 
@@ -80,7 +79,7 @@ pub type MouseKeyManager = ButtonManager<MouseButton>;
 
 #[derive(Default)]
 pub struct MousePositionManager {
-    position: PhysicalPosition<f64>,
+    position: (f64, f64),
     movement: (f64, f64),
     moved: bool,
 }
@@ -94,14 +93,14 @@ impl MousePositionManager {
         self.movement.1 += movement.1;
         self.moved = true;
     }
-    pub fn set_position(&mut self, position: PhysicalPosition<f64>) {
+    pub fn set_position(&mut self, position: (f64, f64)) {
         self.position = position;
         self.moved = true;
     }
 
     //----------------------------------------------
 
-    pub fn position(&self) -> PhysicalPosition<f64> {
+    pub fn position(&self) -> (f64, f64) {
         self.position
     }
     pub fn movement(&self) -> (f64, f64) {
@@ -144,7 +143,7 @@ impl InputManager {
                 self.keys.manage_input(input.state, input.virtual_keycode)
             }
             winit::event::WindowEvent::CursorMoved { position, .. } => {
-                self.mouse_pos.set_position(*position)
+                self.mouse_pos.set_position((*position).into())
             }
             winit::event::WindowEvent::CursorEntered { .. } => self.mouse_on_screen = true,
             winit::event::WindowEvent::CursorLeft { .. } => self.mouse_on_screen = false,

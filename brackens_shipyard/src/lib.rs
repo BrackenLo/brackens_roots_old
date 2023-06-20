@@ -9,6 +9,8 @@ pub use shipyard;
 
 #[cfg(feature = "assets")]
 pub mod assets;
+#[cfg(feature = "tools")]
+pub mod tools;
 
 //===============================================================
 

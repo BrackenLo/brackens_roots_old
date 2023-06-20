@@ -5,10 +5,7 @@ use brackens_renderer::{wgpu, Size};
 use brackens_tools::{
     input::{self, KeyCode},
     upkeep,
-    winit::{
-        dpi::{PhysicalPosition, PhysicalSize},
-        event::MouseButton,
-    },
+    winit::{dpi::PhysicalSize, event::MouseButton},
 };
 use shipyard::Unique;
 
@@ -85,7 +82,7 @@ impl MouseKeyManager {
 #[derive(Unique, Default)]
 pub struct MousePositionManager(pub(crate) input::MousePositionManager);
 impl MousePositionManager {
-    pub fn position(&self) -> PhysicalPosition<f64> {
+    pub fn position(&self) -> (f64, f64) {
         self.0.position()
     }
     pub fn movement(&self) -> (f64, f64) {
