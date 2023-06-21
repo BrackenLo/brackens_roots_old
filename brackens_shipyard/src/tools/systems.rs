@@ -4,9 +4,21 @@ use brackens_tools::{
     input::MouseButton,
     winit::event::{ElementState, KeyboardInput},
 };
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, ViewMut};
+use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, ViewMut};
 
 use super::components::{KeyManager, MouseKeyManager, MousePositionManager, Timer, UpkeepTracker};
+
+//===============================================================
+
+pub fn sys_setup_upkeep(all_storages: AllStoragesView) {
+    all_storages.add_unique(UpkeepTracker::new());
+}
+
+pub fn sys_setup_input_managers(all_storages: AllStoragesView) {
+    all_storages.add_unique(KeyManager::new());
+    all_storages.add_unique(MouseKeyManager::new());
+    all_storages.add_unique(MousePositionManager::new());
+}
 
 //===============================================================
 

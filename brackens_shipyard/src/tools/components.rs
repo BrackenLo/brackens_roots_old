@@ -234,6 +234,9 @@ impl Timer {
 #[derive(Unique, Default)]
 pub struct KeyManager(pub(crate) KeyManagerInner);
 impl KeyManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
     #[inline]
     pub fn pressed(&self, key: KeyCode) -> bool {
         self.0.pressed(key)
@@ -248,11 +251,11 @@ impl KeyManager {
     }
 
     #[inline]
-    pub(crate) fn manage_input(&mut self, state: ElementState, keycode: Option<KeyCode>) {
+    pub fn manage_input(&mut self, state: ElementState, keycode: Option<KeyCode>) {
         self.0.manage_input(state, keycode);
     }
     #[inline]
-    pub(crate) fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.0.reset();
     }
 }
@@ -260,6 +263,9 @@ impl KeyManager {
 #[derive(Unique, Default)]
 pub struct MouseKeyManager(pub(crate) MouseKeyManagerInner);
 impl MouseKeyManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
     #[inline]
     pub fn pressed(&self, button: MouseButton) -> bool {
         self.0.pressed(button)
@@ -274,11 +280,11 @@ impl MouseKeyManager {
     }
 
     #[inline]
-    pub(crate) fn manage_input(&mut self, state: ElementState, button: MouseButton) {
+    pub fn manage_input(&mut self, state: ElementState, button: MouseButton) {
         self.0.manage_input(state, Some(button));
     }
     #[inline]
-    pub(crate) fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.0.reset();
     }
 }
@@ -286,6 +292,9 @@ impl MouseKeyManager {
 #[derive(Unique, Default)]
 pub struct MousePositionManager(pub(crate) MousePositionManagerInner);
 impl MousePositionManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
     #[inline]
     pub fn position(&self) -> (f64, f64) {
         self.0.position()
@@ -300,11 +309,11 @@ impl MousePositionManager {
     }
 
     #[inline]
-    pub(crate) fn add_movement(&mut self, movement: (f64, f64)) {
+    pub fn add_movement(&mut self, movement: (f64, f64)) {
         self.0.add_movement(movement);
     }
     #[inline]
-    pub(crate) fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.0.reset();
     }
 }
@@ -314,6 +323,9 @@ impl MousePositionManager {
 #[derive(Unique, Default)]
 pub struct UpkeepTracker(UpkeepTrackerInner);
 impl UpkeepTracker {
+    pub fn new() -> Self {
+        Self::default()
+    }
     #[inline]
     pub fn fps(&self) -> u16 {
         self.0.fps()
@@ -354,40 +366,18 @@ impl Window {
         self.0.request_redraw();
     }
 
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "renderer")] {
+    #[inline]
+    pub fn size(&self) -> brackens_tools::winit::dpi::PhysicalSize<u32> {
+        self.0.size()
+    }
+    #[inline]
+    pub fn size_f32(&self) -> brackens_tools::winit::dpi::PhysicalSize<f32> {
+        self.0.size_f32()
+    }
 
-            #[inline]
-            pub fn size(&self) -> brackens_renderer::Size<u32> {
-                self.0.size().into()
-            }
-            #[inline]
-            pub fn size_f32(&self) -> brackens_renderer::Size<f32> {
-                self.0.size_f32().into()
-            }
-
-            pub fn set_window_size(&self, size: brackens_renderer::Size<f32>) {
-                let new_size: brackens_tools::winit::dpi::PhysicalSize<f32>  = size.into();
-                self.0.set_window_size(new_size);
-            }
-
-        } else {
-
-            #[inline]
-            pub fn size(&self) -> brackens_tools::winit::dpi::PhysicalSize<u32> {
-                self.0.size()
-            }
-            #[inline]
-            pub fn size_f32(&self) -> brackens_tools::winit::dpi::PhysicalSize<f32> {
-                self.0.size_f32()
-            }
-
-            #[inline]
-            pub fn set_window_size(&self, size: brackens_tools::winit::dpi::PhysicalSize<f32>) {
-                self.0.set_window_size(size);
-            }
-
-        }
+    #[inline]
+    pub fn set_window_size(&self, size: brackens_tools::winit::dpi::PhysicalSize<f32>) {
+        self.0.set_window_size(size);
     }
 
     #[inline]
