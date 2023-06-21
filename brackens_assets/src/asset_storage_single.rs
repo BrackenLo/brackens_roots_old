@@ -6,7 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 
 // use log::info;
 
-use crate::{asset_storage::ReferenceCountSignalX, handle::HandleInner, ReceiverType, SenderType};
+use crate::{asset_storage::ReferenceCountSignal, handle::HandleInner, ReceiverType, SenderType};
 
 use super::{
     handle::{Handle, HandleID},
@@ -16,8 +16,8 @@ use super::{
 //===============================================================
 
 pub struct AssetStorageSingle<T: Asset> {
-    sender: SenderType<ReferenceCountSignalX>,
-    receiver: ReceiverType<ReferenceCountSignalX>,
+    sender: SenderType<ReferenceCountSignal>,
+    receiver: ReceiverType<ReferenceCountSignal>,
 
     current_id: HandleInner,
 
@@ -179,10 +179,10 @@ where
             };
 
             match data {
-                ReferenceCountSignalX::Increase(id) => {
+                ReferenceCountSignal::Increase(id) => {
                     *self.handle_count.get_mut(&id).unwrap() += 1;
                 }
-                ReferenceCountSignalX::Decrease(id) => {
+                ReferenceCountSignal::Decrease(id) => {
                     let count = self.handle_count.get_mut(&id).unwrap();
                     *count -= 1;
                     if *count == 0 {

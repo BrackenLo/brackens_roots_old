@@ -1,7 +1,7 @@
 //===============================================================
 
 use brackens_assets::{
-    asset_storage::{AssetStorageError, AssetStorageX},
+    asset_storage::{AssetStorage as AssetStorageInner, AssetStorageError},
     handle::HandleInner,
     Asset, AssetFileLoadable,
 };
@@ -12,7 +12,7 @@ pub use brackens_assets::handle::{Handle, HandleID};
 //===============================================================
 
 #[derive(Unique, Default)]
-pub struct AssetStorage(AssetStorageX);
+pub struct AssetStorage(AssetStorageInner);
 impl AssetStorage {
     pub fn new() -> Self {
         Self::default()

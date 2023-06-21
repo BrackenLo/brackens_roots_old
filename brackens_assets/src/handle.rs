@@ -2,7 +2,7 @@
 
 use std::{hash::Hash, marker::PhantomData, sync::Arc};
 
-use crate::{asset_storage::ReferenceCountSignalX, Asset, SenderType};
+use crate::{asset_storage::ReferenceCountSignal, Asset, SenderType};
 
 //===============================================================
 
@@ -72,17 +72,17 @@ impl<T: Asset> Eq for HandleID<T> {}
 
 pub struct Handle<T: Asset> {
     handle_id: HandleID<T>,
-    sender: SenderType<ReferenceCountSignalX>,
+    sender: SenderType<ReferenceCountSignal>,
     asset: Arc<T>,
 }
 
 impl<T: Asset> Handle<T> {
     pub(crate) fn new(
         id: HandleID<T>,
-        sender: SenderType<ReferenceCountSignalX>,
+        sender: SenderType<ReferenceCountSignal>,
         asset: Arc<T>,
     ) -> Self {
-        sender.send(ReferenceCountSignalX::Increase(id.id)).unwrap();
+        sender.send(ReferenceCountSignal::Increase(id.id)).unwrap();
 
         Self {
             handle_id: id,

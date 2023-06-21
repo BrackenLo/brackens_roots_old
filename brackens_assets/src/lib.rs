@@ -10,7 +10,7 @@ pub mod handle;
 
 //===============================================================
 
-pub use asset_storage::AssetStorageX;
+pub use asset_storage::AssetStorage;
 pub use asset_storage_single::AssetStorageSingle;
 pub use handle::{Handle, HandleID};
 

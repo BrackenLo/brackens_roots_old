@@ -33,16 +33,16 @@ impl std::error::Error for AssetStorageError {}
 
 //===============================================================
 
-pub enum ReferenceCountSignalX {
+pub enum ReferenceCountSignal {
     Increase(HandleInner),
     Decrease(HandleInner),
 }
 
 //===============================================================
 
-pub struct AssetStorageX {
-    sender: crossbeam::channel::Sender<ReferenceCountSignalX>,
-    receiver: crossbeam::channel::Receiver<ReferenceCountSignalX>,
+pub struct AssetStorage {
+    sender: crossbeam::channel::Sender<ReferenceCountSignal>,
+    receiver: crossbeam::channel::Receiver<ReferenceCountSignal>,
 
     current_id: HandleInner,
     loaded: HashMap<HandleInner, Arc<dyn Asset>>,
@@ -63,7 +63,7 @@ pub struct AssetStorageX {
     removed_assets: Vec<HandleInner>,
 }
 
-impl Default for AssetStorageX {
+impl Default for AssetStorage {
     fn default() -> Self {
         let (sender, receiver) = crossbeam::channel::unbounded();
         Self {
@@ -82,7 +82,7 @@ impl Default for AssetStorageX {
     }
 }
 
-impl AssetStorageX {
+impl AssetStorage {
     //----------------------------------------------
 
     pub fn new() -> Self {
@@ -263,14 +263,14 @@ impl AssetStorageX {
             };
 
             match data {
-                ReferenceCountSignalX::Increase(id) => match self.handle_count.get_mut(&id) {
+                ReferenceCountSignal::Increase(id) => match self.handle_count.get_mut(&id) {
                     Some(count) => *count += 1,
                     None => panic!(
                         "Error: Handle amount increased but asset with id {:?} doesn't exist.",
                         id
                     ),
                 },
-                ReferenceCountSignalX::Decrease(id) => match self.handle_count.get_mut(&id) {
+                ReferenceCountSignal::Decrease(id) => match self.handle_count.get_mut(&id) {
                     Some(count) => {
                         *count -= 1;
                         if *count == 0 {

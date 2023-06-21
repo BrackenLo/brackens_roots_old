@@ -1,6 +1,6 @@
 //===============================================================
 
-use shipyard::Label;
+use shipyard::{Label, Workload, World};
 use std::hash::Hash;
 
 //===============================================================
@@ -15,7 +15,7 @@ pub mod tools;
 //===============================================================
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
-pub enum WorkloadPhase {
+pub enum WorkloadStage {
     Start,
     PreUpdate,
     Update,
@@ -25,7 +25,7 @@ pub enum WorkloadPhase {
     PostRender,
     End,
 }
-impl Label for WorkloadPhase {
+impl Label for WorkloadStage {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -49,6 +49,31 @@ impl Label for WorkloadPhase {
     fn dyn_debug(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(f, "{:?}", self)
     }
+}
+
+//===============================================================
+
+pub fn run_startup_systems(world: &mut World) {
+    world.add_workload(startup_systems);
+    world.run_workload(startup_systems).unwrap();
+}
+
+pub fn startup_systems() -> Workload {
+    let workload = Workload::new("");
+
+    #[cfg(feature = "assets")]
+    let workload = workload.merge(&mut assets::workload_asset_storage_startup());
+
+    workload
+}
+
+pub fn workload_all_builtin() -> Workload {
+    let workload = Workload::new("");
+
+    #[cfg(feature = "assets")]
+    let workload = workload.merge(&mut assets::workload_asset_storage_main());
+
+    workload
 }
 
 //===============================================================
