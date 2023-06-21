@@ -12,9 +12,9 @@ assets = ["dep:brackens_assets"]
 renderer = ["dep:brackens_renderer"]
 
 [dependencies]
-brackens_tools = { path = "../brackens_tools", optional = true}
-brackens_assets = { path = "../brackens_assets", optional = true}
-brackens_renderer = { path = "../brackens_renderer", optional = true}
+brackens_tools = { path = "../brackens_tools", optional = true }
+brackens_assets = { path = "../brackens_assets", optional = true }
+brackens_renderer = { path = "../brackens_renderer", optional = true, features = ["winit"] }
 
 shipyard = "0.6.2"
 cfg-if = { workspace = true }

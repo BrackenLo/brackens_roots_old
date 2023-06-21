@@ -34,6 +34,16 @@ impl<T> From<winit::dpi::PhysicalSize<T>> for Size<T> {
     }
 }
 
+#[cfg(feature = "winit")]
+impl<T> From<Size<T>> for winit::dpi::PhysicalSize<T> {
+    fn from(value: Size<T>) -> Self {
+        Self {
+            width: value.width,
+            height: value.height,
+        }
+    }
+}
+
 //===============================================================
 
 pub struct RenderPrefs {

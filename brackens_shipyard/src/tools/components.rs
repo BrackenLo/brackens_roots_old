@@ -8,9 +8,12 @@ use brackens_tools::{
         MouseKeyManager as MouseKeyManagerInner, MousePositionManager as MousePositionManagerInner,
     },
     upkeep::UpkeepTracker as UpkeepTrackerInner,
-    winit::event::ElementState,
+    window::WindowManager,
+    winit::{dpi::PhysicalPosition, event::ElementState},
 };
 use shipyard::{Component, Unique};
+
+pub use brackens_tools::window::FullscreenMode;
 
 //===============================================================
 
@@ -150,6 +153,7 @@ impl std::ops::Add<&Self> for Transform {
 }
 
 impl std::ops::AddAssign for Transform {
+    #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0
     }
@@ -333,6 +337,91 @@ impl UpkeepTracker {
     #[inline]
     pub(crate) fn tick(&mut self) {
         self.0.tick()
+    }
+}
+
+//===============================================================
+
+#[derive(Unique)]
+pub struct Window(WindowManager);
+impl Window {
+    pub fn new(window: brackens_tools::winit::window::Window) -> Self {
+        Self(WindowManager::new(window))
+    }
+
+    #[inline]
+    pub fn request_redraw(&self) {
+        self.0.request_redraw();
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "renderer")] {
+
+            #[inline]
+            pub fn size(&self) -> brackens_renderer::Size<u32> {
+                self.0.size().into()
+            }
+            #[inline]
+            pub fn size_f32(&self) -> brackens_renderer::Size<f32> {
+                self.0.size_f32().into()
+            }
+
+            pub fn set_window_size(&self, size: brackens_renderer::Size<f32>) {
+                let new_size: brackens_tools::winit::dpi::PhysicalSize<f32>  = size.into();
+                self.0.set_window_size(new_size);
+            }
+
+        } else {
+
+            #[inline]
+            pub fn size(&self) -> brackens_tools::winit::dpi::PhysicalSize<u32> {
+                self.0.size()
+            }
+            #[inline]
+            pub fn size_f32(&self) -> brackens_tools::winit::dpi::PhysicalSize<f32> {
+                self.0.size_f32()
+            }
+
+            #[inline]
+            pub fn set_window_size(&self, size: brackens_tools::winit::dpi::PhysicalSize<f32>) {
+                self.0.set_window_size(size);
+            }
+
+        }
+    }
+
+    #[inline]
+    pub fn width(&self) -> u32 {
+        self.0.width()
+    }
+    #[inline]
+    pub fn height(&self) -> u32 {
+        self.0.height()
+    }
+
+    #[inline]
+    pub fn set_title(&self, title: &str) {
+        self.0.set_title(title);
+    }
+
+    #[inline]
+    pub fn move_window(&self, position: (i32, i32)) {
+        self.0
+            .move_window(PhysicalPosition::new(position.0, position.1));
+    }
+
+    #[inline]
+    pub fn set_maximized(&self, maximized: bool) {
+        self.0.set_maximized(maximized);
+    }
+    #[inline]
+    pub fn set_minimized(&self, minimized: bool) {
+        self.0.set_minimized(minimized);
+    }
+
+    #[inline]
+    pub fn set_fullscreen_mode(&self, mode: FullscreenMode) {
+        self.0.set_fullscreen_mode(mode);
     }
 }
 

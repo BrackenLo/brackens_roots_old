@@ -43,6 +43,7 @@ pub fn manage_mouse_key_input(
     mouse_key_manager.manage_input(state, input_button);
 }
 
+/// Call with world::run_with_data
 pub fn manage_mouse_input(
     input: (f64, f64),
     mut mouse_pos_manager: UniqueViewMut<MousePositionManager>,
