@@ -127,17 +127,16 @@ impl InputManager {
         Self::default()
     }
 
-    pub fn manage_device_input(&mut self, event: &winit::event::DeviceEvent) -> bool {
+    pub fn manage_device_event(&mut self, event: &winit::event::DeviceEvent) -> bool {
         match event {
             winit::event::DeviceEvent::MouseMotion { delta } => self.mouse_pos.add_movement(*delta),
             // winit::event::DeviceEvent::MouseWheel { delta } => todo!(),
             _ => return false,
         }
-
         true
     }
 
-    pub fn manage_window_input(&mut self, event: &winit::event::WindowEvent) -> bool {
+    pub fn manage_window_event(&mut self, event: &winit::event::WindowEvent) -> bool {
         match event {
             winit::event::WindowEvent::KeyboardInput { input, .. } => {
                 self.keys.manage_input(input.state, input.virtual_keycode)
@@ -177,6 +176,16 @@ impl InputManager {
             _ => return false,
         }
         return true;
+    }
+
+    pub fn keys(&self) -> &KeyManager {
+        &self.keys
+    }
+    pub fn mouse_buttons(&self) -> &MouseKeyManager {
+        &self.mouse_keys
+    }
+    pub fn mouse_position(&self) -> &MousePositionManager {
+        &self.mouse_pos
     }
 }
 

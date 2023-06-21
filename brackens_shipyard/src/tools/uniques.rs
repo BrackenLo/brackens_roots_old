@@ -3,8 +3,8 @@
 use brackens_tools::input::KeyCode;
 use brackens_tools::{
     input::{
-        KeyManager as KeyManagerInner, MouseButton, MouseKeyManager as MouseKeyManagerInner,
-        MousePositionManager as MousePositionManagerInner,
+        InputManager as InputManagerInner, KeyManager as KeyManagerInner, MouseButton,
+        MouseKeyManager as MouseKeyManagerInner, MousePositionManager as MousePositionManagerInner,
     },
     upkeep::UpkeepTracker as UpkeepTrackerInner,
     window::WindowManager,
@@ -17,7 +17,7 @@ pub use brackens_tools::window::FullscreenMode;
 //===============================================================
 
 #[derive(Unique, Default)]
-pub struct KeyManager(pub(crate) KeyManagerInner);
+pub struct KeyManager(KeyManagerInner);
 impl KeyManager {
     pub fn new() -> Self {
         Self::default()
@@ -46,7 +46,7 @@ impl KeyManager {
 }
 
 #[derive(Unique, Default)]
-pub struct MouseKeyManager(pub(crate) MouseKeyManagerInner);
+pub struct MouseKeyManager(MouseKeyManagerInner);
 impl MouseKeyManager {
     pub fn new() -> Self {
         Self::default()
@@ -75,7 +75,7 @@ impl MouseKeyManager {
 }
 
 #[derive(Unique, Default)]
-pub struct MousePositionManager(pub(crate) MousePositionManagerInner);
+pub struct MousePositionManager(MousePositionManagerInner);
 impl MousePositionManager {
     pub fn new() -> Self {
         Self::default()
@@ -100,6 +100,43 @@ impl MousePositionManager {
     #[inline]
     pub fn reset(&mut self) {
         self.0.reset();
+    }
+}
+
+#[derive(Unique, Default)]
+pub struct InputManager(InputManagerInner);
+impl InputManager {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[inline]
+    pub fn manage_device_event(
+        &mut self,
+        event: &brackens_tools::winit::event::DeviceEvent,
+    ) -> bool {
+        self.0.manage_device_event(event)
+    }
+
+    #[inline]
+    pub fn manage_window_event(
+        &mut self,
+        event: &brackens_tools::winit::event::WindowEvent,
+    ) -> bool {
+        self.0.manage_window_event(event)
+    }
+
+    #[inline]
+    pub fn keys(&self) -> &KeyManagerInner {
+        &self.0.keys()
+    }
+    #[inline]
+    pub fn mouse_buttons(&self) -> &MouseKeyManagerInner {
+        &self.0.mouse_buttons()
+    }
+    #[inline]
+    pub fn mouse_position(&self) -> &MousePositionManagerInner {
+        &self.0.mouse_position()
     }
 }
 
