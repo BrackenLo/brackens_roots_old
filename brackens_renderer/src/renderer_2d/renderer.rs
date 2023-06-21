@@ -22,6 +22,7 @@ use super::{
         RawTextureInstance, RawTextureVertex, RendererDescriptor2D, TextureDrawBuffer,
         TEXTURE_INDICES, TEXTURE_VERTICES,
     },
+    tools::TEXTURE_SHADER,
     Texture,
 };
 
@@ -272,7 +273,7 @@ impl TextureRenderer {
             format,
             global_bind_group_template: bind_group_template,
             data: vec![data],
-            shader: wgpu::ShaderSource::Wgsl(include_str!("../shaders/texture_shader.wgsl").into()),
+            shader: wgpu::ShaderSource::Wgsl(TEXTURE_SHADER.into()),
             use_depth_texture: true,
             label: "Texture Renderer",
         });

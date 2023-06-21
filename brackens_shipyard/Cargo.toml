@@ -6,15 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["tools", "assets"]
+default = ["tools", "assets", "renderer"]
 tools = ["dep:brackens_tools"]
 assets = ["dep:brackens_assets"]
-# renderer = ["dep:brackens_renderer"]
+renderer = ["dep:brackens_renderer"]
 
 [dependencies]
 brackens_tools = { path = "../brackens_tools", optional = true }
 brackens_assets = { path = "../brackens_assets", optional = true }
-# brackens_renderer = { path = "../brackens_renderer", optional = true, features = ["winit"] }
+brackens_renderer = { path = "../brackens_renderer", optional = true, features = ["winit"] }
 
 shipyard = { version = "0.6.2", features = ["default", "tracing"] }
 cfg-if = { workspace = true }

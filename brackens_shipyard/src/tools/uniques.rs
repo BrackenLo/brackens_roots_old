@@ -188,19 +188,49 @@ impl Window {
         self.0.request_redraw();
     }
 
+    //--------------------------------------------------
+
+    #[cfg(feature = "renderer")]
+    #[inline]
+    pub fn size(&self) -> brackens_renderer::Size<u32> {
+        self.0.size().into()
+    }
+
+    #[cfg(not(feature = "renderer"))]
     #[inline]
     pub fn size(&self) -> brackens_tools::winit::dpi::PhysicalSize<u32> {
         self.0.size()
     }
+
+    //--------------------------------------------------
+
+    #[cfg(feature = "renderer")]
+    #[inline]
+    pub fn size_f32(&self) -> brackens_renderer::Size<f32> {
+        self.0.size_f32().into()
+    }
+
+    #[cfg(not(feature = "renderer"))]
     #[inline]
     pub fn size_f32(&self) -> brackens_tools::winit::dpi::PhysicalSize<f32> {
         self.0.size_f32()
     }
 
+    //--------------------------------------------------
+
+    #[cfg(feature = "renderer")]
+    pub fn set_window_size(&self, size: brackens_renderer::Size<f32>) {
+        let new_size: brackens_tools::winit::dpi::PhysicalSize<f32> = size.into();
+        self.0.set_window_size(new_size);
+    }
+
+    #[cfg(not(feature = "renderer"))]
     #[inline]
     pub fn set_window_size(&self, size: brackens_tools::winit::dpi::PhysicalSize<f32>) {
         self.0.set_window_size(size);
     }
+
+    //--------------------------------------------------
 
     #[inline]
     pub fn width(&self) -> u32 {
@@ -210,6 +240,8 @@ impl Window {
     pub fn height(&self) -> u32 {
         self.0.height()
     }
+
+    //--------------------------------------------------
 
     #[inline]
     pub fn set_title(&self, title: &str) {

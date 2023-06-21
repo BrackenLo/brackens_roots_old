@@ -41,6 +41,7 @@ impl<T: Asset> HandleID<T> {
             data: PhantomData,
         }
     }
+    #[inline]
     pub fn id(&self) -> HandleInner {
         self.id
     }
@@ -91,9 +92,11 @@ impl<T: Asset> Handle<T> {
         }
     }
 
+    #[inline]
     pub fn id(&self) -> HandleID<T> {
         self.handle_id
     }
+    #[inline]
     pub fn inner_id(&self) -> HandleInner {
         self.handle_id.id
     }

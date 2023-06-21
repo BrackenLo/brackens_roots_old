@@ -74,7 +74,6 @@ pub struct RenderComponents {
     pub queue: wgpu::Queue,
     pub surface: wgpu::Surface,
     pub config: wgpu::SurfaceConfiguration,
-    pub size: Size<u32>,
 }
 
 impl RenderComponents {
@@ -149,7 +148,6 @@ impl RenderComponents {
             queue,
             surface,
             config,
-            size,
         }
 
         //----------------------------------------------

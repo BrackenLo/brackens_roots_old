@@ -8,6 +8,10 @@ use super::{RawTextureInstance, TextureDrawBuffer};
 
 //===============================================================
 
+pub const TEXTURE_SHADER: &str = include_str!("../shaders/texture_shader.wgsl");
+
+//===============================================================
+
 pub struct TextureProcessor<T>
 where
     T: Copy + Eq + std::hash::Hash,
