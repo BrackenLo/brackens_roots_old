@@ -6,7 +6,7 @@ use brackens_tools::{
 };
 use shipyard::{AllStoragesView, IntoIter, UniqueView, UniqueViewMut, ViewMut};
 
-use super::components::{KeyManager, MouseKeyManager, MousePositionManager, Timer, UpkeepTracker};
+use super::{KeyManager, MouseKeyManager, MousePositionManager, Timer, UpkeepTracker};
 
 //===============================================================
 

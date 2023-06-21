@@ -3,12 +3,14 @@
 use shipyard::Workload;
 
 mod components;
-pub mod systems;
+mod systems;
+mod uniques;
 
 //===============================================================
 
 pub use components::*;
 pub use systems::*;
+pub use uniques::*;
 
 //===============================================================
 

@@ -2,7 +2,7 @@
 
 use shipyard::{AllStoragesView, UniqueViewMut};
 
-use super::components::AssetStorage;
+use super::AssetStorage;
 
 //===============================================================
 
