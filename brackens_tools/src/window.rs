@@ -25,12 +25,20 @@ impl WindowManager {
     pub fn new(window: Window) -> Self {
         Self(window)
     }
+
+    #[inline]
+    pub fn inner(&self) -> &Window {
+        &self.0
+    }
+
+    #[inline]
     pub fn request_redraw(&self) {
         self.0.request_redraw()
     }
 
     //----------------------------------------------
 
+    #[inline]
     pub fn size(&self) -> PhysicalSize<u32> {
         self.0.inner_size()
     }
@@ -40,9 +48,11 @@ impl WindowManager {
             self.0.inner_size().height as f32,
         )
     }
+    #[inline]
     pub fn width(&self) -> u32 {
         self.0.inner_size().width
     }
+    #[inline]
     pub fn height(&self) -> u32 {
         self.0.inner_size().height
     }

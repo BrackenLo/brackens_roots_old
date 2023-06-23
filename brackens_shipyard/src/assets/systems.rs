@@ -6,7 +6,7 @@ use super::AssetStorage;
 
 //===============================================================
 
-pub fn setup_asset_storage(all_storages: AllStoragesView) {
+pub fn setup_assets(all_storages: AllStoragesView) {
     all_storages.add_unique(AssetStorage::new());
 }
 

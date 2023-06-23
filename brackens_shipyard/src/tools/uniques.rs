@@ -138,6 +138,10 @@ impl InputManager {
     pub fn mouse_position(&self) -> &MousePositionManagerInner {
         &self.0.mouse_position()
     }
+
+    pub fn reset(&mut self) {
+        self.0.reset();
+    }
 }
 
 //===============================================================
@@ -181,6 +185,11 @@ pub struct Window(WindowManager);
 impl Window {
     pub fn new(window: brackens_tools::winit::window::Window) -> Self {
         Self(WindowManager::new(window))
+    }
+
+    #[inline]
+    pub fn inner(&self) -> &brackens_tools::winit::window::Window {
+        self.0.inner()
     }
 
     #[inline]

@@ -18,6 +18,10 @@ impl AssetStorage {
         Self::default()
     }
 
+    pub fn inner(&self) -> &AssetStorageInner {
+        &self.0
+    }
+
     #[inline]
     pub fn load_from_file<T: AssetFileLoadable>(
         &mut self,

@@ -187,6 +187,12 @@ impl InputManager {
     pub fn mouse_position(&self) -> &MousePositionManager {
         &self.mouse_pos
     }
+
+    pub fn reset(&mut self) {
+        self.keys.reset();
+        self.mouse_keys.reset();
+        self.mouse_pos.reset();
+    }
 }
 
 //===============================================================
