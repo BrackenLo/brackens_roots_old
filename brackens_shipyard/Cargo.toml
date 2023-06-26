@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["tools", "assets", "renderer"]
+default = ["tools", "assets", "renderer", "runner"]
 tools = ["dep:brackens_tools"]
 assets = ["dep:brackens_assets"]
 renderer = ["dep:brackens_renderer"]
+runner = ["dep:brackens_tools"]
 
 [dependencies]
 brackens_tools = { path = "../brackens_tools", optional = true }

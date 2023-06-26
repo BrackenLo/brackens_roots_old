@@ -2,20 +2,26 @@
 
 use brackens_renderer::Size;
 use brackens_tools::{EventLoopProxy, RunnerCore, RunnerLoopEvent, WindowEvent};
-use shipyard::{UniqueView, World};
+use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::{
     assets::setup_assets,
     renderer::setup_renderer,
-    tools::{input_manage_device_event, input_manage_window_event, setup_tools, Window},
+    tools::{
+        input_manage_device_event, input_manage_window_event, setup_tools, ResizeEvent, Window,
+    },
 };
 
 //===============================================================
 
 // shipyard game state
+// #[allow(unused)]
 pub trait ShipyardCore {
     fn new(world: &World, event_proxy: EventLoopProxy<RunnerLoopEvent>) -> Self;
-    fn resize(&mut self, new_size: Size<u32>) {}
+    #[cfg(feature = "renderer")]
+    fn resize(&mut self, world: &World, new_size: Size<u32>) {}
+    #[cfg(not(feature = "renderer"))]
+    fn resize(&mut self, new_size: PhysicalSize<u32>) {}
     fn update(&mut self, world: &World);
     fn render(&mut self, world: &World);
     fn input(&mut self, world: &World, event: WindowEvent);
@@ -68,8 +74,7 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunner<Core> {
             | WindowEvent::ScaleFactorChanged {
                 new_inner_size: &mut new_size,
                 ..
-            } => todo!(),
-            WindowEvent::CloseRequested => todo!(),
+            } => self.resize(new_size.into()),
             _ => {
                 self.core.input(&self.world, event);
             }
@@ -90,10 +95,40 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunner<Core> {
     }
 
     fn tick(&mut self) {
-        todo!()
+        self.core.update(&self.world);
+
+        self.render();
+        self.core.render(&self.world);
+        self.end_render();
     }
 }
-impl<Core: ShipyardCore> ShipyardRunner<Core> {}
+impl<Core: ShipyardCore> ShipyardRunner<Core> {
+    pub fn resize(
+        &mut self,
+        #[cfg(feature = "renderer")] new_size: Size<u32>,
+        #[cfg(not(feature = "renderer"))] new_size: PhysicalSize<u32>,
+    ) {
+        if new_size.width == 0 || new_size.height == 0 {
+            return;
+        }
+
+        #[cfg(feature = "renderer")]
+        self.world.run(
+            |device: UniqueView<crate::renderer::Device>,
+             surface: UniqueView<crate::renderer::Surface>,
+             mut config: UniqueViewMut<crate::renderer::SurfaceConfig>| {
+                config.set_size(new_size);
+                surface.inner().configure(device.inner(), config.inner());
+            },
+        );
+
+        self.world.add_unique(ResizeEvent::new(new_size));
+        self.core.resize(&self.world, new_size);
+    }
+
+    pub fn render(&mut self) {}
+    pub fn end_render(&mut self) {}
+}
 
 //===============================================================
 
