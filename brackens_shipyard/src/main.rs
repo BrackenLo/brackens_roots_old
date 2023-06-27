@@ -1,5 +1,7 @@
 //===============================================================
 
+use std::{error::Error, fmt::Display};
+
 use shipyard::{Workload, WorkloadModificator, World};
 
 //===============================================================
@@ -38,8 +40,8 @@ fn master_workload() -> Workload {
                 .merge(&mut end_phase_1())
                 .merge(&mut end_phase_2())
                 .tag("End")
-                .after_all("Mid")
-                .after_all("Start"),
+                .after_all("Start")
+                .after_all("Mid"),
         )
 }
 
@@ -54,7 +56,7 @@ fn start_phase_2() -> Workload {
 }
 
 fn mid_phase_1() -> Workload {
-    Workload::new("").with_system(sys_3)
+    Workload::new("").with_try_system(sys_3)
 }
 
 fn mid_phase_2() -> Workload {
@@ -77,8 +79,9 @@ fn sys_1() {
 fn sys_2() {
     println!("2")
 }
-fn sys_3() {
-    println!("3")
+fn sys_3() -> Result<(), MyError> {
+    println!("3");
+    Err(MyError)
 }
 fn sys_4() {
     println!("4")
@@ -91,3 +94,12 @@ fn sys_6() {
 }
 
 //===============================================================
+
+#[derive(Debug)]
+struct MyError;
+impl Error for MyError {}
+impl Display for MyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MyError")
+    }
+}

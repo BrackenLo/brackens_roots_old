@@ -279,30 +279,3 @@ impl Window {
 }
 
 //===============================================================
-
-#[derive(Unique)]
-#[track(Insertion)]
-#[cfg(feature = "renderer")]
-pub struct ResizeEvent(brackens_renderer::Size<u32>);
-#[cfg(not(feature = "renderer"))]
-pub struct ResizeEvent(brackens_tools::winit::dpi::PhysicalSize<u32>);
-impl ResizeEvent {
-    #[cfg(feature = "renderer")]
-    pub fn new(size: brackens_renderer::Size<u32>) -> Self {
-        Self(size)
-    }
-    #[cfg(not(feature = "renderer"))]
-    pub fn new(size: brackens_tools::winit::dpi::PhysicalSize<u32>) -> Self {
-        Self(size)
-    }
-    #[inline]
-    pub fn width(&self) -> u32 {
-        self.0.width
-    }
-    #[inline]
-    pub fn height(&self) -> u32 {
-        self.0.height
-    }
-}
-
-//===============================================================

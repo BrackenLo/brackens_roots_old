@@ -10,7 +10,7 @@ default = ["tools", "assets", "renderer", "runner"]
 tools = ["dep:brackens_tools"]
 assets = ["dep:brackens_assets"]
 renderer = ["dep:brackens_renderer"]
-runner = ["dep:brackens_tools"]
+runner = ["tools", "assets", "renderer"]
 
 [dependencies]
 brackens_tools = { path = "../brackens_tools", optional = true }

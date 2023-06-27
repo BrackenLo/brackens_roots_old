@@ -3,11 +3,11 @@
 use brackens_renderer::{
     render_tools,
     wgpu::{PresentMode, SurfaceError},
-    RenderComponents, RenderPrefs,
+    RenderComponents, RenderPrefs, Size,
 };
 use shipyard::{AllStoragesView, UniqueView, UniqueViewMut};
 
-use crate::tools::Window;
+use crate::{runner::uniques::RunnerErrorManager, tools::Window};
 
 use super::{ClearColor, Device, Queue, RenderPassTools, Surface, SurfaceConfig};
 
@@ -37,19 +37,55 @@ pub fn setup_renderer(all_storages: AllStoragesView, window: UniqueView<Window>)
 
 //===============================================================
 
+/// Use with run_with_data.
+/// New size must not have 0 as width or height
+pub fn resize(
+    new_size: Size<u32>,
+    device: UniqueView<Device>,
+    surface: UniqueView<Surface>,
+    mut config: UniqueViewMut<SurfaceConfig>,
+) {
+    config.set_size(new_size);
+    surface.inner().configure(device.inner(), config.inner());
+}
+
+//===============================================================
+
 pub fn sys_start_render_pass(
     all_storages: AllStoragesView,
     device: UniqueView<Device>,
     surface: UniqueView<Surface>,
-) -> Result<(), SurfaceError> {
+) {
     match render_tools::start_render_pass(device.inner(), surface.inner()) {
         Ok(tools) => {
             all_storages.add_unique(RenderPassTools::new(tools));
-            Ok(())
         }
-        Err(e) => Err(e),
+        Err(e) => match e {
+            SurfaceError::Lost => {
+                let mut val = all_storages
+                    .borrow::<UniqueViewMut<RunnerErrorManager>>()
+                    .unwrap();
+                val.add_error(crate::runner::uniques::RunnerError::ForceResize);
+            }
+            SurfaceError::OutOfMemory => panic!("Error: Surface out of memory"),
+            _ => {}
+        },
     }
 }
+
+// pub fn sys_start_render_pass(
+//     all_storages: AllStoragesView,
+//     device: UniqueView<Device>,
+//     surface: UniqueView<Surface>,
+// ) -> Result<(), SurfaceError> {
+//     match render_tools::start_render_pass(device.inner(), surface.inner()) {
+//         Ok(tools) => {
+//             all_storages.add_unique(RenderPassTools::new(tools));
+//             Ok(())
+//         }
+//         Err(e) => Err(e),
+//     }
+// }
 
 pub fn sys_end_render_pass(all_storages: AllStoragesView, queue: UniqueView<Queue>) {
     if let Ok(tools) = all_storages.remove_unique::<RenderPassTools>() {

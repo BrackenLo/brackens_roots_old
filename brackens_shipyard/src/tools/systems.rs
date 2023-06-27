@@ -45,7 +45,7 @@ pub fn sys_tick_timers(upkeep: UniqueView<UpkeepTracker>, mut vm_timer: ViewMut<
 
 //--------------------------------------------------
 
-pub fn sys_update_all_input_managers(
+pub fn sys_reset_all_input_managers(
     mut key_manager: UniqueViewMut<KeyManager>,
     mut mouse_key_manager: UniqueViewMut<MouseKeyManager>,
     mut mouse_pos_manager: UniqueViewMut<MousePositionManager>,
@@ -55,7 +55,7 @@ pub fn sys_update_all_input_managers(
     mouse_pos_manager.reset();
 }
 
-pub fn sys_update_input_manager(mut input_manager: UniqueViewMut<InputManager>) {
+pub fn sys_reset_input_manager(mut input_manager: UniqueViewMut<InputManager>) {
     input_manager.reset();
 }
 
