@@ -3,7 +3,9 @@
 use std::{hash::Hash, marker::PhantomData};
 
 use brackens_renderer::Size;
-use brackens_tools::{EventLoopProxy, RunnerCore, RunnerLoopEvent, WindowEvent};
+use brackens_tools::{
+    EventLoopProxy, Runner, RunnerCore, RunnerLoopEvent, WindowBuilder, WindowEvent,
+};
 use shipyard::{
     Label, SystemModificator, UniqueView, UniqueViewMut, Workload, WorkloadModificator, World,
 };
@@ -81,14 +83,26 @@ pub trait ShipyardCore {
     fn end() -> Workload;
 }
 
+#[derive(Default)]
+pub struct ShipyardRunner {
+    pub window_builder: WindowBuilder,
+}
+
+impl ShipyardRunner {
+    pub fn run<Core: ShipyardCore + 'static>(self) {
+        let runner = Runner::new(self.window_builder);
+        runner.run::<ShipyardRunnerInner<Core>>();
+    }
+}
+
 // shipyard core
-pub struct ShipyardRunner<Core: ShipyardCore> {
+struct ShipyardRunnerInner<Core: ShipyardCore> {
     phantom: PhantomData<Core>,
     world: World,
     _proxy: EventLoopProxy<RunnerLoopEvent>,
 }
 
-impl<Core: ShipyardCore> RunnerCore for ShipyardRunner<Core> {
+impl<Core: ShipyardCore> RunnerCore for ShipyardRunnerInner<Core> {
     fn new(
         window: brackens_tools::Window,
         event_loop: &brackens_tools::EventLoop<brackens_tools::RunnerLoopEvent>,
@@ -103,7 +117,7 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunner<Core> {
 
         //--------------------------------------------------
 
-        ShipyardRunnerInner::new(&world);
+        ShipyardRunnerWorkloads::new(&world);
         Core::new(&world);
 
         world.add_workload(|| Self::workload_main());
@@ -167,7 +181,7 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunner<Core> {
     }
 }
 
-impl<Core: ShipyardCore> ShipyardRunner<Core> {
+impl<Core: ShipyardCore> ShipyardRunnerInner<Core> {
     pub fn resize(&mut self, new_size: Size<u32>) {
         if new_size.width == 0 || new_size.height == 0 {
             return;
@@ -180,20 +194,20 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
         Workload::new("")
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::start())
+                    .merge(&mut ShipyardRunnerWorkloads::start())
                     .merge(&mut Core::start())
                     .tag(Stages::Start),
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::pre_update())
+                    .merge(&mut ShipyardRunnerWorkloads::pre_update())
                     .merge(&mut Core::pre_update())
                     .tag(Stages::PreUpdate)
                     .after_all(Stages::Start),
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::update())
+                    .merge(&mut ShipyardRunnerWorkloads::update())
                     .merge(&mut Core::update())
                     .tag(Stages::Update)
                     .after_all(Stages::Start)
@@ -201,7 +215,7 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::post_update())
+                    .merge(&mut ShipyardRunnerWorkloads::post_update())
                     .merge(&mut Core::post_update())
                     .tag(Stages::PostUpdate)
                     .after_all(Stages::Start)
@@ -210,7 +224,7 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::pre_render())
+                    .merge(&mut ShipyardRunnerWorkloads::pre_render())
                     .merge(&mut Core::pre_render())
                     .tag(Stages::PreRender)
                     .after_all(Stages::Start)
@@ -220,7 +234,7 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::render())
+                    .merge(&mut ShipyardRunnerWorkloads::render())
                     .merge(&mut Core::render())
                     .tag(Stages::Render)
                     .after_all(Stages::Start)
@@ -231,7 +245,7 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::post_render())
+                    .merge(&mut ShipyardRunnerWorkloads::post_render())
                     .merge(&mut Core::post_render())
                     .tag(Stages::PostRender)
                     .after_all(Stages::Start)
@@ -243,7 +257,7 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
             )
             .merge(
                 &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerInner::end())
+                    .merge(&mut ShipyardRunnerWorkloads::end())
                     .merge(&mut Core::end())
                     .tag(Stages::End)
                     .after_all(Stages::Start)
@@ -261,8 +275,8 @@ impl<Core: ShipyardCore> ShipyardRunner<Core> {
 
 //===============================================================
 
-pub struct ShipyardRunnerInner;
-impl ShipyardCore for ShipyardRunnerInner {
+struct ShipyardRunnerWorkloads;
+impl ShipyardCore for ShipyardRunnerWorkloads {
     fn new(world: &World) {
         world.run(setup_assets);
         world.run(setup_renderer);
