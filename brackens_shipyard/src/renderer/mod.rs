@@ -17,6 +17,9 @@ pub use uniques::*;
 use shipyard::{Workload, WorkloadModificator};
 
 #[cfg(feature = "runner")]
+use crate::runner::uniques::ResizeEvent;
+
+#[cfg(feature = "runner")]
 pub struct RendererWorkload;
 #[cfg(feature = "runner")]
 impl crate::runner::RunnerWorkloads for RendererWorkload {
@@ -26,7 +29,7 @@ impl crate::runner::RunnerWorkloads for RendererWorkload {
     fn setup(&self, _world: &shipyard::World) {}
 
     fn start(&self) -> Workload {
-        Workload::new("").with_system(sys_resize)
+        Workload::new("").with_system(sys_resize.skip_if_missing_unique::<ResizeEvent>())
     }
 
     fn pre_render(&self) -> Workload {
@@ -40,7 +43,7 @@ impl crate::runner::RunnerWorkloads for RendererWorkload {
 
     fn post_render(&self) -> Workload {
         Workload::new("")
-            .with_system(sys_start_render_pass.skip_if_missing_unique::<RenderPassTools>())
+            .with_system(sys_end_render_pass.skip_if_missing_unique::<RenderPassTools>())
     }
 }
 

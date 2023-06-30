@@ -117,10 +117,13 @@ impl ShipyardRunner {
         );
     }
 
-    pub fn run_all_plugins(self, mut core: Vec<Box<dyn RunnerWorkloads>>) {
-        core.push(Box::new(ToolsWorkload));
-        core.push(Box::new(AssetsWorkload));
-        core.push(Box::new(RendererWorkload));
+    pub fn run_all_plugins<W: 'static + RunnerWorkloads>(self, core: W) {
+        let core: Vec<Box<dyn RunnerWorkloads>> = vec![
+            Box::new(core),
+            Box::new(ToolsWorkload),
+            Box::new(AssetsWorkload),
+            Box::new(RendererWorkload),
+        ];
 
         Runner::run_with_data::<Vec<Box<dyn RunnerWorkloads>>, ShipyardRunnerInner>(
             self.window_builder,
@@ -168,7 +171,6 @@ impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
         //--------------------------------------------------
 
         generate_workload(workloads).add_to_world(&world).unwrap();
-        world.set_default_workload("MainWorkload").unwrap();
 
         //--------------------------------------------------
 
