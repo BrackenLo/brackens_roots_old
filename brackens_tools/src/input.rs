@@ -127,6 +127,35 @@ impl InputManager {
         Self::default()
     }
 
+    //----------------------------------------------
+
+    #[inline]
+    pub fn add_mouse_movement(&mut self, movement: (f64, f64)) {
+        self.mouse_pos.add_movement(movement);
+    }
+
+    #[inline]
+    pub fn set_mouse_position(&mut self, position: (f64, f64)) {
+        self.mouse_pos.set_position(position);
+    }
+
+    #[inline]
+    pub fn set_keyboard_key(&mut self, state: ElementState, key: Option<KeyCode>) {
+        self.keys.manage_input(state, key);
+    }
+
+    #[inline]
+    pub fn set_mouse_key(&mut self, state: ElementState, key: Option<MouseButton>) {
+        self.mouse_keys.manage_input(state, key);
+    }
+
+    #[inline]
+    pub fn set_mouse_on_screen(&mut self, on_screen: bool) {
+        self.mouse_on_screen = on_screen;
+    }
+
+    //----------------------------------------------
+
     pub fn manage_device_event(&mut self, event: &winit::event::DeviceEvent) -> bool {
         match event {
             winit::event::DeviceEvent::MouseMotion { delta } => self.mouse_pos.add_movement(*delta),

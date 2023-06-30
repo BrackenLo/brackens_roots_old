@@ -70,8 +70,7 @@ pub struct ShipyardRunner {
 }
 impl ShipyardRunner {
     pub fn run<GS: ShipyardGameState + 'static>(self) {
-        let runner = Runner::new(self.window_builder);
-        runner.run::<ShipyardCore<GS>>();
+        Runner::run::<ShipyardCore<GS>>(self.window_builder);
     }
 }
 

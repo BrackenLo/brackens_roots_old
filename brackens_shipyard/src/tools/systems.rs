@@ -20,18 +20,6 @@ pub fn setup_tools(all_storages: AllStoragesView) {
 
 //===============================================================
 
-pub fn sys_setup_upkeep(all_storages: AllStoragesView) {
-    all_storages.add_unique(UpkeepTracker::new());
-}
-
-pub fn sys_setup_input_managers(all_storages: AllStoragesView) {
-    all_storages.add_unique(KeyManager::new());
-    all_storages.add_unique(MouseKeyManager::new());
-    all_storages.add_unique(MousePositionManager::new());
-}
-
-//===============================================================
-
 pub fn sys_update_upkeep(mut upkeep: UniqueViewMut<UpkeepTracker>) {
     upkeep.tick();
 }
@@ -44,16 +32,6 @@ pub fn sys_tick_timers(upkeep: UniqueView<UpkeepTracker>, mut vm_timer: ViewMut<
 }
 
 //--------------------------------------------------
-
-pub fn sys_reset_all_input_managers(
-    mut key_manager: UniqueViewMut<KeyManager>,
-    mut mouse_key_manager: UniqueViewMut<MouseKeyManager>,
-    mut mouse_pos_manager: UniqueViewMut<MousePositionManager>,
-) {
-    key_manager.reset();
-    mouse_key_manager.reset();
-    mouse_pos_manager.reset();
-}
 
 pub fn sys_reset_input_manager(mut input_manager: UniqueViewMut<InputManager>) {
     input_manager.reset();
@@ -91,6 +69,7 @@ pub fn manage_mouse_input(
 
 //--------------------------------------------------
 
+/// Call with world::run_with_data
 pub fn input_manage_window_event(
     event: &WindowEvent,
     mut input_manager: UniqueViewMut<InputManager>,
@@ -98,11 +77,50 @@ pub fn input_manage_window_event(
     input_manager.manage_window_event(event)
 }
 
+/// Call with world::run_with_data
 pub fn input_manage_device_event(
     event: &DeviceEvent,
     mut input_manager: UniqueViewMut<InputManager>,
 ) -> bool {
     input_manager.manage_device_event(event)
+}
+
+//===============================================================
+
+#[cfg(feature = "runner")]
+pub fn sys_process_input_events(
+    input_events: UniqueView<crate::runner::uniques::InputEventManager>,
+    mut input_manager: UniqueViewMut<InputManager>,
+) {
+    input_events.iter().for_each(|val| match val {
+        crate::runner::uniques::InputEvent::KeyboardInput {
+            key_code, state, ..
+        } => input_manager.set_keyboard_key(*state, Some(*key_code)),
+        crate::runner::uniques::InputEvent::CursorMoved { position, .. } => {
+            input_manager.set_mouse_position((*position).into())
+        }
+        crate::runner::uniques::InputEvent::CursorEntered { .. } => {
+            input_manager.set_mouse_on_screen(true)
+        }
+        crate::runner::uniques::InputEvent::CursorLeft { .. } => {
+            input_manager.set_mouse_on_screen(false)
+        }
+        crate::runner::uniques::InputEvent::MouseInput { state, button, .. } => {
+            input_manager.set_mouse_key(*state, Some(*button));
+        }
+        crate::runner::uniques::InputEvent::RawMouseMotion { delta, .. } => {
+            input_manager.add_mouse_movement(*delta)
+        }
+        // crate::runner::uniques::InputEvent::MouseWheel { device_id, delta, phase, } => todo!(),
+        // crate::runner::uniques::InputEvent::TouchpadMagnify => todo!(),
+        // crate::runner::uniques::InputEvent::SmartMagnify => todo!(),
+        // crate::runner::uniques::InputEvent::TouchpadRotate => todo!(),
+        // crate::runner::uniques::InputEvent::TouchpadPressure => todo!(),
+        // crate::runner::uniques::InputEvent::AxisMotion => todo!(),
+        // crate::runner::uniques::InputEvent::Touch => todo!(),
+        // crate::runner::uniques::InputEvent::RawMouseWheel { device_id, delta } => todo!(),
+        _ => {}
+    });
 }
 
 //===============================================================

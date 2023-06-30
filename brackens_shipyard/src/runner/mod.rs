@@ -1,27 +1,22 @@
 //===============================================================
 
-use std::{hash::Hash, marker::PhantomData};
+use std::hash::Hash;
 
-use brackens_renderer::Size;
 use brackens_tools::{
-    EventLoopProxy, Runner, RunnerCore, RunnerLoopEvent, WindowBuilder, WindowEvent,
+    runner::RunnerDataCore, EventLoopProxy, Runner, RunnerCore, RunnerLoopEvent, WindowBuilder,
 };
 use shipyard::{
     Label, SystemModificator, UniqueView, UniqueViewMut, Workload, WorkloadModificator, World,
 };
 
-use crate::{
-    assets::{setup_assets, sys_reset_asset_storage},
-    renderer::{setup_renderer, sys_clear_background, sys_start_render_pass, RenderPassTools},
-    tools::{
-        input_manage_device_event, input_manage_window_event, setup_tools, sys_reset_input_manager,
-        sys_tick_timers, sys_update_upkeep, Window,
-    },
-};
+use crate::tools::Window;
 
 use self::{
-    systems::sys_remove_resize,
-    uniques::{ResizeEvent, RunnerErrorManager},
+    systems::{sys_clear_input_events, sys_clear_misc_events, sys_remove_resize},
+    uniques::{
+        generate_device_event, generate_window_event, InputEventManager, MiscEventManager,
+        ResizeEvent, RunnerErrorManager,
+    },
 };
 
 pub mod systems;
@@ -70,18 +65,36 @@ impl Label for Stages {
 //===============================================================
 
 // shipyard game state
-pub trait ShipyardCore {
-    fn new(world: &World);
+pub trait RunnerWorkloads {
+    fn setup(&self, world: &World);
 
-    fn start() -> Workload;
-    fn pre_update() -> Workload;
-    fn update() -> Workload;
-    fn post_update() -> Workload;
-    fn pre_render() -> Workload;
-    fn render() -> Workload;
-    fn post_render() -> Workload;
-    fn end() -> Workload;
+    fn start(&self) -> Workload {
+        Workload::new("")
+    }
+    fn pre_update(&self) -> Workload {
+        Workload::new("")
+    }
+    fn update(&self) -> Workload {
+        Workload::new("")
+    }
+    fn post_update(&self) -> Workload {
+        Workload::new("")
+    }
+    fn pre_render(&self) -> Workload {
+        Workload::new("")
+    }
+    fn render(&self) -> Workload {
+        Workload::new("")
+    }
+    fn post_render(&self) -> Workload {
+        Workload::new("")
+    }
+    fn end(&self) -> Workload {
+        Workload::new("")
+    }
 }
+
+//===============================================================
 
 #[derive(Default)]
 pub struct ShipyardRunner {
@@ -89,23 +102,27 @@ pub struct ShipyardRunner {
 }
 
 impl ShipyardRunner {
-    pub fn run<Core: ShipyardCore + 'static>(self) {
-        let runner = Runner::new(self.window_builder);
-        runner.run::<ShipyardRunnerInner<Core>>();
+    pub fn run(self, core: Vec<Box<dyn RunnerWorkloads>>) {
+        Runner::run_with_data::<Vec<Box<dyn RunnerWorkloads>>, ShipyardRunnerInner>(
+            self.window_builder,
+            core,
+        );
     }
 }
 
+//===============================================================
+
 // shipyard core
-struct ShipyardRunnerInner<Core: ShipyardCore> {
-    phantom: PhantomData<Core>,
+struct ShipyardRunnerInner {
     world: World,
     _proxy: EventLoopProxy<RunnerLoopEvent>,
 }
 
-impl<Core: ShipyardCore> RunnerCore for ShipyardRunnerInner<Core> {
-    fn new(
+impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
+    fn new_data(
         window: brackens_tools::Window,
-        event_loop: &brackens_tools::EventLoop<brackens_tools::RunnerLoopEvent>,
+        event_loop: &brackens_tools::EventLoop<RunnerLoopEvent>,
+        mut workloads: Vec<Box<dyn RunnerWorkloads>>,
     ) -> Self {
         //--------------------------------------------------
 
@@ -117,46 +134,79 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunnerInner<Core> {
 
         //--------------------------------------------------
 
-        ShipyardRunnerWorkloads::new(&world);
-        Core::new(&world);
+        workloads.push(Box::new(ShipyardRunnerWorkloads));
 
-        world.add_workload(|| Self::workload_main());
+        workloads
+            .iter()
+            .for_each(|workloads| workloads.setup(&world));
+
+        //--------------------------------------------------
+
+        generate_workload(workloads).add_to_world(&world).unwrap();
+        world.set_default_workload("MainWorkload").unwrap();
 
         //--------------------------------------------------
 
         Self {
             world,
             _proxy: proxy,
-            phantom: PhantomData,
         }
 
         //--------------------------------------------------
     }
+}
+
+impl RunnerCore for ShipyardRunnerInner {
+    fn new(
+        _window: brackens_tools::Window,
+        _event_loop: &brackens_tools::EventLoop<brackens_tools::RunnerLoopEvent>,
+    ) -> Self {
+        panic!("Dont use this function")
+    }
 
     fn input(&mut self, event: brackens_tools::WindowEvent) {
-        if self.world.run_with_data(input_manage_window_event, &event) {
-            return;
-        }
-
+        let event = generate_window_event(event);
         match event {
-            WindowEvent::Resized(new_size)
-            | WindowEvent::ScaleFactorChanged {
-                new_inner_size: &mut new_size,
-                ..
-            } => self.resize(new_size.into()),
-            _ => {
-                // self.core.input(&self.world, event);
-                // todo!()
+            uniques::WindowEventTypes::Resize(event) => {
+                self.world.remove_unique::<ResizeEvent>().ok();
+                self.world.add_unique(event);
             }
+            uniques::WindowEventTypes::Misc(event) => self
+                .world
+                .run(|mut misc_events: UniqueViewMut<MiscEventManager>| misc_events.0.push(event)),
+            uniques::WindowEventTypes::Input(event) => {
+                self.world
+                    .run(|mut input_events: UniqueViewMut<InputEventManager>| {
+                        input_events.0.push(event)
+                    })
+            }
+            uniques::WindowEventTypes::None => {}
         }
     }
 
     fn device_input(
         &mut self,
-        _device_id: brackens_tools::DeviceId,
+        device_id: brackens_tools::DeviceId,
         event: brackens_tools::DeviceEvent,
     ) {
-        self.world.run_with_data(input_manage_device_event, &event);
+        match generate_device_event(event, device_id) {
+            uniques::WindowEventTypes::Resize(event) => {
+                self.world.remove_unique::<ResizeEvent>().ok();
+                self.world.add_unique(event);
+            }
+            uniques::WindowEventTypes::Misc(event) => self
+                .world
+                .run(|mut misc_events: UniqueViewMut<MiscEventManager>| misc_events.0.push(event)),
+            uniques::WindowEventTypes::Input(event) => {
+                self.world
+                    .run(|mut input_events: UniqueViewMut<InputEventManager>| {
+                        input_events.0.push(event)
+                    })
+            }
+            uniques::WindowEventTypes::None => {}
+        }
+
+        // self.world.run_with_data(input_manage_device_event, &event);
     }
 
     fn main_events_cleared(&mut self) {
@@ -165,7 +215,7 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunnerInner<Core> {
     }
 
     fn tick(&mut self) {
-        self.world.run_workload(|| Self::workload_main()).unwrap();
+        self.world.run_default().unwrap();
 
         let mut manager = self
             .world
@@ -175,154 +225,178 @@ impl<Core: ShipyardCore> RunnerCore for ShipyardRunnerInner<Core> {
         manager.drain().for_each(|e| match e {
             uniques::RunnerError::ForceResize => {
                 let size = self.world.run(|window: UniqueView<Window>| window.size());
-                self.world.run_with_data(systems::resize, size);
+
+                if size.width > 0 && size.height > 0 {
+                    self.world.remove_unique::<ResizeEvent>().ok();
+                    self.world.add_unique(ResizeEvent::new(size));
+                }
             }
         });
     }
 }
 
-impl<Core: ShipyardCore> ShipyardRunnerInner<Core> {
-    pub fn resize(&mut self, new_size: Size<u32>) {
-        if new_size.width == 0 || new_size.height == 0 {
-            return;
-        }
-
-        self.world.run_with_data(systems::resize, new_size);
-    }
-
-    fn workload_main() -> Workload {
-        Workload::new("")
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::start())
-                    .merge(&mut Core::start())
-                    .tag(Stages::Start),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::pre_update())
-                    .merge(&mut Core::pre_update())
-                    .tag(Stages::PreUpdate)
-                    .after_all(Stages::Start),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::update())
-                    .merge(&mut Core::update())
-                    .tag(Stages::Update)
-                    .after_all(Stages::Start)
-                    .after_all(Stages::PreUpdate),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::post_update())
-                    .merge(&mut Core::post_update())
-                    .tag(Stages::PostUpdate)
-                    .after_all(Stages::Start)
-                    .after_all(Stages::PreUpdate)
-                    .after_all(Stages::Update),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::pre_render())
-                    .merge(&mut Core::pre_render())
-                    .tag(Stages::PreRender)
-                    .after_all(Stages::Start)
-                    .after_all(Stages::PreUpdate)
-                    .after_all(Stages::Update)
-                    .after_all(Stages::PostUpdate),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::render())
-                    .merge(&mut Core::render())
-                    .tag(Stages::Render)
-                    .after_all(Stages::Start)
-                    .after_all(Stages::PreUpdate)
-                    .after_all(Stages::Update)
-                    .after_all(Stages::PostUpdate)
-                    .after_all(Stages::PreRender),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::post_render())
-                    .merge(&mut Core::post_render())
-                    .tag(Stages::PostRender)
-                    .after_all(Stages::Start)
-                    .after_all(Stages::PreUpdate)
-                    .after_all(Stages::Update)
-                    .after_all(Stages::PostUpdate)
-                    .after_all(Stages::PreRender)
-                    .after_all(Stages::Render),
-            )
-            .merge(
-                &mut Workload::new("")
-                    .merge(&mut ShipyardRunnerWorkloads::end())
-                    .merge(&mut Core::end())
-                    .tag(Stages::End)
-                    .after_all(Stages::Start)
-                    .after_all(Stages::PreUpdate)
-                    .after_all(Stages::Update)
-                    .after_all(Stages::PostUpdate)
-                    .after_all(Stages::PreRender)
-                    .after_all(Stages::Render)
-                    .after_all(Stages::PostRender),
-            )
-    }
-}
-
 //===============================================================
+
+pub fn generate_workload(workloads: Vec<Box<dyn RunnerWorkloads>>) -> Workload {
+    let mut start = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.start())
+        })
+        .tag(Stages::Start);
+
+    let mut pre_update = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.pre_update())
+        })
+        .tag(Stages::PreUpdate)
+        .after_all(Stages::Start);
+
+    let mut update = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.update())
+        })
+        .tag(Stages::Update)
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate);
+
+    let mut post_update = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.post_update())
+        })
+        .tag(Stages::PostUpdate)
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate)
+        .after_all(Stages::Update);
+
+    let mut pre_render = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.pre_render())
+        })
+        .tag(Stages::PreRender)
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate)
+        .after_all(Stages::Update)
+        .after_all(Stages::PostUpdate);
+
+    let mut render = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.render())
+        })
+        .tag(Stages::Render)
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate)
+        .after_all(Stages::Update)
+        .after_all(Stages::PostUpdate)
+        .after_all(Stages::PreRender);
+
+    let mut post_render = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.post_render())
+        })
+        .tag(Stages::PostRender)
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate)
+        .after_all(Stages::Update)
+        .after_all(Stages::PostUpdate)
+        .after_all(Stages::PreRender)
+        .after_all(Stages::Render);
+
+    let mut end = workloads
+        .iter()
+        .fold(Workload::new(""), |workload, stage| {
+            workload.merge(&mut stage.end())
+        })
+        .tag(Stages::End)
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate)
+        .after_all(Stages::Update)
+        .after_all(Stages::PostUpdate)
+        .after_all(Stages::PreRender)
+        .after_all(Stages::Render)
+        .after_all(Stages::PostRender);
+
+    Workload::new("MainWorkload")
+        .merge(&mut start)
+        .merge(&mut pre_update)
+        .merge(&mut update)
+        .merge(&mut post_update)
+        .merge(&mut pre_render)
+        .merge(&mut render)
+        .merge(&mut post_render)
+        .merge(&mut end)
+}
 
 //===============================================================
 
 struct ShipyardRunnerWorkloads;
-impl ShipyardCore for ShipyardRunnerWorkloads {
-    fn new(world: &World) {
-        world.run(setup_assets);
-        world.run(setup_renderer);
-        world.run(setup_tools);
+impl RunnerWorkloads for ShipyardRunnerWorkloads {
+    fn setup(&self, world: &World) {
         world.add_unique(RunnerErrorManager::default());
+        world.add_unique(MiscEventManager::default());
+        world.add_unique(InputEventManager::default());
     }
 
-    fn start() -> Workload {
-        Workload::new("").with_system(sys_update_upkeep)
-    }
-
-    fn pre_update() -> Workload {
-        Workload::new("").with_system(sys_tick_timers)
-    }
-
-    fn update() -> Workload {
-        Workload::new("")
-    }
-
-    fn post_update() -> Workload {
-        Workload::new("").with_system(sys_reset_input_manager)
-    }
-
-    fn pre_render() -> Workload {
-        Workload::new("").with_system(sys_start_render_pass).merge(
-            &mut Workload::new("")
-                .skip_if_missing_unique::<RenderPassTools>()
-                .after_all(sys_start_render_pass)
-                .with_system(sys_clear_background),
-        )
-    }
-
-    fn render() -> Workload {
-        Workload::new("").skip_if_missing_unique::<RenderPassTools>()
-    }
-
-    fn post_render() -> Workload {
-        Workload::new("")
-            .with_system(sys_start_render_pass.skip_if_missing_unique::<RenderPassTools>())
-    }
-
-    fn end() -> Workload {
+    fn end(&self) -> Workload {
         Workload::new("")
             .with_system(sys_remove_resize.skip_if_missing_unique::<ResizeEvent>())
-            .with_system(sys_reset_asset_storage)
+            .with_system(sys_clear_input_events)
+            .with_system(sys_clear_misc_events)
     }
 }
+// impl ShipyardCore for ShipyardRunnerWorkloads {
+//     fn new(world: &World) {
+//         world.run(setup_assets);
+//         world.run(setup_renderer);
+//         world.run(setup_tools);
+//         world.add_unique(RunnerErrorManager::default());
+//     }
+
+//     fn start() -> Workload {
+//         Workload::new("").with_system(sys_update_upkeep)
+//     }
+
+//     fn pre_update() -> Workload {
+//         Workload::new("").with_system(sys_tick_timers)
+//     }
+
+//     fn update() -> Workload {
+//         Workload::new("")
+//     }
+
+//     fn post_update() -> Workload {
+//         Workload::new("").with_system(sys_reset_input_manager)
+//     }
+
+//     fn pre_render() -> Workload {
+//         Workload::new("").with_system(sys_start_render_pass).merge(
+//             &mut Workload::new("")
+//                 .skip_if_missing_unique::<RenderPassTools>()
+//                 .after_all(sys_start_render_pass)
+//                 .with_system(sys_clear_background),
+//         )
+//     }
+
+//     fn render() -> Workload {
+//         Workload::new("").skip_if_missing_unique::<RenderPassTools>()
+//     }
+
+//     fn post_render() -> Workload {
+//         Workload::new("")
+//             .with_system(sys_start_render_pass.skip_if_missing_unique::<RenderPassTools>())
+//     }
+
+//     fn end() -> Workload {
+//         Workload::new("")
+//             .with_system(sys_remove_resize.skip_if_missing_unique::<ResizeEvent>())
+//             .with_system(sys_reset_asset_storage)
+//     }
+// }
 
 //===============================================================

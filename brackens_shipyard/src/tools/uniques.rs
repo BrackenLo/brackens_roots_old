@@ -1,9 +1,8 @@
 //===============================================================
 
-use brackens_tools::input::KeyCode;
 use brackens_tools::{
     input::{
-        InputManager as InputManagerInner, KeyManager as KeyManagerInner, MouseButton,
+        InputManager as InputManagerInner, KeyCode, KeyManager as KeyManagerInner, MouseButton,
         MouseKeyManager as MouseKeyManagerInner, MousePositionManager as MousePositionManagerInner,
     },
     upkeep::UpkeepTracker as UpkeepTrackerInner,
@@ -13,6 +12,8 @@ use brackens_tools::{
 use shipyard::Unique;
 
 pub use brackens_tools::window::FullscreenMode;
+
+//===============================================================
 
 //===============================================================
 
@@ -110,6 +111,35 @@ impl InputManager {
         Self::default()
     }
 
+    //----------------------------------------------
+
+    #[inline]
+    pub fn add_mouse_movement(&mut self, movement: (f64, f64)) {
+        self.0.add_mouse_movement(movement);
+    }
+
+    #[inline]
+    pub fn set_mouse_position(&mut self, position: (f64, f64)) {
+        self.0.set_mouse_position(position);
+    }
+
+    #[inline]
+    pub fn set_keyboard_key(&mut self, state: ElementState, key: Option<KeyCode>) {
+        self.0.set_keyboard_key(state, key);
+    }
+
+    #[inline]
+    pub fn set_mouse_key(&mut self, state: ElementState, key: Option<MouseButton>) {
+        self.0.set_mouse_key(state, key);
+    }
+
+    #[inline]
+    pub fn set_mouse_on_screen(&mut self, on_screen: bool) {
+        self.0.set_mouse_on_screen(on_screen);
+    }
+
+    //----------------------------------------------
+
     #[inline]
     pub fn manage_device_event(
         &mut self,
@@ -125,6 +155,10 @@ impl InputManager {
     ) -> bool {
         self.0.manage_window_event(event)
     }
+
+    // pub fn add_mouse_movement(&mut self, movement: (f64, f64)) {
+
+    // }
 
     #[inline]
     pub fn keys(&self) -> &KeyManagerInner {

@@ -2,12 +2,22 @@
 
 use std::{error::Error, fmt::Display};
 
-use shipyard::{Workload, WorkloadModificator, World};
+use shipyard::{Unique, UniqueView, Workload, WorkloadModificator, World};
 
 //===============================================================
 
+#[derive(Unique)]
+pub struct TestUnique(u32);
+
 pub fn main() {
     let world = World::new();
+
+    world.add_unique(TestUnique(45));
+    world.remove_unique::<TestUnique>().ok();
+    world.add_unique(TestUnique(22));
+
+    let val = world.borrow::<UniqueView<TestUnique>>().unwrap();
+    println!("val = {}", val.0);
 
     world.add_workload(master_workload);
     world.run_workload(master_workload).unwrap();
