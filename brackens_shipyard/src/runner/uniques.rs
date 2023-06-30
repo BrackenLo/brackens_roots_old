@@ -15,6 +15,8 @@ use shipyard::Unique;
 
 //===============================================================
 
+//===============================================================
+
 pub enum WindowEventTypes {
     Resize(ResizeEvent),
     Misc(MiscEvent),
@@ -221,6 +223,10 @@ pub struct MiscEventManager(pub(crate) Vec<MiscEvent>);
 impl MiscEventManager {
     pub fn iter(&self) -> Iter<MiscEvent> {
         self.0.iter()
+    }
+
+    pub fn drain(&mut self) -> Drain<MiscEvent> {
+        self.0.drain(..)
     }
 }
 

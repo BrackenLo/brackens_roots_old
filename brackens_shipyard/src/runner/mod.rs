@@ -9,10 +9,14 @@ use shipyard::{
     Label, SystemModificator, UniqueView, UniqueViewMut, Workload, WorkloadModificator, World,
 };
 
-use crate::tools::Window;
+use crate::{
+    assets::AssetsWorkload,
+    renderer::RendererWorkload,
+    tools::{ToolsWorkload, Window},
+};
 
 use self::{
-    systems::{sys_clear_input_events, sys_clear_misc_events, sys_remove_resize},
+    systems::{sys_clear_input_events, sys_remove_resize},
     uniques::{
         generate_device_event, generate_window_event, InputEventManager, MiscEventManager,
         ResizeEvent, RunnerErrorManager,
@@ -112,6 +116,17 @@ impl ShipyardRunner {
             core,
         );
     }
+
+    pub fn run_all_plugins(self, mut core: Vec<Box<dyn RunnerWorkloads>>) {
+        core.push(Box::new(ToolsWorkload));
+        core.push(Box::new(AssetsWorkload));
+        core.push(Box::new(RendererWorkload));
+
+        Runner::run_with_data::<Vec<Box<dyn RunnerWorkloads>>, ShipyardRunnerInner>(
+            self.window_builder,
+            core,
+        );
+    }
 }
 
 //===============================================================
@@ -119,7 +134,7 @@ impl ShipyardRunner {
 // shipyard core
 struct ShipyardRunnerInner {
     world: World,
-    _proxy: EventLoopProxy<RunnerLoopEvent>,
+    proxy: EventLoopProxy<RunnerLoopEvent>,
 }
 
 impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
@@ -157,10 +172,7 @@ impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
 
         //--------------------------------------------------
 
-        Self {
-            world,
-            _proxy: proxy,
-        }
+        Self { world, proxy }
 
         //--------------------------------------------------
     }
@@ -168,10 +180,16 @@ impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
 
 impl RunnerCore for ShipyardRunnerInner {
     fn new(
-        _window: brackens_tools::Window,
-        _event_loop: &brackens_tools::EventLoop<brackens_tools::RunnerLoopEvent>,
+        window: brackens_tools::Window,
+        event_loop: &brackens_tools::EventLoop<brackens_tools::RunnerLoopEvent>,
     ) -> Self {
-        panic!("Dont use this function")
+        let workloads: Vec<Box<dyn RunnerWorkloads>> = vec![
+            Box::new(ToolsWorkload),
+            Box::new(AssetsWorkload),
+            Box::new(RendererWorkload),
+        ];
+
+        Self::new_data(window, event_loop, workloads)
     }
 
     fn input(&mut self, event: brackens_tools::WindowEvent) {
@@ -215,8 +233,6 @@ impl RunnerCore for ShipyardRunnerInner {
             }
             uniques::WindowEventTypes::None => {}
         }
-
-        // self.world.run_with_data(input_manage_device_event, &event);
     }
 
     fn main_events_cleared(&mut self) {
@@ -227,12 +243,12 @@ impl RunnerCore for ShipyardRunnerInner {
     fn tick(&mut self) {
         self.world.run_default().unwrap();
 
-        let mut manager = self
+        let mut error_manager = self
             .world
             .borrow::<UniqueViewMut<RunnerErrorManager>>()
             .unwrap();
 
-        manager.drain().for_each(|e| match e {
+        error_manager.drain().for_each(|e| match e {
             uniques::RunnerError::ForceResize => {
                 let size = self.world.run(|window: UniqueView<Window>| window.size());
 
@@ -242,6 +258,17 @@ impl RunnerCore for ShipyardRunnerInner {
                 }
             }
         });
+
+        let mut misc_events = self
+            .world
+            .borrow::<UniqueViewMut<MiscEventManager>>()
+            .unwrap();
+        misc_events.drain().for_each(|e| match e {
+            uniques::MiscEvent::CloseRequested | uniques::MiscEvent::Destroyed => {
+                self.proxy.send_event(RunnerLoopEvent::Exit).unwrap()
+            }
+            _ => {}
+        })
     }
 }
 
@@ -357,56 +384,7 @@ impl RunnerWorkloads for ShipyardRunnerWorkloads {
         Workload::new("")
             .with_system(sys_remove_resize.skip_if_missing_unique::<ResizeEvent>())
             .with_system(sys_clear_input_events)
-            .with_system(sys_clear_misc_events)
     }
 }
-// impl ShipyardCore for ShipyardRunnerWorkloads {
-//     fn new(world: &World) {
-//         world.run(setup_assets);
-//         world.run(setup_renderer);
-//         world.run(setup_tools);
-//         world.add_unique(RunnerErrorManager::default());
-//     }
-
-//     fn start() -> Workload {
-//         Workload::new("").with_system(sys_update_upkeep)
-//     }
-
-//     fn pre_update() -> Workload {
-//         Workload::new("").with_system(sys_tick_timers)
-//     }
-
-//     fn update() -> Workload {
-//         Workload::new("")
-//     }
-
-//     fn post_update() -> Workload {
-//         Workload::new("").with_system(sys_reset_input_manager)
-//     }
-
-//     fn pre_render() -> Workload {
-//         Workload::new("").with_system(sys_start_render_pass).merge(
-//             &mut Workload::new("")
-//                 .skip_if_missing_unique::<RenderPassTools>()
-//                 .after_all(sys_start_render_pass)
-//                 .with_system(sys_clear_background),
-//         )
-//     }
-
-//     fn render() -> Workload {
-//         Workload::new("").skip_if_missing_unique::<RenderPassTools>()
-//     }
-
-//     fn post_render() -> Workload {
-//         Workload::new("")
-//             .with_system(sys_start_render_pass.skip_if_missing_unique::<RenderPassTools>())
-//     }
-
-//     fn end() -> Workload {
-//         Workload::new("")
-//             .with_system(sys_remove_resize.skip_if_missing_unique::<ResizeEvent>())
-//             .with_system(sys_reset_asset_storage)
-//     }
-// }
 
 //===============================================================
