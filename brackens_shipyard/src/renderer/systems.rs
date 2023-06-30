@@ -7,9 +7,10 @@ use brackens_renderer::{
 };
 use shipyard::{AllStoragesView, UniqueView, UniqueViewMut};
 
-use crate::{runner::uniques::RunnerErrorManager, tools::Window};
-
 use super::{ClearColor, Device, Queue, RenderPassTools, Surface, SurfaceConfig};
+#[cfg(feature = "runner")]
+use crate::runner::uniques::{ResizeEvent, RunnerErrorManager};
+use crate::tools::Window;
 
 //===============================================================
 
@@ -49,8 +50,20 @@ pub fn resize(
     surface.inner().configure(device.inner(), config.inner());
 }
 
+#[cfg(feature = "runner")]
+pub fn sys_resize(
+    resize: UniqueView<ResizeEvent>,
+    device: UniqueView<Device>,
+    surface: UniqueView<Surface>,
+    mut config: UniqueViewMut<SurfaceConfig>,
+) {
+    config.set_size(resize.inner());
+    surface.inner().configure(device.inner(), config.inner());
+}
+
 //===============================================================
 
+#[cfg(feature = "runner")]
 pub fn sys_start_render_pass(
     all_storages: AllStoragesView,
     device: UniqueView<Device>,
@@ -72,20 +85,6 @@ pub fn sys_start_render_pass(
         },
     }
 }
-
-// pub fn sys_start_render_pass(
-//     all_storages: AllStoragesView,
-//     device: UniqueView<Device>,
-//     surface: UniqueView<Surface>,
-// ) -> Result<(), SurfaceError> {
-//     match render_tools::start_render_pass(device.inner(), surface.inner()) {
-//         Ok(tools) => {
-//             all_storages.add_unique(RenderPassTools::new(tools));
-//             Ok(())
-//         }
-//         Err(e) => Err(e),
-//     }
-// }
 
 pub fn sys_end_render_pass(all_storages: AllStoragesView, queue: UniqueView<Queue>) {
     if let Ok(tools) = all_storages.remove_unique::<RenderPassTools>() {

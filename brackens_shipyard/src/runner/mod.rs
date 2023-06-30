@@ -66,7 +66,11 @@ impl Label for Stages {
 
 // shipyard game state
 pub trait RunnerWorkloads {
+    #[allow(unused_variables)]
+    fn pre_setup(&self, world: &World) {}
     fn setup(&self, world: &World);
+    #[allow(unused_variables)]
+    fn post_setup(&self, world: &World) {}
 
     fn start(&self) -> Workload {
         Workload::new("")
@@ -138,7 +142,13 @@ impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
 
         workloads
             .iter()
+            .for_each(|workloads| workloads.pre_setup(&world));
+        workloads
+            .iter()
             .for_each(|workloads| workloads.setup(&world));
+        workloads
+            .iter()
+            .for_each(|workloads| workloads.post_setup(&world));
 
         //--------------------------------------------------
 

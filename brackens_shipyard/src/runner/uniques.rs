@@ -139,6 +139,10 @@ impl ResizeEvent {
         Self(size)
     }
     #[inline]
+    pub fn inner(&self) -> Size<u32> {
+        self.0
+    }
+    #[inline]
     pub fn width(&self) -> u32 {
         self.0.width
     }

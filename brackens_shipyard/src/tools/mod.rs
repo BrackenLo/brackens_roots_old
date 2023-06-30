@@ -1,9 +1,5 @@
 //===============================================================
 
-use shipyard::Workload;
-
-use crate::runner::RunnerWorkloads;
-
 mod components;
 mod systems;
 mod uniques;
@@ -17,9 +13,12 @@ pub use uniques::*;
 //===============================================================
 
 #[cfg(feature = "runner")]
+use shipyard::Workload;
+
+#[cfg(feature = "runner")]
 pub struct ToolsWorkload;
 #[cfg(feature = "runner")]
-impl RunnerWorkloads for ToolsWorkload {
+impl crate::runner::RunnerWorkloads for ToolsWorkload {
     fn setup(&self, world: &shipyard::World) {
         world.run(setup_tools);
     }
