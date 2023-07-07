@@ -167,12 +167,43 @@ impl Asset for RendererTexture {
     fn asset_name(&self) -> &str {
         "Renderer Texture"
     }
-    // fn asset_name() -> &'static str {
-    //     "Renderer Texture"
-    // }
 }
 
 impl RendererTexture {
+    pub fn from_color_f32(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        color: [f32; 3],
+        label: &str,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        let r = (color[0].clamp(0., 1.) * 255.) as u8;
+        let g = (color[1].clamp(0., 1.) * 255.) as u8;
+        let b = (color[2].clamp(0., 1.) * 255.) as u8;
+
+        Self::from_color(device, queue, [r, g, b], label, sampler, layout)
+    }
+
+    pub fn from_color(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        color: [u8; 3],
+        label: &str,
+        sampler: &wgpu::SamplerDescriptor,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Result<Self> {
+        let mut rgb = image::RgbImage::new(1, 1);
+        rgb.pixels_mut().for_each(|mut pixel| {
+            pixel.0[0] = color[0];
+            pixel.0[1] = color[1];
+            pixel.0[2] = color[2];
+        });
+        let rgba = image::DynamicImage::from(rgb);
+
+        Self::from_image(device, queue, &rgba, Some(label), sampler, layout)
+    }
+
     pub fn from_file(
         device: &wgpu::Device,
         queue: &wgpu::Queue,

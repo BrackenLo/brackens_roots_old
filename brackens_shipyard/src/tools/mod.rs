@@ -19,7 +19,7 @@ use shipyard::Workload;
 pub struct ToolsWorkload;
 #[cfg(feature = "runner")]
 impl crate::runner::RunnerWorkloads for ToolsWorkload {
-    fn setup(&self, world: &shipyard::World) {
+    fn setup(&self, world: &mut shipyard::World) {
         world.run(setup_tools);
     }
 

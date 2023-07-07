@@ -22,6 +22,7 @@ use self::{
 };
 
 pub mod systems;
+pub mod tools;
 pub mod uniques;
 
 //===============================================================
@@ -64,10 +65,10 @@ impl Label for Stages {
 // shipyard game state
 pub trait RunnerWorkloads {
     #[allow(unused_variables)]
-    fn pre_setup(&self, world: &World) {}
-    fn setup(&self, world: &World);
+    fn pre_setup(&self, world: &mut World) {}
+    fn setup(&self, world: &mut World);
     #[allow(unused_variables)]
-    fn post_setup(&self, world: &World) {}
+    fn post_setup(&self, world: &mut World) {}
 
     fn start(&self) -> Workload {
         Workload::new("")
@@ -131,7 +132,7 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
     ) -> Self {
         //--------------------------------------------------
 
-        let world = World::new();
+        let mut world = World::new();
 
         world.add_unique(Window::new(window));
 
@@ -144,15 +145,15 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
         workloads
             .0
             .iter()
-            .for_each(|workloads| workloads.pre_setup(&world));
+            .for_each(|workloads| workloads.pre_setup(&mut world));
         workloads
             .0
             .iter()
-            .for_each(|workloads| workloads.setup(&world));
+            .for_each(|workloads| workloads.setup(&mut world));
         workloads
             .0
             .iter()
-            .for_each(|workloads| workloads.post_setup(&world));
+            .for_each(|workloads| workloads.post_setup(&mut world));
 
         //--------------------------------------------------
 
@@ -354,7 +355,7 @@ impl WorkloadGroup {
 
 struct ShipyardRunnerWorkloads;
 impl RunnerWorkloads for ShipyardRunnerWorkloads {
-    fn setup(&self, world: &World) {
+    fn setup(&self, world: &mut World) {
         world.add_unique(RunnerErrorManager::default());
         world.add_unique(MiscEventManager::default());
         world.add_unique(InputEventManager::default());

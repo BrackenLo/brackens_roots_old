@@ -240,7 +240,8 @@ pub fn sys_renderer2d_process_textures(
                     .or_insert(vec![])
                     // Add instance of texture to new or existing hashmap entry
                     .push(RawTextureInstance {
-                        transform: transform.to_raw(),
+                        transform: (Transform::from_scale(texture.size.extend(1.)) + transform)
+                            .to_raw(),
                         color: texture.color,
                         ..Default::default()
                     });

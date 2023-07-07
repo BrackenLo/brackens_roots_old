@@ -23,7 +23,7 @@ use super::{
         TEXTURE_INDICES, TEXTURE_VERTICES,
     },
     tools::TEXTURE_SHADER,
-    Texture,
+    RendererTexture, Texture,
 };
 
 //===============================================================
@@ -204,6 +204,8 @@ where
         }
     }
 
+    //===============================================================
+
     pub fn name(&self) -> &str {
         &self.pipeline.name()
     }
@@ -211,6 +213,27 @@ where
     pub fn get_texture_layout(&self) -> &wgpu::BindGroupLayout {
         &self.texture_bind_group_layout
     }
+
+    pub fn load_texture(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        label: &str,
+        path: &str,
+        sampler: wgpu::SamplerDescriptor,
+    ) -> RendererTexture {
+        RendererTexture::from_file(
+            device,
+            queue,
+            path,
+            label,
+            &sampler,
+            &self.texture_bind_group_layout,
+        )
+        .unwrap()
+    }
+
+    //===============================================================
 
     pub fn render(
         &self,
