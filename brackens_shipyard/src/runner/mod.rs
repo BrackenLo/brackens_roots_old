@@ -110,25 +110,15 @@ pub struct ShipyardRunner {
 }
 
 impl ShipyardRunner {
-    pub fn run(self, core: Vec<Box<dyn RunnerWorkloads>>) {
-        Runner::run_with_data::<Vec<Box<dyn RunnerWorkloads>>, ShipyardRunnerInner>(
-            self.window_builder,
-            core,
-        );
+    pub fn run(self, core: WorkloadGroup) {
+        Runner::run_with_data::<WorkloadGroup, ShipyardRunnerInner>(self.window_builder, core);
     }
 
-    pub fn run_all_plugins<W: 'static + RunnerWorkloads>(self, core: W) {
-        let core: Vec<Box<dyn RunnerWorkloads>> = vec![
-            Box::new(core),
-            Box::new(ToolsWorkload),
-            Box::new(AssetsWorkload),
-            Box::new(RendererWorkload),
-        ];
+    pub fn run_all_plugins(self, plugins: WorkloadGroup) {
+        let mut core = WorkloadGroup::default_workloads();
+        core.add_workload_group(plugins);
 
-        Runner::run_with_data::<Vec<Box<dyn RunnerWorkloads>>, ShipyardRunnerInner>(
-            self.window_builder,
-            core,
-        );
+        Runner::run_with_data::<WorkloadGroup, ShipyardRunnerInner>(self.window_builder, core);
     }
 }
 
@@ -140,11 +130,11 @@ struct ShipyardRunnerInner {
     proxy: EventLoopProxy<RunnerLoopEvent>,
 }
 
-impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
+impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
     fn new_data(
         window: brackens_tools::Window,
         event_loop: &brackens_tools::EventLoop<RunnerLoopEvent>,
-        mut workloads: Vec<Box<dyn RunnerWorkloads>>,
+        mut workloads: WorkloadGroup,
     ) -> Self {
         //--------------------------------------------------
 
@@ -156,21 +146,47 @@ impl RunnerDataCore<Vec<Box<dyn RunnerWorkloads>>> for ShipyardRunnerInner {
 
         //--------------------------------------------------
 
-        workloads.push(Box::new(ShipyardRunnerWorkloads));
+        workloads.add_workload(Box::new(ShipyardRunnerWorkloads));
 
         workloads
+            .0
             .iter()
             .for_each(|workloads| workloads.pre_setup(&world));
         workloads
+            .0
             .iter()
             .for_each(|workloads| workloads.setup(&world));
         workloads
+            .0
             .iter()
             .for_each(|workloads| workloads.post_setup(&world));
 
         //--------------------------------------------------
 
-        generate_workload(workloads).add_to_world(&world).unwrap();
+        // generate_workload(workloads).add_to_world(&world).unwrap();
+        // let workload = generate_workload(workloads);
+        // world.add_workload(|| workload);
+
+        // world.add_workload(|| generate_workload(workloads));
+
+        add_workloads(&world, workloads);
+
+        println!("================================\n");
+
+        // println!("workloads: {:?}", world.workloads_type_usage());
+
+        world.workloads_type_usage().0.iter().for_each(|(k, v)| {
+            println!("Name: {}", k);
+            v.iter().for_each(|(name, type_info)| {
+                println!(" -- {}: ", name);
+                type_info.iter().for_each(|val| {
+                    println!("     -- {:?}", val);
+                });
+            });
+            println!("\n");
+        });
+
+        println!("\n================================\n");
 
         //--------------------------------------------------
 
@@ -185,12 +201,7 @@ impl RunnerCore for ShipyardRunnerInner {
         window: brackens_tools::Window,
         event_loop: &brackens_tools::EventLoop<brackens_tools::RunnerLoopEvent>,
     ) -> Self {
-        let workloads: Vec<Box<dyn RunnerWorkloads>> = vec![
-            Box::new(ToolsWorkload),
-            Box::new(AssetsWorkload),
-            Box::new(RendererWorkload),
-        ];
-
+        let workloads = WorkloadGroup::default_workloads();
         Self::new_data(window, event_loop, workloads)
     }
 
@@ -243,7 +254,8 @@ impl RunnerCore for ShipyardRunnerInner {
     }
 
     fn tick(&mut self) {
-        self.world.run_default().unwrap();
+        // self.world.run_default().unwrap();
+        run_workloads(&self.world);
 
         let mut error_manager = self
             .world
@@ -276,100 +288,170 @@ impl RunnerCore for ShipyardRunnerInner {
 
 //===============================================================
 
-pub fn generate_workload(workloads: Vec<Box<dyn RunnerWorkloads>>) -> Workload {
-    let mut start = workloads
+fn add_workloads(world: &World, workloads: WorkloadGroup) {
+    start_workloads(&workloads).add_to_world(world).unwrap();
+
+    pre_update_workloads(&workloads)
+        .add_to_world(world)
+        .unwrap();
+    update_workloads(&workloads).add_to_world(world).unwrap();
+    post_update_workloads(&workloads)
+        .add_to_world(world)
+        .unwrap();
+
+    pre_render_workloads(&workloads)
+        .add_to_world(world)
+        .unwrap();
+    render_workloads(&workloads).add_to_world(world).unwrap();
+    post_render_workloads(&workloads)
+        .add_to_world(world)
+        .unwrap();
+
+    end_workloads(&workloads).add_to_world(world).unwrap();
+}
+
+fn run_workloads(world: &World) {
+    world.run_workload(Stages::Start).unwrap();
+
+    world.run_workload(Stages::PreUpdate).unwrap();
+    world.run_workload(Stages::Update).unwrap();
+    world.run_workload(Stages::PostUpdate).unwrap();
+
+    world.run_workload(Stages::PreRender).unwrap();
+    world.run_workload(Stages::Render).unwrap();
+    world.run_workload(Stages::PostRender).unwrap();
+
+    world.run_workload(Stages::End).unwrap();
+}
+
+fn start_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
+        .fold(Workload::new(Stages::Start), |workload, stage| {
             workload.merge(&mut stage.start())
         })
-        .tag(Stages::Start);
+}
 
-    let mut pre_update = workloads
+fn pre_update_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
+        .fold(Workload::new(Stages::PreUpdate), |workload, stage| {
             workload.merge(&mut stage.pre_update())
         })
-        .tag(Stages::PreUpdate)
-        .after_all(Stages::Start);
+        .after_all(Stages::Start)
+}
 
-    let mut update = workloads
+fn update_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
+        .fold(Workload::new(Stages::Update), |workload, stage| {
             workload.merge(&mut stage.update())
         })
-        .tag(Stages::Update)
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate);
-
-    let mut post_update = workloads
-        .iter()
-        .fold(Workload::new(""), |workload, stage| {
-            workload.merge(&mut stage.post_update())
-        })
-        .tag(Stages::PostUpdate)
         .after_all(Stages::Start)
         .after_all(Stages::PreUpdate)
-        .after_all(Stages::Update);
+}
 
-    let mut pre_render = workloads
+fn post_update_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
-            workload.merge(&mut stage.pre_render())
+        .fold(Workload::new(Stages::PostUpdate), |workload, stage| {
+            workload.merge(&mut stage.post_update())
         })
-        .tag(Stages::PreRender)
         .after_all(Stages::Start)
         .after_all(Stages::PreUpdate)
         .after_all(Stages::Update)
-        .after_all(Stages::PostUpdate);
+}
 
-    let mut render = workloads
+fn pre_render_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
-            workload.merge(&mut stage.render())
+        .fold(Workload::new(Stages::PreRender), |workload, stage| {
+            workload.merge(&mut stage.pre_render())
         })
-        .tag(Stages::Render)
         .after_all(Stages::Start)
         .after_all(Stages::PreUpdate)
         .after_all(Stages::Update)
         .after_all(Stages::PostUpdate)
-        .after_all(Stages::PreRender);
+}
 
-    let mut post_render = workloads
+fn render_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
-            workload.merge(&mut stage.post_render())
+        .fold(Workload::new(Stages::Render), |workload, stage| {
+            workload.merge(&mut stage.render())
         })
-        .tag(Stages::PostRender)
         .after_all(Stages::Start)
         .after_all(Stages::PreUpdate)
         .after_all(Stages::Update)
         .after_all(Stages::PostUpdate)
         .after_all(Stages::PreRender)
-        .after_all(Stages::Render);
+}
 
-    let mut end = workloads
+fn post_render_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
         .iter()
-        .fold(Workload::new(""), |workload, stage| {
-            workload.merge(&mut stage.end())
+        .fold(Workload::new(Stages::PostRender), |workload, stage| {
+            workload.merge(&mut stage.post_render())
         })
-        .tag(Stages::End)
         .after_all(Stages::Start)
         .after_all(Stages::PreUpdate)
         .after_all(Stages::Update)
         .after_all(Stages::PostUpdate)
         .after_all(Stages::PreRender)
         .after_all(Stages::Render)
-        .after_all(Stages::PostRender);
+}
 
-    Workload::new("MainWorkload")
-        .merge(&mut start)
-        .merge(&mut pre_update)
-        .merge(&mut update)
-        .merge(&mut post_update)
-        .merge(&mut pre_render)
-        .merge(&mut render)
-        .merge(&mut post_render)
-        .merge(&mut end)
+fn end_workloads(workloads: &WorkloadGroup) -> Workload {
+    workloads
+        .0
+        .iter()
+        .fold(Workload::new(Stages::End), |workload, stage| {
+            workload.merge(&mut stage.end())
+        })
+        .after_all(Stages::Start)
+        .after_all(Stages::PreUpdate)
+        .after_all(Stages::Update)
+        .after_all(Stages::PostUpdate)
+        .after_all(Stages::PreRender)
+        .after_all(Stages::Render)
+        .after_all(Stages::PostRender)
+}
+
+//===============================================================
+
+pub struct WorkloadGroup(pub(crate) Vec<Box<dyn RunnerWorkloads>>);
+impl WorkloadGroup {
+    pub fn default_workloads() -> Self {
+        Self(vec![
+            Box::new(ToolsWorkload),
+            Box::new(AssetsWorkload),
+            Box::new(RendererWorkload),
+        ])
+    }
+
+    pub fn with_workload(workload: Box<dyn RunnerWorkloads>) -> Self {
+        Self(vec![workload])
+    }
+    pub fn with_workloads(workloads: Vec<Box<dyn RunnerWorkloads>>) -> Self {
+        Self(workloads)
+    }
+
+    pub fn add_workload(&mut self, workload: Box<dyn RunnerWorkloads>) {
+        self.0.push(workload);
+    }
+    pub fn add_workload_group(&mut self, workload_group: WorkloadGroup) {
+        workload_group
+            .0
+            .into_iter()
+            .for_each(|val| self.0.push(val));
+    }
 }
 
 //===============================================================
