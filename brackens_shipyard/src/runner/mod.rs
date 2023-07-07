@@ -5,9 +5,7 @@ use std::hash::Hash;
 use brackens_tools::{
     runner::RunnerDataCore, EventLoopProxy, Runner, RunnerCore, RunnerLoopEvent, WindowBuilder,
 };
-use shipyard::{
-    Label, SystemModificator, UniqueView, UniqueViewMut, Workload, WorkloadModificator, World,
-};
+use shipyard::{Label, SystemModificator, UniqueView, UniqueViewMut, Workload, World};
 
 use crate::{
     assets::AssetsWorkload,
@@ -44,23 +42,18 @@ impl Label for Stages {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-
     fn dyn_eq(&self, other: &dyn Label) -> bool {
         if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            self == other
-        } else {
-            false
+            return self == other;
         }
+        return false;
     }
-
     fn dyn_hash(&self, mut state: &mut dyn std::hash::Hasher) {
         Self::hash(self, &mut state);
     }
-
     fn dyn_clone(&self) -> Box<dyn Label> {
         Box::new(self.clone())
     }
-
     fn dyn_debug(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(f, "{:?}", self)
     }
@@ -163,17 +156,9 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
 
         //--------------------------------------------------
 
-        // generate_workload(workloads).add_to_world(&world).unwrap();
-        // let workload = generate_workload(workloads);
-        // world.add_workload(|| workload);
-
-        // world.add_workload(|| generate_workload(workloads));
-
         add_workloads(&world, workloads);
 
         println!("================================\n");
-
-        // println!("workloads: {:?}", world.workloads_type_usage());
 
         world.workloads_type_usage().0.iter().for_each(|(k, v)| {
             println!("Name: {}", k);
@@ -254,7 +239,6 @@ impl RunnerCore for ShipyardRunnerInner {
     }
 
     fn tick(&mut self) {
-        // self.world.run_default().unwrap();
         run_workloads(&self.world);
 
         let mut error_manager = self
@@ -289,25 +273,37 @@ impl RunnerCore for ShipyardRunnerInner {
 //===============================================================
 
 fn add_workloads(world: &World, workloads: WorkloadGroup) {
-    start_workloads(&workloads).add_to_world(world).unwrap();
+    add_workload_group(&world, &workloads, Stages::Start);
 
-    pre_update_workloads(&workloads)
-        .add_to_world(world)
-        .unwrap();
-    update_workloads(&workloads).add_to_world(world).unwrap();
-    post_update_workloads(&workloads)
-        .add_to_world(world)
-        .unwrap();
+    add_workload_group(&world, &workloads, Stages::PreUpdate);
+    add_workload_group(&world, &workloads, Stages::Update);
+    add_workload_group(&world, &workloads, Stages::PostUpdate);
 
-    pre_render_workloads(&workloads)
-        .add_to_world(world)
-        .unwrap();
-    render_workloads(&workloads).add_to_world(world).unwrap();
-    post_render_workloads(&workloads)
-        .add_to_world(world)
-        .unwrap();
+    add_workload_group(&world, &workloads, Stages::PreRender);
+    add_workload_group(&world, &workloads, Stages::Render);
+    add_workload_group(&world, &workloads, Stages::PostRender);
 
-    end_workloads(&workloads).add_to_world(world).unwrap();
+    add_workload_group(&world, &workloads, Stages::End);
+}
+
+fn add_workload_group(world: &World, workloads: &WorkloadGroup, stage: Stages) {
+    workloads
+        .0
+        .iter()
+        .fold(Workload::new(stage), |master_workload, workload| {
+            master_workload.merge(&mut match stage {
+                Stages::Start => workload.start(),
+                Stages::PreUpdate => workload.pre_update(),
+                Stages::Update => workload.update(),
+                Stages::PostUpdate => workload.post_update(),
+                Stages::PreRender => workload.pre_render(),
+                Stages::Render => workload.render(),
+                Stages::PostRender => workload.post_render(),
+                Stages::End => workload.end(),
+            })
+        })
+        .add_to_world(world)
+        .unwrap();
 }
 
 fn run_workloads(world: &World) {
@@ -322,106 +318,6 @@ fn run_workloads(world: &World) {
     world.run_workload(Stages::PostRender).unwrap();
 
     world.run_workload(Stages::End).unwrap();
-}
-
-fn start_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::Start), |workload, stage| {
-            workload.merge(&mut stage.start())
-        })
-}
-
-fn pre_update_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::PreUpdate), |workload, stage| {
-            workload.merge(&mut stage.pre_update())
-        })
-        .after_all(Stages::Start)
-}
-
-fn update_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::Update), |workload, stage| {
-            workload.merge(&mut stage.update())
-        })
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate)
-}
-
-fn post_update_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::PostUpdate), |workload, stage| {
-            workload.merge(&mut stage.post_update())
-        })
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate)
-        .after_all(Stages::Update)
-}
-
-fn pre_render_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::PreRender), |workload, stage| {
-            workload.merge(&mut stage.pre_render())
-        })
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate)
-        .after_all(Stages::Update)
-        .after_all(Stages::PostUpdate)
-}
-
-fn render_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::Render), |workload, stage| {
-            workload.merge(&mut stage.render())
-        })
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate)
-        .after_all(Stages::Update)
-        .after_all(Stages::PostUpdate)
-        .after_all(Stages::PreRender)
-}
-
-fn post_render_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::PostRender), |workload, stage| {
-            workload.merge(&mut stage.post_render())
-        })
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate)
-        .after_all(Stages::Update)
-        .after_all(Stages::PostUpdate)
-        .after_all(Stages::PreRender)
-        .after_all(Stages::Render)
-}
-
-fn end_workloads(workloads: &WorkloadGroup) -> Workload {
-    workloads
-        .0
-        .iter()
-        .fold(Workload::new(Stages::End), |workload, stage| {
-            workload.merge(&mut stage.end())
-        })
-        .after_all(Stages::Start)
-        .after_all(Stages::PreUpdate)
-        .after_all(Stages::Update)
-        .after_all(Stages::PostUpdate)
-        .after_all(Stages::PreRender)
-        .after_all(Stages::Render)
-        .after_all(Stages::PostRender)
 }
 
 //===============================================================
