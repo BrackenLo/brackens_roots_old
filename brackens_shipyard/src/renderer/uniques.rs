@@ -1,7 +1,16 @@
 //===============================================================
 
-use brackens_renderer::{render_tools::RenderPassTools as RenderPassToolsInner, wgpu, Size};
+use std::collections::HashMap;
+
+use brackens_renderer::{
+    render_tools::{self, RenderPassTools as RenderPassToolsInner},
+    renderer_2d::{tools::TextureProcessor, RawTextureInstance, TextureID, TextureRenderer},
+    wgpu, Size,
+};
+use brackens_tools::glam::Mat4;
 use shipyard::Unique;
+
+use crate::assets::AssetStorage;
 
 //===============================================================
 
@@ -96,6 +105,82 @@ impl ClearColor {
     }
     pub fn set_b(&mut self, b: f64) {
         self.0[2] = b;
+    }
+}
+
+//===============================================================
+
+#[derive(Unique)]
+pub struct Renderer2D {
+    renderer: TextureRenderer,
+    processor: TextureProcessor<TextureID>,
+}
+
+impl Renderer2D {
+    pub fn new(
+        device: &wgpu::Device,
+        config: &wgpu::SurfaceConfiguration,
+        window_size: Size<u32>,
+    ) -> Self {
+        Self {
+            renderer: TextureRenderer::new(device, config.format, window_size),
+            processor: TextureProcessor::default(),
+        }
+    }
+
+    #[inline]
+    pub fn get_layout(&self) -> &wgpu::BindGroupLayout {
+        self.renderer.get_texture_layout()
+    }
+
+    #[inline]
+    pub(crate) fn resize_depth(&mut self, device: &wgpu::Device, new_size: Size<u32>) {
+        self.renderer.resize_depth(device, new_size);
+    }
+
+    #[inline]
+    pub(crate) fn resize_projection(&mut self, queue: &wgpu::Queue, matrix: &Mat4) {
+        self.renderer.set_projection(queue, matrix);
+    }
+
+    #[inline]
+    pub(crate) fn resize_depth_and_projection(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        size: Size<u32>,
+    ) {
+        self.renderer.resize_depth_projection(device, queue, size);
+    }
+
+    #[inline]
+    pub(crate) fn get_unprocessed_mut(
+        &mut self,
+    ) -> &mut HashMap<TextureID, Vec<RawTextureInstance>> {
+        self.processor.get_unprocessed_mut()
+    }
+
+    #[inline]
+    pub(crate) fn process_texture(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
+        self.processor.process_texture(device, queue);
+    }
+
+    pub(crate) fn render(
+        &mut self,
+        texture_storage: &AssetStorage,
+        render_tools: &mut render_tools::RenderPassTools,
+    ) {
+        let draw = self
+            .processor
+            .get_draw_data()
+            .iter()
+            .map(|(id, buffer)| {
+                let bind_group = &texture_storage.get_data(*id).unwrap().bind_group;
+                (bind_group, buffer)
+            })
+            .collect::<Vec<_>>();
+
+        self.renderer.render(render_tools, &draw);
     }
 }
 

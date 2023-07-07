@@ -1,5 +1,8 @@
 //===============================================================
 
+use brackens_assets::Handle;
+use brackens_renderer::renderer_2d::RendererTexture;
+use brackens_tools::glam::Vec2;
 use shipyard::Component;
 
 pub use brackens_renderer::tools::{
@@ -7,6 +10,12 @@ pub use brackens_renderer::tools::{
 };
 
 //===============================================================
+
+#[derive(Component)]
+#[track(All)]
+pub struct CameraActive;
+
+//--------------------------------------------------
 
 #[derive(Component)]
 #[track(All)]
@@ -43,7 +52,7 @@ impl CameraOrthographic {
     }
 }
 
-//===============================================================
+//--------------------------------------------------
 
 #[derive(Component)]
 #[track(All)]
@@ -71,6 +80,37 @@ impl CameraPerspective {
         target: brackens_tools::glam::Vec3,
     ) -> brackens_tools::glam::Mat4 {
         self.0.get_projection_target(position, target)
+    }
+}
+
+//===============================================================
+
+#[derive(Component, Clone)]
+pub struct Texture2D {
+    pub size: Vec2,
+    pub handle: Handle<RendererTexture>,
+    pub color: [f32; 4],
+}
+impl Texture2D {
+    pub fn new(handle: Handle<RendererTexture>, width: f32, height: f32) -> Self {
+        Self {
+            size: Vec2::new(width, height),
+            handle,
+            color: [1., 1., 1., 1.],
+        }
+    }
+
+    pub fn new_color(
+        handle: Handle<RendererTexture>,
+        width: f32,
+        height: f32,
+        color: [f32; 4],
+    ) -> Self {
+        Self {
+            size: Vec2::new(width, height),
+            handle,
+            color,
+        }
     }
 }
 
