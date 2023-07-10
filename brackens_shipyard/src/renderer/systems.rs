@@ -163,8 +163,6 @@ pub fn sys_update_camera_active(entities: EntitiesView, mut v_active: ViewMut<Ca
     v_active.clear();
     // Re-add the component
     entities.add_component(id, &mut v_active, CameraActive);
-
-    println!("DEBUG: Camera active inserted - Make sure this is only printed once");
 }
 
 pub fn sys_renderer2d_update_camera(

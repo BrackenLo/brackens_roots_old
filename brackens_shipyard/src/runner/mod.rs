@@ -180,8 +180,6 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
         workloads.add_workload(Box::new(ShipyardRunnerWorkloads));
 
         add_setup_workloads(&world, &workloads);
-        run_setup_workloads(&world);
-
         add_workloads(&world, &workloads);
 
         println!("================================\n");
@@ -198,6 +196,8 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
         });
 
         println!("\n================================\n");
+
+        run_setup_workloads(&world);
 
         //--------------------------------------------------
 
