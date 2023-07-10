@@ -23,6 +23,11 @@ impl AssetStorage {
     }
 
     #[inline]
+    pub fn insert_data<T: Asset>(&mut self, data: T) -> Handle<T> {
+        self.0.insert_data(data)
+    }
+
+    #[inline]
     pub fn load_from_file<T: AssetFileLoadable>(
         &mut self,
         path: &str,

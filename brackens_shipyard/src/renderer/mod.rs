@@ -11,6 +11,8 @@ use shipyard::SystemModificator;
 pub use systems::*;
 pub use uniques::*;
 
+use crate::runner::SetupStages;
+
 //===============================================================
 
 #[cfg(feature = "runner")]
@@ -26,10 +28,13 @@ pub struct RendererWorkload;
 
 #[cfg(feature = "runner")]
 impl crate::runner::RunnerWorkloads for RendererWorkload {
-    fn pre_setup(&self, world: &mut shipyard::World) {
-        world.run(setup_renderer);
+    fn pre_setup(&self) -> Workload {
+        Workload::new("").with_system(setup_renderer.before_all(SetupStages::Start))
     }
-    fn setup(&self, _world: &mut shipyard::World) {}
+
+    fn setup(&self) -> Workload {
+        Workload::new("")
+    }
 
     fn start(&self) -> Workload {
         Workload::new("").with_system(sys_resize.skip_if_missing_unique::<ResizeEvent>())
@@ -57,8 +62,12 @@ pub struct Renderer2dWorkload;
 
 #[cfg(feature = "runner")]
 impl crate::runner::RunnerWorkloads for Renderer2dWorkload {
-    fn setup(&self, world: &mut shipyard::World) {
-        world.run(sys_setup_renderer_2d);
+    fn pre_setup(&self) -> Workload {
+        Workload::new("").with_system(sys_setup_renderer_2d)
+    }
+
+    fn setup(&self) -> Workload {
+        Workload::new("")
     }
 
     fn post_update(&self) -> Workload {

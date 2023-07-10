@@ -10,7 +10,7 @@ pub use brackens_tools::window::FullscreenMode;
 
 //===============================================================
 
-#[derive(Component)]
+#[derive(Component, Default)]
 #[track(All)]
 pub struct Transform(TransformInner);
 

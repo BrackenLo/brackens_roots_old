@@ -108,7 +108,7 @@ impl AssetStorage {
         handle
     }
 
-    fn insert_data<T: Asset>(&mut self, data: T) -> Handle<T> {
+    pub fn insert_data<T: Asset>(&mut self, data: T) -> Handle<T> {
         let id = self.get_next_id();
 
         let handle_inner = Arc::new(data);

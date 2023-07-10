@@ -5,7 +5,9 @@ use std::hash::Hash;
 use brackens_tools::{
     runner::RunnerDataCore, EventLoopProxy, Runner, RunnerCore, RunnerLoopEvent, WindowBuilder,
 };
-use shipyard::{Label, SystemModificator, UniqueView, UniqueViewMut, Workload, World};
+use shipyard::{
+    AllStoragesView, Label, SystemModificator, UniqueView, UniqueViewMut, Workload, World,
+};
 
 use crate::{
     assets::AssetsWorkload,
@@ -26,6 +28,39 @@ pub mod tools;
 pub mod uniques;
 
 //===============================================================
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub enum SetupStages {
+    Start,
+    Main,
+    End,
+}
+impl Label for SetupStages {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn dyn_eq(&self, other: &dyn Label) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+            return self == other;
+        }
+        return false;
+    }
+
+    fn dyn_hash(&self, mut state: &mut dyn std::hash::Hasher) {
+        Self::hash(self, &mut state);
+    }
+
+    fn dyn_clone(&self) -> Box<dyn Label> {
+        Box::new(self.clone())
+    }
+
+    fn dyn_debug(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        write!(f, "{:?}", self)
+    }
+}
+
+//--------------------------------------------------
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum Stages {
@@ -64,11 +99,13 @@ impl Label for Stages {
 
 // shipyard game state
 pub trait RunnerWorkloads {
-    #[allow(unused_variables)]
-    fn pre_setup(&self, world: &mut World) {}
-    fn setup(&self, world: &mut World);
-    #[allow(unused_variables)]
-    fn post_setup(&self, world: &mut World) {}
+    fn pre_setup(&self) -> Workload {
+        Workload::new("")
+    }
+    fn setup(&self) -> Workload;
+    fn post_setup(&self) -> Workload {
+        Workload::new("")
+    }
 
     fn start(&self) -> Workload {
         Workload::new("")
@@ -132,7 +169,7 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
     ) -> Self {
         //--------------------------------------------------
 
-        let mut world = World::new();
+        let world = World::new();
 
         world.add_unique(Window::new(window));
 
@@ -142,22 +179,10 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
 
         workloads.add_workload(Box::new(ShipyardRunnerWorkloads));
 
-        workloads
-            .0
-            .iter()
-            .for_each(|workloads| workloads.pre_setup(&mut world));
-        workloads
-            .0
-            .iter()
-            .for_each(|workloads| workloads.setup(&mut world));
-        workloads
-            .0
-            .iter()
-            .for_each(|workloads| workloads.post_setup(&mut world));
+        add_setup_workloads(&world, &workloads);
+        run_setup_workloads(&world);
 
-        //--------------------------------------------------
-
-        add_workloads(&world, workloads);
+        add_workloads(&world, &workloads);
 
         println!("================================\n");
 
@@ -273,7 +298,36 @@ impl RunnerCore for ShipyardRunnerInner {
 
 //===============================================================
 
-fn add_workloads(world: &World, workloads: WorkloadGroup) {
+fn add_setup_workloads(world: &World, workloads: &WorkloadGroup) {
+    add_setup_workload_group(&world, &workloads, SetupStages::Start);
+    add_setup_workload_group(&world, &workloads, SetupStages::Main);
+    add_setup_workload_group(&world, &workloads, SetupStages::End);
+}
+
+fn add_setup_workload_group(world: &World, workloads: &WorkloadGroup, stage: SetupStages) {
+    workloads
+        .0
+        .iter()
+        .fold(Workload::new(stage), |master_workload, workload| {
+            master_workload.merge(&mut match stage {
+                SetupStages::Start => workload.pre_setup(),
+                SetupStages::Main => workload.setup(),
+                SetupStages::End => workload.post_setup(),
+            })
+        })
+        .add_to_world(world)
+        .unwrap();
+}
+
+fn run_setup_workloads(world: &World) {
+    world.run_workload(SetupStages::Start).unwrap();
+    world.run_workload(SetupStages::Main).unwrap();
+    world.run_workload(SetupStages::End).unwrap();
+}
+
+//--------------------------------------------------
+
+fn add_workloads(world: &World, workloads: &WorkloadGroup) {
     add_workload_group(&world, &workloads, Stages::Start);
 
     add_workload_group(&world, &workloads, Stages::PreUpdate);
@@ -355,10 +409,12 @@ impl WorkloadGroup {
 
 struct ShipyardRunnerWorkloads;
 impl RunnerWorkloads for ShipyardRunnerWorkloads {
-    fn setup(&self, world: &mut World) {
-        world.add_unique(RunnerErrorManager::default());
-        world.add_unique(MiscEventManager::default());
-        world.add_unique(InputEventManager::default());
+    fn setup(&self) -> Workload {
+        Workload::new("").with_system(|storages: AllStoragesView| {
+            storages.add_unique(RunnerErrorManager::default());
+            storages.add_unique(MiscEventManager::default());
+            storages.add_unique(InputEventManager::default());
+        })
     }
 
     fn end(&self) -> Workload {

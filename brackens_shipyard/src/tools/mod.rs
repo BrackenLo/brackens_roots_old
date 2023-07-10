@@ -19,8 +19,8 @@ use shipyard::Workload;
 pub struct ToolsWorkload;
 #[cfg(feature = "runner")]
 impl crate::runner::RunnerWorkloads for ToolsWorkload {
-    fn setup(&self, world: &mut shipyard::World) {
-        world.run(setup_tools);
+    fn setup(&self) -> Workload {
+        Workload::new("").with_system(setup_tools)
     }
 
     fn start(&self) -> Workload {
