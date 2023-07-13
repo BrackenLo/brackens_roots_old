@@ -11,7 +11,8 @@ use shipyard::{
 
 use crate::{
     assets::AssetsWorkload,
-    renderer::RendererWorkload,
+    hierarchies::HierarchyWorkload,
+    renderer::{Renderer2dWorkload, RendererWorkload},
     tools::{ToolsWorkload, Window},
 };
 
@@ -384,6 +385,8 @@ impl WorkloadGroup {
             Box::new(ToolsWorkload),
             Box::new(AssetsWorkload),
             Box::new(RendererWorkload),
+            Box::new(HierarchyWorkload),
+            Box::new(Renderer2dWorkload),
         ])
     }
 

@@ -115,22 +115,37 @@ impl Default for Transform {
         }
     }
 }
+
+//--------------------------------------------------
+
 impl std::ops::Add for Transform {
     type Output = Self;
 
-    fn add(self, rhs: Transform) -> Self::Output {
-        let mut output = self;
-        output.translation += rhs.translation;
-        output.rotation = output.rotation.mul_quat(rhs.rotation);
-        output.scale *= rhs.scale;
-        output
+    fn add(mut self, rhs: Transform) -> Self::Output {
+        self.translation += rhs.translation;
+        self.rotation = self.rotation.mul_quat(rhs.rotation);
+        self.scale *= rhs.scale;
+        self
     }
 }
+
 impl std::ops::AddAssign for Transform {
     fn add_assign(&mut self, rhs: Self) {
         self.translation += rhs.translation;
         self.rotation = self.rotation.mul_quat(rhs.rotation);
         self.scale *= rhs.scale;
+    }
+}
+
+impl std::ops::Sub for Transform {
+    type Output = Self;
+
+    fn sub(mut self, rhs: Self) -> Self::Output {
+        self.translation -= rhs.translation;
+        self.rotation = self.rotation.mul_quat(rhs.rotation.inverse());
+        self.scale /= rhs.scale;
+
+        self
     }
 }
 

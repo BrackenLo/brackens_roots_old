@@ -17,8 +17,12 @@ use shipyard::Workload;
 pub struct AssetsWorkload;
 #[cfg(feature = "runner")]
 impl crate::runner::RunnerWorkloads for AssetsWorkload {
-    fn setup(&self) -> Workload {
+    fn pre_setup(&self) -> Workload {
         Workload::new("").with_system(setup_assets)
+    }
+
+    fn setup(&self) -> Workload {
+        Workload::new("")
     }
 
     fn end(&self) -> Workload {
