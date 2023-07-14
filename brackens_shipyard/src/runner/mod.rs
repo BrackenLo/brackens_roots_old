@@ -183,20 +183,20 @@ impl RunnerDataCore<WorkloadGroup> for ShipyardRunnerInner {
         add_setup_workloads(&world, &workloads);
         add_workloads(&world, &workloads);
 
-        println!("================================\n");
+        // println!("================================\n");
 
-        world.workloads_type_usage().0.iter().for_each(|(k, v)| {
-            println!("Name: {}", k);
-            v.iter().for_each(|(name, type_info)| {
-                println!(" -- {}: ", name);
-                type_info.iter().for_each(|val| {
-                    println!("     -- {:?}", val);
-                });
-            });
-            println!("\n");
-        });
+        // world.workloads_type_usage().0.iter().for_each(|(k, v)| {
+        //     println!("Name: {}", k);
+        //     v.iter().for_each(|(name, type_info)| {
+        //         println!(" -- {}: ", name);
+        //         type_info.iter().for_each(|val| {
+        //             println!("     -- {:?}", val);
+        //         });
+        //     });
+        //     println!("\n");
+        // });
 
-        println!("\n================================\n");
+        // println!("\n================================\n");
 
         run_setup_workloads(&world);
 

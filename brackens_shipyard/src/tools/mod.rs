@@ -34,7 +34,10 @@ impl crate::runner::RunnerWorkloads for ToolsWorkload {
     }
 
     fn post_update(&self) -> Workload {
-        Workload::new("").with_system(sys_reset_input_manager)
+        Workload::new("")
+            .with_system(sys_reset_key_input)
+            .with_system(sys_reset_mouse_input)
+            .with_system(sys_reset_mouse_pos)
     }
 }
 

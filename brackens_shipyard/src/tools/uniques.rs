@@ -2,7 +2,7 @@
 
 use brackens_tools::{
     input::{
-        InputManager as InputManagerInner, KeyCode, KeyManager as KeyManagerInner, MouseButton,
+        KeyCode, KeyManager as KeyManagerInner, MouseButton,
         MouseKeyManager as MouseKeyManagerInner, MousePositionManager as MousePositionManagerInner,
     },
     upkeep::UpkeepTracker as UpkeepTrackerInner,
@@ -35,7 +35,6 @@ impl KeyManager {
     pub fn just_released(&self, key: KeyCode) -> bool {
         self.0.just_released(key)
     }
-
     #[inline]
     pub fn manage_input(&mut self, state: ElementState, keycode: Option<KeyCode>) {
         self.0.manage_input(state, keycode);
@@ -99,80 +98,10 @@ impl MousePositionManager {
         self.0.add_movement(movement);
     }
     #[inline]
-    pub fn reset(&mut self) {
-        self.0.reset();
-    }
-}
-
-#[derive(Unique, Default)]
-pub struct InputManager(InputManagerInner);
-impl InputManager {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    //----------------------------------------------
-
-    #[inline]
-    pub fn add_mouse_movement(&mut self, movement: (f64, f64)) {
-        self.0.add_mouse_movement(movement);
-    }
-
-    #[inline]
-    pub fn set_mouse_position(&mut self, position: (f64, f64)) {
-        self.0.set_mouse_position(position);
-    }
-
-    #[inline]
-    pub fn set_keyboard_key(&mut self, state: ElementState, key: Option<KeyCode>) {
-        self.0.set_keyboard_key(state, key);
-    }
-
-    #[inline]
-    pub fn set_mouse_key(&mut self, state: ElementState, key: Option<MouseButton>) {
-        self.0.set_mouse_key(state, key);
-    }
-
-    #[inline]
-    pub fn set_mouse_on_screen(&mut self, on_screen: bool) {
-        self.0.set_mouse_on_screen(on_screen);
-    }
-
-    //----------------------------------------------
-
-    #[inline]
-    pub fn manage_device_event(
-        &mut self,
-        event: &brackens_tools::winit::event::DeviceEvent,
-    ) -> bool {
-        self.0.manage_device_event(event)
-    }
-
-    #[inline]
-    pub fn manage_window_event(
-        &mut self,
-        event: &brackens_tools::winit::event::WindowEvent,
-    ) -> bool {
-        self.0.manage_window_event(event)
-    }
-
-    // pub fn add_mouse_movement(&mut self, movement: (f64, f64)) {
-
-    // }
-
-    #[inline]
-    pub fn keys(&self) -> &KeyManagerInner {
-        &self.0.keys()
+    pub fn set_position(&mut self, position: (f64, f64)) {
+        self.0.set_position(position);
     }
     #[inline]
-    pub fn mouse_buttons(&self) -> &MouseKeyManagerInner {
-        &self.0.mouse_buttons()
-    }
-    #[inline]
-    pub fn mouse_position(&self) -> &MousePositionManagerInner {
-        &self.0.mouse_position()
-    }
-
     pub fn reset(&mut self) {
         self.0.reset();
     }
